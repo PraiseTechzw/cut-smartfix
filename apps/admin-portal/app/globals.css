@@ -1539,5 +1539,7 @@ input[type="radio"] {
   .analytics-grid {
     grid-template-columns: 1fr;
   }
-  .category-grid { grid-template-columns: 1fr; }
+  .category-grid {
+    grid-template-columns: 1fr;
+  }
 }

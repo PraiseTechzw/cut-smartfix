@@ -9,7 +9,6 @@
     "experiments": { "typedRoutes": true },
     "plugins": [
       "expo-router",
-      "expo-linear-gradient",
       [
         "expo-image-picker",
         {
@@ -20,10 +19,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#0b6b57",
-          "defaultChannel": "default",
-          "sounds": []
+          "color": "#0b6b57"
         }
       ]
     ],
