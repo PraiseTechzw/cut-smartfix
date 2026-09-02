@@ -1,0 +1,25 @@
+{
+  "name": "@cut-smartfix/student-mobile",
+  "private": true,
+  "version": "0.1.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cut-smartfix/api-client": "workspace:*",
+    "@cut-smartfix/contracts": "workspace:*",
+    "expo": "^52.0.0",
+    "expo-router": "^4.0.0",
+    "react": "^18.3.1",
+    "react-native": "^0.76.6"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "typescript": "^5.7.0"
+  }
+}
