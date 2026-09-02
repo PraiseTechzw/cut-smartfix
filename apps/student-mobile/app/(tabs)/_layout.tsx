@@ -1,8 +1,32 @@
 import { Tabs } from "expo-router";
+import React from "react";
 import { StyleSheet, Text } from "react-native";
 
 const PRIMARY = "#0b6b57";
 const MUTED = "#52615b";
+
+// Type cast workaround: @types/react version mismatch between expo-router and workspace
+// (same pattern used in the original _layout.tsx scaffold)
+type TabsType = React.ComponentType<{
+  screenOptions?: {
+    headerShown?: boolean;
+    tabBarActiveTintColor?: string;
+    tabBarInactiveTintColor?: string;
+    tabBarStyle?: object;
+    tabBarLabelStyle?: object;
+  };
+  children?: React.ReactNode;
+}> & {
+  Screen: React.ComponentType<{
+    name: string;
+    options?: {
+      title?: string;
+      tabBarIcon?: (props: { focused: boolean; color: string }) => React.ReactNode;
+    };
+  }>;
+};
+
+const TabsNav = Tabs as unknown as TabsType;
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   return (
@@ -12,7 +36,7 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 
 export default function TabsLayout() {
   return (
-    <Tabs
+    <TabsNav
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: PRIMARY,
@@ -21,7 +45,7 @@ export default function TabsLayout() {
         tabBarLabelStyle: styles.label,
       }}
     >
-      <Tabs.Screen
+      <TabsNav.Screen
         name="index"
         options={{
           title: "Home",
@@ -30,7 +54,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      <TabsNav.Screen
         name="reports"
         options={{
           title: "Reports",
@@ -39,7 +63,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      <TabsNav.Screen
         name="notifications"
         options={{
           title: "Alerts",
@@ -48,7 +72,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      <TabsNav.Screen
         name="profile"
         options={{
           title: "Profile",
@@ -57,7 +81,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-    </Tabs>
+    </TabsNav>
   );
 }
 
