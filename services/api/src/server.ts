@@ -2272,6 +2272,71 @@ app.patch(
 );
 
 // --- User management ---
+const createStaffUserSchema = z.object({
+  email: z.string().email(),
+  fullName: z.string().trim().min(2).max(120),
+  password: z.string().min(8).max(128),
+  role: z.enum(["technician", "supervisor", "administrator"]),
+  departmentId: z.string().uuid().optional(),
+});
+
+app.post(
+  "/v1/admin/users",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = createStaffUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        parsed.error.issues[0]?.message ?? "Invalid staff account.",
+      );
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    const { data: created, error } = await client.auth.admin.createUser({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      email_confirm: false,
+      user_metadata: {
+        full_name: parsed.data.fullName,
+        department_id: parsed.data.departmentId ?? "",
+      },
+      app_metadata: {
+        role: parsed.data.role,
+        provisioned_by: user.id,
+      },
+    });
+    if (error || !created.user) {
+      sendError(
+        res,
+        502,
+        "STAFF_CREATE_FAILED",
+        error?.message ?? "Could not create staff account.",
+      );
+      return;
+    }
+    await audit(client, user.id, "user.created", "profile", created.user.id, {
+      email: parsed.data.email,
+      role: parsed.data.role,
+      departmentId: parsed.data.departmentId,
+    });
+    ok(
+      res,
+      {
+        id: created.user.id,
+        email: created.user.email,
+        role: parsed.data.role,
+      },
+      201,
+    );
+  },
+);
+
 app.get(
   "/v1/admin/users",
   requireAuth,

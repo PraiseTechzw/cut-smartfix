@@ -679,16 +679,25 @@ function MatchIndicator({
   password: string;
   confirm: string;
 }) {
-  if (!confirm) return null;
-  const match = password === confirm;
+  // Hooks must always be called unconditionally — the early return was
+  // violating Rules of Hooks and causing React's static flag error.
   const opacity = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
+    if (!confirm) {
+      opacity.setValue(0);
+      return;
+    }
     Animated.timing(opacity, {
       toValue: 1,
       duration: 200,
       useNativeDriver: true,
     }).start();
-  }, [opacity]);
+  }, [confirm, opacity]);
+
+  if (!confirm) return null;
+
+  const match = password === confirm;
   return (
     <Animated.View style={[miStyles.row, { opacity }]}>
       <Text style={[miStyles.icon, { color: match ? "#27ae60" : ERROR }]}>

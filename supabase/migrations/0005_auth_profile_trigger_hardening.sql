@@ -1,3 +1,5 @@
+-- Keep public sign-up roles at student. Staff roles must be provisioned through
+-- the server using Supabase app_metadata, which clients cannot write.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -25,10 +27,12 @@ begin
 end;
 $$;
 
+-- Recreate the trigger idempotently for environments where 0004 was edited
+-- or applied with the previous raw metadata role behavior.
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
+after insert on auth.users
+for each row execute function public.handle_new_user();
 
 create unique index if not exists profiles_student_id_unique
   on public.profiles (lower(student_id))
