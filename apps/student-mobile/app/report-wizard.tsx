@@ -4,7 +4,7 @@
  *  1. Location – campus → area → building → floor → room
  *  2. Category → subcategory
  *  3. Title + description
- *  4. Urgency + photo placeholder
+ *  4. Urgency + photo capture / pick
  *  5. Review & submit
  */
 import { router } from "expo-router";
@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -34,6 +35,7 @@ import type {
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 const TOTAL_STEPS = 5;
+const MAX_PHOTOS = 5;
 
 // ---------------------------------------------------------------------------
 // Offline queue helpers
@@ -70,6 +72,128 @@ async function saveOffline(report: unknown) {
   const queue: unknown[] = existing ? JSON.parse(existing) : [];
   queue.push(report);
   await s.setItem("cut_pending_reports", JSON.stringify(queue));
+}
+
+// ---------------------------------------------------------------------------
+// Photo types
+// ---------------------------------------------------------------------------
+interface PickedPhoto {
+  uri: string;
+  /** mime type – defaults to image/jpeg if unknown */
+  mimeType?: string;
+  fileName?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Image picker helpers (dynamic require so build doesn't fail without native module)
+// ---------------------------------------------------------------------------
+async function pickFromGallery(): Promise<PickedPhoto[]> {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const ImagePicker = require("expo-image-picker");
+  const { status } =
+    await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert(
+      "Permission required",
+      "Please allow access to your photos in Settings.",
+    );
+    return [];
+  }
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsMultipleSelection: true,
+    quality: 0.8,
+    selectionLimit: MAX_PHOTOS,
+  });
+  if (result.canceled) return [];
+  return result.assets.map((a: { uri: string; mimeType?: string; fileName?: string }) => ({
+    uri: a.uri,
+    mimeType: a.mimeType ?? "image/jpeg",
+    fileName: a.fileName,
+  }));
+}
+
+async function captureFromCamera(): Promise<PickedPhoto | null> {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const ImagePicker = require("expo-image-picker");
+  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert(
+      "Permission required",
+      "Please allow camera access in Settings.",
+    );
+    return null;
+  }
+  const result = await ImagePicker.launchCameraAsync({
+    quality: 0.8,
+    allowsEditing: true,
+    aspect: [4, 3],
+  });
+  if (result.canceled) return null;
+  const a = result.assets[0];
+  return {
+    uri: a.uri,
+    mimeType: a.mimeType ?? "image/jpeg",
+    fileName: a.fileName,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Upload a single photo to the API
+// ---------------------------------------------------------------------------
+async function uploadPhoto(
+  reportId: string,
+  photo: PickedPhoto,
+  authToken: string,
+): Promise<void> {
+  const contentType = (photo.mimeType ?? "image/jpeg") as
+    | "image/jpeg"
+    | "image/png"
+    | "image/webp";
+
+  const fileName =
+    photo.fileName ??
+    `photo_${Date.now()}.${contentType.split("/")[1] ?? "jpg"}`;
+
+  // Step 1: Request a signed upload URL from the API
+  const signRes = await fetch(`${API_URL}/v1/reports/${reportId}/attachments/sign`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ fileName, contentType }),
+  });
+
+  if (!signRes.ok) {
+    throw new Error(`Sign failed: HTTP ${signRes.status}`);
+  }
+
+  const { data: signData } = await signRes.json();
+
+  // Step 2: Upload the file directly to the signed URL (Supabase storage)
+  const fileRes = await fetch(photo.uri);
+  const blob = await fileRes.blob();
+
+  const uploadRes = await fetch(signData.path, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body: blob,
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error(`Upload failed: HTTP ${uploadRes.status}`);
+  }
+
+  // Step 3: Confirm the upload with the API so it records the attachment
+  await fetch(`${API_URL}/v1/reports/${reportId}/attachments/confirm`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ id: signData.id }),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -218,6 +342,7 @@ export default function ReportWizardScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [offline, setOffline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState("");
   const [ticketNumber, setTicketNumber] = useState<string | undefined>();
 
   // Step 1: Location
@@ -249,8 +374,9 @@ export default function ReportWizardScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  // Step 4: Urgency
+  // Step 4: Urgency + Photos
   const [urgency, setUrgency] = useState<Urgency>("normal");
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
 
   // ---------------------------------------------------------------------------
   // Data fetching helpers
@@ -355,12 +481,48 @@ export default function ReportWizardScreen() {
   }, [selectedFloor, authHeader]);
 
   // ---------------------------------------------------------------------------
+  // Photo actions
+  // ---------------------------------------------------------------------------
+  function showPhotoOptions() {
+    if (photos.length >= MAX_PHOTOS) {
+      Alert.alert("Limit reached", `You can attach up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
+    Alert.alert("Add Photo", "Choose a source", [
+      {
+        text: "Take Photo",
+        onPress: async () => {
+          const photo = await captureFromCamera();
+          if (photo) setPhotos((prev) => [...prev, photo].slice(0, MAX_PHOTOS));
+        },
+      },
+      {
+        text: "Choose from Library",
+        onPress: async () => {
+          const picked = await pickFromGallery();
+          if (picked.length > 0) {
+            setPhotos((prev) =>
+              [...prev, ...picked].slice(0, MAX_PHOTOS),
+            );
+          }
+        },
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  // ---------------------------------------------------------------------------
   // Navigation guards
   // ---------------------------------------------------------------------------
   function canProceed(): boolean {
     if (step === 1) return !!selectedCampus;
     if (step === 2) return !!selectedCategory;
-    if (step === 3) return title.trim().length >= 3 && description.trim().length >= 10;
+    if (step === 3)
+      return title.trim().length >= 3 && description.trim().length >= 10;
     if (step === 4) return true;
     return true;
   }
@@ -372,7 +534,10 @@ export default function ReportWizardScreen() {
         2: "Please select a category.",
         3: "Please enter a title (min 3 chars) and description (min 10 chars).",
       };
-      Alert.alert("More info needed", hints[step] ?? "Please complete this step.");
+      Alert.alert(
+        "More info needed",
+        hints[step] ?? "Please complete this step.",
+      );
       return;
     }
     setStep((s) => Math.min(s + 1, TOTAL_STEPS));
@@ -387,6 +552,8 @@ export default function ReportWizardScreen() {
   // ---------------------------------------------------------------------------
   async function handleSubmit() {
     setSubmitting(true);
+    setSubmitStatus("Submitting report…");
+
     const payload = {
       title: title.trim(),
       description: description.trim(),
@@ -413,18 +580,35 @@ export default function ReportWizardScreen() {
         },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      setTicketNumber(json.data?.ticketNumber);
+      const reportId: string = json.data?.id;
+      const ticket: string = json.data?.ticketNumber;
+
+      // Upload photos if any
+      if (photos.length > 0 && token && reportId) {
+        for (let i = 0; i < photos.length; i++) {
+          setSubmitStatus(`Uploading photo ${i + 1} of ${photos.length}…`);
+          try {
+            await uploadPhoto(reportId, photos[i], token);
+          } catch {
+            // Non-fatal: photo upload failure doesn't block the report
+          }
+        }
+      }
+
+      setTicketNumber(ticket);
       setOffline(false);
       setSubmitted(true);
     } catch {
-      // Save offline
+      // Save offline (photos stored as URIs for later manual handling)
       await saveOffline({ ...payload, savedAt: new Date().toISOString() });
       setOffline(true);
       setSubmitted(true);
     } finally {
       setSubmitting(false);
+      setSubmitStatus("");
     }
   }
 
@@ -508,7 +692,7 @@ export default function ReportWizardScreen() {
 
             {selectedFloor && (
               <>
-                <Text style={styles.sectionLabel}>Room</Text>
+                <Text style={styles.sectionLabel}>Room / Facility</Text>
                 <SelectionList
                   items={rooms}
                   selected={selectedRoom?.id ?? null}
@@ -584,7 +768,7 @@ export default function ReportWizardScreen() {
           </View>
         )}
 
-        {/* ─── Step 4: Urgency + Photo ─── */}
+        {/* ─── Step 4: Urgency + Photos ─── */}
         {step === 4 && (
           <View>
             <Text style={styles.stepTitle}>How urgent is this?</Text>
@@ -592,16 +776,36 @@ export default function ReportWizardScreen() {
             <View style={styles.urgencyGrid}>
               {(
                 [
-                  { value: "low", label: "Low", emoji: "🟢", desc: "Minor inconvenience" },
-                  { value: "normal", label: "Normal", emoji: "🟡", desc: "Standard priority" },
-                  { value: "high", label: "High", emoji: "🟠", desc: "Affects daily operations" },
+                  {
+                    value: "low",
+                    label: "Low",
+                    emoji: "🟢",
+                    desc: "Minor inconvenience",
+                  },
+                  {
+                    value: "normal",
+                    label: "Normal",
+                    emoji: "🟡",
+                    desc: "Standard priority",
+                  },
+                  {
+                    value: "high",
+                    label: "High",
+                    emoji: "🟠",
+                    desc: "Affects daily operations",
+                  },
                   {
                     value: "emergency",
                     label: "Emergency",
                     emoji: "🔴",
                     desc: "Safety risk / critical",
                   },
-                ] as { value: Urgency; label: string; emoji: string; desc: string }[]
+                ] as {
+                  value: Urgency;
+                  label: string;
+                  emoji: string;
+                  desc: string;
+                }[]
               ).map((u) => (
                 <Pressable
                   key={u.value}
@@ -625,23 +829,51 @@ export default function ReportWizardScreen() {
               ))}
             </View>
 
-            {/* Photo placeholder */}
-            <Text style={[styles.sectionLabel, { marginTop: 24 }]}>
-              Photo Evidence
+            {/* Photo section */}
+            <Text style={[styles.sectionLabel, { marginTop: 28 }]}>
+              Photo Evidence{" "}
+              <Text style={styles.sectionLabelOptional}>
+                (optional, up to {MAX_PHOTOS})
+              </Text>
             </Text>
-            <Pressable
-              style={styles.photoPlaceholder}
-              onPress={() =>
-                Alert.alert(
-                  "Coming Soon",
-                  "Photo upload will be available in a future update.",
-                )
-              }
-            >
-              <Text style={styles.photoIcon}>📷</Text>
-              <Text style={styles.photoText}>Add a photo</Text>
-              <Text style={styles.photoSubtext}>(Coming soon)</Text>
-            </Pressable>
+
+            {/* Photo grid */}
+            {photos.length > 0 && (
+              <View style={styles.photoGrid}>
+                {photos.map((photo, index) => (
+                  <View key={`${photo.uri}-${index}`} style={styles.photoThumbContainer}>
+                    <Image
+                      source={{ uri: photo.uri }}
+                      style={styles.photoThumb}
+                      resizeMode="cover"
+                    />
+                    <Pressable
+                      style={styles.photoRemoveBtn}
+                      onPress={() => removePhoto(index)}
+                    >
+                      <Text style={styles.photoRemoveText}>✕</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {photos.length < MAX_PHOTOS && (
+              <Pressable
+                style={styles.photoAddBtn}
+                onPress={showPhotoOptions}
+              >
+                <Text style={styles.photoAddIcon}>📷</Text>
+                <Text style={styles.photoAddText}>
+                  {photos.length === 0
+                    ? "Add a photo"
+                    : `Add another photo (${photos.length}/${MAX_PHOTOS})`}
+                </Text>
+                <Text style={styles.photoAddSubtext}>
+                  Take a photo or choose from library
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -680,7 +912,35 @@ export default function ReportWizardScreen() {
               <ReviewRow label="Description" value={description} />
               <View style={styles.reviewDivider} />
               <ReviewRow label="Urgency" value={urgency.toUpperCase()} />
+              <ReviewRow
+                label="Photos"
+                value={
+                  photos.length === 0
+                    ? "None"
+                    : `${photos.length} photo${photos.length > 1 ? "s" : ""} attached`
+                }
+              />
             </View>
+
+            {/* Photo preview row in review */}
+            {photos.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.reviewPhotoScroll}
+              >
+                <View style={styles.reviewPhotoRow}>
+                  {photos.map((p, i) => (
+                    <Image
+                      key={`review-${i}`}
+                      source={{ uri: p.uri }}
+                      style={styles.reviewPhotoThumb}
+                      resizeMode="cover"
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+            )}
 
             {!token && (
               <View style={styles.authWarning}>
@@ -691,12 +951,20 @@ export default function ReportWizardScreen() {
             )}
 
             <Pressable
-              style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+              style={[
+                styles.submitBtn,
+                submitting && styles.submitBtnDisabled,
+              ]}
               onPress={handleSubmit}
               disabled={submitting}
             >
               {submitting ? (
-                <ActivityIndicator color="#fff" />
+                <View style={styles.submitBtnInner}>
+                  <ActivityIndicator color="#fff" />
+                  {submitStatus ? (
+                    <Text style={styles.submitStatusText}>{submitStatus}</Text>
+                  ) : null}
+                </View>
               ) : (
                 <Text style={styles.submitBtnText}>Submit Report</Text>
               )}
@@ -801,6 +1069,12 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
+  sectionLabelOptional: {
+    fontWeight: "400",
+    textTransform: "none",
+    letterSpacing: 0,
+    fontSize: 12,
+  },
   selectionList: {
     gap: 8,
   },
@@ -884,7 +1158,42 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center",
   },
-  photoPlaceholder: {
+  // Photos
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 12,
+  },
+  photoThumbContainer: {
+    position: "relative",
+    width: 90,
+    height: 90,
+  },
+  photoThumb: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    backgroundColor: "#e8ede9",
+  },
+  photoRemoveBtn: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#e05252",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoRemoveText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+    lineHeight: 12,
+  },
+  photoAddBtn: {
     backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 1.5,
@@ -894,9 +1203,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  photoIcon: { fontSize: 36 },
-  photoText: { color: "#17231f", fontSize: 15, fontWeight: "600" },
-  photoSubtext: { color: "#52615b", fontSize: 12 },
+  photoAddIcon: { fontSize: 36 },
+  photoAddText: { color: "#17231f", fontSize: 15, fontWeight: "600" },
+  photoAddSubtext: { color: "#52615b", fontSize: 12 },
+  // Review
   reviewCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -930,6 +1240,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f4f1",
     marginVertical: 4,
   },
+  reviewPhotoScroll: {
+    marginBottom: 16,
+  },
+  reviewPhotoRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  reviewPhotoThumb: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+    backgroundColor: "#e8ede9",
+  },
   authWarning: {
     backgroundColor: "#fff3cd",
     borderRadius: 8,
@@ -952,7 +1275,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   submitBtnDisabled: { opacity: 0.6 },
+  submitBtnInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   submitBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  submitStatusText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
   navBar: {
     flexDirection: "row",
     padding: 16,

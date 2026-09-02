@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import type {
+  CompletionEvidence,
   CreateFeedbackInput,
   MaintenanceReport,
   ReportAttachment,
@@ -64,6 +65,13 @@ const TIMELINE_ICONS: Partial<Record<ReportStatus, string>> = {
   cancelled: "🚫",
   reopened: "🔄",
 };
+
+/** Statuses where a student can request to reopen the issue */
+const REOPENABLE_STATUSES: ReportStatus[] = [
+  "closed",
+  "repair_completed",
+  "under_verification",
+];
 
 function StatusBadge({ status }: { status: ReportStatus }) {
   const c = STATUS_COLORS[status] ?? { bg: "#e9ecef", text: "#495057" };
@@ -139,6 +147,7 @@ export default function ReportDetailScreen() {
   const [report, setReport] = useState<MaintenanceReport | null>(null);
   const [timeline, setTimeline] = useState<ReportTimelineEvent[]>([]);
   const [attachments, setAttachments] = useState<ReportAttachment[]>([]);
+  const [evidence, setEvidence] = useState<CompletionEvidence[]>([]);
   const [feedback, setFeedback] = useState<ReportFeedback | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -149,6 +158,11 @@ export default function ReportDetailScreen() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
+  // Reopen flow state
+  const [reopenNote, setReopenNote] = useState("");
+  const [reopening, setReopening] = useState(false);
+  const [showReopenForm, setShowReopenForm] = useState(false);
 
   const authHeaders = useCallback(
     () => ({
@@ -163,11 +177,16 @@ export default function ReportDetailScreen() {
     setLoading(true);
     setError(null);
     try {
-      const [reportRes, timelineRes, attachRes, feedbackRes] =
+      const [reportRes, timelineRes, attachRes, evidenceRes, feedbackRes] =
         await Promise.allSettled([
           fetch(`${API_URL}/v1/reports/${id}`, { headers: authHeaders() }),
-          fetch(`${API_URL}/v1/reports/${id}/timeline`, { headers: authHeaders() }),
+          fetch(`${API_URL}/v1/reports/${id}/timeline`, {
+            headers: authHeaders(),
+          }),
           fetch(`${API_URL}/v1/reports/${id}/attachments`, {
+            headers: authHeaders(),
+          }),
+          fetch(`${API_URL}/v1/reports/${id}/evidence`, {
             headers: authHeaders(),
           }),
           fetch(`${API_URL}/v1/reports/${id}/feedback`, {
@@ -192,6 +211,11 @@ export default function ReportDetailScreen() {
         setAttachments(j.data ?? []);
       }
 
+      if (evidenceRes.status === "fulfilled" && evidenceRes.value.ok) {
+        const j = await evidenceRes.value.json();
+        setEvidence(j.data ?? []);
+      }
+
       if (feedbackRes.status === "fulfilled" && feedbackRes.value.ok) {
         const j = await feedbackRes.value.json();
         setFeedback(j.data ?? null);
@@ -207,6 +231,9 @@ export default function ReportDetailScreen() {
     loadData();
   }, [loadData]);
 
+  // ---------------------------------------------------------------------------
+  // Feedback submission
+  // ---------------------------------------------------------------------------
   async function submitFeedback() {
     if (resolved === null) {
       Alert.alert("Please answer", "Was this issue resolved?");
@@ -227,11 +254,55 @@ export default function ReportDetailScreen() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
       setFeedback(j.data ?? null);
-      Alert.alert("Thank you!", "Your feedback has been submitted.");
+
+      // If the student says the problem is NOT resolved, show reopen option
+      if (!resolved) {
+        Alert.alert(
+          "Problem not resolved?",
+          "Would you like to reopen this ticket so the team can address it?",
+          [
+            {
+              text: "Yes, Reopen",
+              onPress: () => setShowReopenForm(true),
+            },
+            { text: "No, keep closed", style: "cancel" },
+          ],
+        );
+      } else {
+        Alert.alert("Thank you!", "Your feedback has been submitted.");
+      }
     } catch (err) {
       Alert.alert("Failed to submit", (err as Error).message);
     } finally {
       setSubmittingFeedback(false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reopen
+  // ---------------------------------------------------------------------------
+  async function handleReopen() {
+    setReopening(true);
+    try {
+      const res = await fetch(`${API_URL}/v1/reports/${id}/reopen`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          note: reopenNote.trim() || "Student indicated issue is not resolved.",
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      Alert.alert(
+        "Ticket Reopened",
+        "Your ticket has been reopened. The maintenance team will review it again.",
+        [{ text: "OK", onPress: () => loadData() }],
+      );
+      setShowReopenForm(false);
+      setReopenNote("");
+    } catch (err) {
+      Alert.alert("Failed to reopen", (err as Error).message);
+    } finally {
+      setReopening(false);
     }
   }
 
@@ -280,6 +351,18 @@ export default function ReportDetailScreen() {
     .filter(Boolean)
     .join(", ");
 
+  // Should we show the "Reopen" button?
+  // Show it when: status is in REOPENABLE_STATUSES AND either
+  //   - feedback has been submitted with resolved=false, OR
+  //   - status is closed and no feedback yet (student may still want to reopen)
+  const canReopen =
+    REOPENABLE_STATUSES.includes(report.status) &&
+    report.status !== "reopened";
+  const showReopenButtonDirectly =
+    canReopen && feedback && !feedback.resolved && !showReopenForm;
+  const showReopenButtonClosed =
+    report.status === "closed" && !feedback && !showReopenForm;
+
   return (
     <SafeAreaView style={styles.page}>
       {/* Top bar */}
@@ -311,7 +394,9 @@ export default function ReportDetailScreen() {
         {/* Details grid */}
         <View style={styles.card}>
           <Text style={styles.cardSectionTitle}>Details</Text>
-          {locationStr ? <DetailRow label="Location" value={locationStr} /> : null}
+          {locationStr ? (
+            <DetailRow label="Location" value={locationStr} />
+          ) : null}
           {report.categoryName ? (
             <DetailRow label="Category" value={report.categoryName} />
           ) : null}
@@ -319,7 +404,10 @@ export default function ReportDetailScreen() {
             <DetailRow label="Subcategory" value={report.subcategoryName} />
           ) : null}
           <DetailRow label="Urgency" value={report.urgency.toUpperCase()} />
-          <DetailRow label="Submitted" value={formatDateTime(report.createdAt)} />
+          <DetailRow
+            label="Submitted"
+            value={formatDateTime(report.createdAt)}
+          />
           {report.closedAt && (
             <DetailRow label="Closed" value={formatDateTime(report.closedAt)} />
           )}
@@ -327,7 +415,10 @@ export default function ReportDetailScreen() {
             <DetailRow label="Assigned to" value={report.assignedToName} />
           )}
           {report.assignedDepartmentName && (
-            <DetailRow label="Department" value={report.assignedDepartmentName} />
+            <DetailRow
+              label="Department"
+              value={report.assignedDepartmentName}
+            />
           )}
           {report.rejectionReason && (
             <DetailRow label="Rejection" value={report.rejectionReason} />
@@ -353,7 +444,9 @@ export default function ReportDetailScreen() {
                     {event.status.replace(/_/g, " ")}
                   </Text>
                   {event.actorName && (
-                    <Text style={styles.timelineActor}>by {event.actorName}</Text>
+                    <Text style={styles.timelineActor}>
+                      by {event.actorName}
+                    </Text>
                   )}
                   {event.note && (
                     <Text style={styles.timelineNote}>{event.note}</Text>
@@ -367,7 +460,7 @@ export default function ReportDetailScreen() {
           </View>
         )}
 
-        {/* Attachments */}
+        {/* Issue attachments (reporter photos) */}
         {attachments.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.cardSectionTitle}>
@@ -397,8 +490,48 @@ export default function ReportDetailScreen() {
           </View>
         )}
 
-        {/* Feedback section — show when under_verification */}
-        {report.status === "under_verification" && (
+        {/* Technician completion evidence */}
+        {evidence.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardSectionTitle}>
+              ✅ Completion Evidence ({evidence.length})
+            </Text>
+            <Text style={styles.evidenceSubtitle}>
+              Photos taken by the technician after completing the repair.
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.photoRow}>
+                {evidence.map((e) =>
+                  e.signedUrl ? (
+                    <View key={e.id}>
+                      <Image
+                        source={{ uri: e.signedUrl }}
+                        style={styles.thumbnail}
+                        resizeMode="cover"
+                      />
+                      {e.caption ? (
+                        <Text style={styles.evidenceCaption} numberOfLines={2}>
+                          {e.caption}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : (
+                    <View key={e.id} style={styles.thumbnailPlaceholder}>
+                      <Text style={styles.thumbnailIcon}>🖼️</Text>
+                      <Text style={styles.thumbnailName} numberOfLines={1}>
+                        {e.fileName}
+                      </Text>
+                    </View>
+                  ),
+                )}
+              </View>
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ── Feedback section — show when under_verification or repair_completed ── */}
+        {(report.status === "under_verification" ||
+          report.status === "repair_completed") && (
           <View style={styles.card}>
             <Text style={styles.cardSectionTitle}>Was this resolved?</Text>
 
@@ -409,13 +542,11 @@ export default function ReportDetailScreen() {
                   Your feedback was recorded ✓
                 </Text>
                 <Text style={styles.feedbackSubmittedDetail}>
-                  Resolved: {feedback.resolved ? "Yes" : "No"}
+                  Resolved: {feedback.resolved ? "Yes ✓" : "No ✗"}
                 </Text>
                 {feedback.rating !== undefined && feedback.rating > 0 && (
                   <View>
-                    <Text style={styles.feedbackSubmittedDetail}>
-                      Rating:
-                    </Text>
+                    <Text style={styles.feedbackSubmittedDetail}>Rating:</Text>
                     <StarRating value={feedback.rating} readonly />
                   </View>
                 )}
@@ -445,7 +576,7 @@ export default function ReportDetailScreen() {
                         resolved === true && styles.yesNoTextActive,
                       ]}
                     >
-                      ✓ Yes
+                      ✓ Yes, resolved
                     </Text>
                   </Pressable>
                   <Pressable
@@ -461,12 +592,14 @@ export default function ReportDetailScreen() {
                         resolved === false && styles.yesNoTextActiveNo,
                       ]}
                     >
-                      ✗ No
+                      ✗ No, still broken
                     </Text>
                   </Pressable>
                 </View>
 
-                <Text style={styles.ratingLabel}>Rate the service (optional)</Text>
+                <Text style={styles.ratingLabel}>
+                  Rate the service (optional)
+                </Text>
                 <StarRating value={rating} onChange={setRating} />
 
                 <TextInput
@@ -497,6 +630,83 @@ export default function ReportDetailScreen() {
                 </Pressable>
               </View>
             )}
+          </View>
+        )}
+
+        {/* ── Reopen section ── */}
+
+        {/* Direct reopen button — shown after feedback says "not resolved" */}
+        {showReopenButtonDirectly && (
+          <View style={styles.card}>
+            <Text style={styles.cardSectionTitle}>Issue not resolved?</Text>
+            <Text style={styles.reopenDescription}>
+              You indicated the problem is still present. You can reopen this
+              ticket so the maintenance team can address it again.
+            </Text>
+            <Pressable
+              style={styles.reopenBtn}
+              onPress={() => setShowReopenForm(true)}
+            >
+              <Text style={styles.reopenBtnText}>🔄 Reopen This Ticket</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Reopen button — for closed tickets with no feedback yet */}
+        {showReopenButtonClosed && (
+          <View style={styles.card}>
+            <Text style={styles.cardSectionTitle}>Still having issues?</Text>
+            <Text style={styles.reopenDescription}>
+              If the problem was not resolved or has reoccurred, you can reopen
+              this ticket.
+            </Text>
+            <Pressable
+              style={styles.reopenBtn}
+              onPress={() => setShowReopenForm(true)}
+            >
+              <Text style={styles.reopenBtnText}>🔄 Reopen This Ticket</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Reopen form */}
+        {showReopenForm && (
+          <View style={styles.card}>
+            <Text style={styles.cardSectionTitle}>Reopen Ticket</Text>
+            <Text style={styles.reopenDescription}>
+              Please describe why the issue needs to be reopened.
+            </Text>
+            <TextInput
+              style={[styles.input, styles.feedbackInput]}
+              placeholder="e.g. The tap is still dripping after the repair..."
+              placeholderTextColor="#9caea5"
+              value={reopenNote}
+              onChangeText={setReopenNote}
+              multiline
+              textAlignVertical="top"
+            />
+            <View style={styles.reopenActions}>
+              <Pressable
+                style={styles.reopenCancelBtn}
+                onPress={() => setShowReopenForm(false)}
+              >
+                <Text style={styles.reopenCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.reopenConfirmBtn,
+                  reopening && styles.btnDisabled,
+                ]}
+                onPress={handleReopen}
+                disabled={reopening}
+              >
+                {reopening ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.reopenConfirmText}>Confirm Reopen</Text>
+                )}
+              </Pressable>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -656,7 +866,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
-  // Attachments
+  // Attachments / Evidence
   photoRow: {
     flexDirection: "row",
     gap: 10,
@@ -680,6 +890,18 @@ const styles = StyleSheet.create({
   },
   thumbnailIcon: { fontSize: 28 },
   thumbnailName: { color: "#52615b", fontSize: 10, textAlign: "center" },
+  evidenceSubtitle: {
+    color: "#52615b",
+    fontSize: 13,
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  evidenceCaption: {
+    color: "#52615b",
+    fontSize: 11,
+    marginTop: 4,
+    maxWidth: 100,
+  },
   // Feedback
   feedbackForm: { gap: 12 },
   feedbackQuestion: {
@@ -712,7 +934,7 @@ const styles = StyleSheet.create({
   yesNoText: {
     color: "#52615b",
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: 14,
   },
   yesNoTextActive: {
     color: "#0b6b57",
@@ -772,6 +994,55 @@ const styles = StyleSheet.create({
   feedbackSubmittedDetail: {
     color: "#52615b",
     fontSize: 14,
+  },
+  // Reopen
+  reopenDescription: {
+    color: "#52615b",
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  reopenBtn: {
+    backgroundColor: "#e3b23c",
+    borderRadius: 10,
+    padding: 15,
+    alignItems: "center",
+  },
+  reopenBtnText: {
+    color: "#17231f",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  reopenActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  reopenCancelBtn: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: "#c5d4c9",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  reopenCancelText: {
+    color: "#52615b",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  reopenConfirmBtn: {
+    flex: 2,
+    backgroundColor: "#e3b23c",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+  },
+  reopenConfirmText: {
+    color: "#17231f",
+    fontWeight: "700",
+    fontSize: 15,
   },
   // States
   center: {

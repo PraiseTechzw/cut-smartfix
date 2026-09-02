@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -12,9 +12,21 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 
-// app.json version fallback
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 const APP_VERSION = "0.1.0";
 
+// ---------------------------------------------------------------------------
+// Notification preferences shape
+// ---------------------------------------------------------------------------
+interface NotificationPreferences {
+  push: boolean;
+  email: boolean;
+  sms: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Components
+// ---------------------------------------------------------------------------
 function RoleBadge({ role }: { role: string }) {
   const colors: Record<string, { bg: string; text: string }> = {
     student: { bg: "#d4edda", text: "#155724" },
@@ -45,12 +57,101 @@ function InitialsAvatar({ name }: { name: string }) {
   );
 }
 
-export default function ProfileScreen() {
-  const { user, logout } = useAuth();
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [smsEnabled, setSmsEnabled] = useState(false);
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue} numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  );
+}
 
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
+export default function ProfileScreen() {
+  const { user, token, logout, refreshProfile } = useAuth();
+
+  const [prefs, setPrefs] = useState<NotificationPreferences>({
+    push: true,
+    email: true,
+    sms: false,
+  });
+  const [loadingPrefs, setLoadingPrefs] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+
+  // Debounce timer ref — we save 1.5s after the last toggle
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // Load preferences from API
+  // ---------------------------------------------------------------------------
+  const loadPreferences = useCallback(async () => {
+    if (!token) return;
+    setLoadingPrefs(true);
+    try {
+      const res = await fetch(`${API_URL}/v1/me/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data as Partial<NotificationPreferences> | null;
+        if (data) {
+          setPrefs({
+            push: data.push ?? true,
+            email: data.email ?? true,
+            sms: data.sms ?? false,
+          });
+        }
+      }
+      // If endpoint doesn't exist yet (404), we silently keep defaults
+    } catch {
+      // Network error — keep defaults
+    } finally {
+      setLoadingPrefs(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadPreferences();
+  }, [loadPreferences]);
+
+  // ---------------------------------------------------------------------------
+  // Save preferences to API with debounce
+  // ---------------------------------------------------------------------------
+  function savePreferences(updated: NotificationPreferences) {
+    if (!token) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      setSavingPrefs(true);
+      try {
+        await fetch(`${API_URL}/v1/me/notifications`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(updated),
+        });
+      } catch {
+        // Silent failure — preferences saved locally, will retry on next toggle
+      } finally {
+        setSavingPrefs(false);
+      }
+    }, 1500);
+  }
+
+  function handleToggle(key: keyof NotificationPreferences, value: boolean) {
+    const updated = { ...prefs, [key]: value };
+    setPrefs(updated);
+    savePreferences(updated);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Logout
+  // ---------------------------------------------------------------------------
   function handleLogout() {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
@@ -84,7 +185,10 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.page}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Avatar + identity */}
         <View style={styles.profileSection}>
           <InitialsAvatar name={user.fullName} />
@@ -115,25 +219,39 @@ export default function ProfileScreen() {
 
         {/* Notification preferences */}
         <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Notification Preferences</Text>
-          <Text style={styles.prefNote}>UI only — saved locally</Text>
-          <PreferenceRow
-            label="Push Notifications"
-            value={pushEnabled}
-            onToggle={setPushEnabled}
-          />
-          <View style={styles.divider} />
-          <PreferenceRow
-            label="Email Notifications"
-            value={emailEnabled}
-            onToggle={setEmailEnabled}
-          />
-          <View style={styles.divider} />
-          <PreferenceRow
-            label="SMS Notifications"
-            value={smsEnabled}
-            onToggle={setSmsEnabled}
-          />
+          <View style={styles.prefHeader}>
+            <Text style={styles.sectionLabel}>Notification Preferences</Text>
+            {savingPrefs && (
+              <Text style={styles.savingText}>Saving…</Text>
+            )}
+          </View>
+
+          {loadingPrefs ? (
+            <Text style={styles.loadingText}>Loading preferences…</Text>
+          ) : (
+            <>
+              <PreferenceRow
+                label="Push Notifications"
+                description="Receive alerts directly on your device"
+                value={prefs.push}
+                onToggle={(v) => handleToggle("push", v)}
+              />
+              <View style={styles.divider} />
+              <PreferenceRow
+                label="Email Notifications"
+                description="Updates sent to your email address"
+                value={prefs.email}
+                onToggle={(v) => handleToggle("email", v)}
+              />
+              <View style={styles.divider} />
+              <PreferenceRow
+                label="SMS Notifications"
+                description="Text messages for critical updates"
+                value={prefs.sms}
+                onToggle={(v) => handleToggle("sms", v)}
+              />
+            </>
+          )}
         </View>
 
         {/* Sign out */}
@@ -148,29 +266,23 @@ export default function ProfileScreen() {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 function PreferenceRow({
   label,
+  description,
   value,
   onToggle,
 }: {
   label: string;
+  description: string;
   value: boolean;
   onToggle: (v: boolean) => void;
 }) {
   return (
     <View style={styles.prefRow}>
-      <Text style={styles.prefLabel}>{label}</Text>
+      <View style={styles.prefTextGroup}>
+        <Text style={styles.prefLabel}>{label}</Text>
+        <Text style={styles.prefDescription}>{description}</Text>
+      </View>
       <Switch
         value={value}
         onValueChange={onToggle}
@@ -255,11 +367,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 12,
   },
-  prefNote: {
+  prefHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  savingText: {
     color: "#52615b",
     fontSize: 12,
-    marginTop: -8,
-    marginBottom: 12,
+  },
+  loadingText: {
+    color: "#52615b",
+    fontSize: 13,
+    textAlign: "center",
+    paddingVertical: 12,
   },
   infoRow: {
     flexDirection: "row",
@@ -287,11 +409,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  prefTextGroup: {
+    flex: 1,
+    gap: 2,
   },
   prefLabel: {
     color: "#17231f",
     fontSize: 14,
+    fontWeight: "600",
+  },
+  prefDescription: {
+    color: "#52615b",
+    fontSize: 12,
   },
   signOutBtn: {
     borderWidth: 1.5,

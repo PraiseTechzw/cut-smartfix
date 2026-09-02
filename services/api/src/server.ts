@@ -228,7 +228,12 @@ function ok<T>(res: express.Response, data: T, status = 200): void {
 
 function getClient(res: express.Response): SupabaseClient | null {
   if (!supabase) {
-    sendError(res, 503, "SERVICE_NOT_CONFIGURED", "Supabase is not configured.");
+    sendError(
+      res,
+      503,
+      "SERVICE_NOT_CONFIGURED",
+      "Supabase is not configured.",
+    );
   }
   return supabase;
 }
@@ -252,8 +257,12 @@ function mapReport(r: Row): MaintenanceReport {
     categoryId: r.category_id ? String(r.category_id) : undefined,
     categoryName: r.category_name ? String(r.category_name) : undefined,
     subcategoryId: r.subcategory_id ? String(r.subcategory_id) : undefined,
-    subcategoryName: r.subcategory_name ? String(r.subcategory_name) : undefined,
-    assignedDepartmentId: r.assigned_department_id ? String(r.assigned_department_id) : undefined,
+    subcategoryName: r.subcategory_name
+      ? String(r.subcategory_name)
+      : undefined,
+    assignedDepartmentId: r.assigned_department_id
+      ? String(r.assigned_department_id)
+      : undefined,
     assignedDepartmentName: r.dept_name ? String(r.dept_name) : undefined,
     assignedTo: r.assigned_to ? String(r.assigned_to) : undefined,
     assignedToName: r.technician_name ? String(r.technician_name) : undefined,
@@ -262,8 +271,12 @@ function mapReport(r: Row): MaintenanceReport {
     closedAt: r.closed_at ? String(r.closed_at) : undefined,
     dueDate: r.due_date ? String(r.due_date) : undefined,
     isOverdue: Boolean(r.is_overdue),
-    rejectionReason: r.rejection_reason ? String(r.rejection_reason) : undefined,
-    completionNotes: r.completion_notes ? String(r.completion_notes) : undefined,
+    rejectionReason: r.rejection_reason
+      ? String(r.rejection_reason)
+      : undefined,
+    completionNotes: r.completion_notes
+      ? String(r.completion_notes)
+      : undefined,
     createdAt: String(r.created_at),
     updatedAt: String(r.updated_at),
   };
@@ -333,7 +346,9 @@ function mapMaterialRequest(r: Row): MaterialRequest {
     unit: String(r.unit),
     reason: String(r.reason),
     status: r.status as MaterialRequest["status"],
-    rejectionReason: r.rejection_reason ? String(r.rejection_reason) : undefined,
+    rejectionReason: r.rejection_reason
+      ? String(r.rejection_reason)
+      : undefined,
     requestedAt: String(r.requested_at),
     decidedAt: r.decided_at ? String(r.decided_at) : undefined,
     issuedAt: r.issued_at ? String(r.issued_at) : undefined,
@@ -382,7 +397,12 @@ async function requireAuth(
   next: express.NextFunction,
 ): Promise<void> {
   if (!supabase) {
-    sendError(res, 503, "SERVICE_NOT_CONFIGURED", "Supabase is not configured.");
+    sendError(
+      res,
+      503,
+      "SERVICE_NOT_CONFIGURED",
+      "Supabase is not configured.",
+    );
     return;
   }
   const auth = req.header("authorization");
@@ -391,9 +411,15 @@ async function requireAuth(
     sendError(res, 401, "UNAUTHENTICATED", "A Bearer token is required.");
     return;
   }
-  const { data: authData, error: authError } = await supabase.auth.getUser(token);
+  const { data: authData, error: authError } =
+    await supabase.auth.getUser(token);
   if (authError || !authData.user) {
-    sendError(res, 401, "UNAUTHENTICATED", "The access token is invalid or expired.");
+    sendError(
+      res,
+      401,
+      "UNAUTHENTICATED",
+      "The access token is invalid or expired.",
+    );
     return;
   }
   const { data: profile, error: profileError } = await supabase
@@ -402,7 +428,12 @@ async function requireAuth(
     .eq("id", authData.user.id)
     .single();
   if (profileError || !profile) {
-    sendError(res, 403, "PROFILE_NOT_FOUND", "The authenticated user has no profile.");
+    sendError(
+      res,
+      403,
+      "PROFILE_NOT_FOUND",
+      "The authenticated user has no profile.",
+    );
     return;
   }
   if (!profile.is_active) {
@@ -414,7 +445,9 @@ async function requireAuth(
     fullName: String(profile.full_name),
     email: String(profile.email),
     role: profile.role as UserProfile["role"],
-    departmentId: profile.department_id ? String(profile.department_id) : undefined,
+    departmentId: profile.department_id
+      ? String(profile.department_id)
+      : undefined,
     isActive: Boolean(profile.is_active),
     avatarUrl: profile.avatar_url ? String(profile.avatar_url) : undefined,
     createdAt: new Date().toISOString(),
@@ -430,7 +463,12 @@ function requireRole(...roles: UserProfile["role"][]) {
   ): void => {
     const user = (req as AuthenticatedRequest).user;
     if (!roles.includes(user.role)) {
-      sendError(res, 403, "FORBIDDEN", "You do not have permission to perform this action.");
+      sendError(
+        res,
+        403,
+        "FORBIDDEN",
+        "You do not have permission to perform this action.",
+      );
       return;
     }
     next();
@@ -512,7 +550,10 @@ app.get("/v1/reports", requireAuth, async (req, res) => {
   const user = (req as AuthenticatedRequest).user;
 
   const page = Math.max(1, parseInt(String(req.query.page ?? "1")));
-  const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize ?? "20"))));
+  const pageSize = Math.min(
+    100,
+    Math.max(1, parseInt(String(req.query.pageSize ?? "20"))),
+  );
   const from = (page - 1) * pageSize;
 
   let query = client
@@ -523,16 +564,26 @@ app.get("/v1/reports", requireAuth, async (req, res) => {
 
   if (user.role === "student") query = query.eq("reporter_id", user.id);
   if (req.query.status) query = query.eq("status", String(req.query.status));
-  if (req.query.priority) query = query.eq("priority", String(req.query.priority));
+  if (req.query.priority)
+    query = query.eq("priority", String(req.query.priority));
   if (req.query.search) {
     const s = `%${String(req.query.search)}%`;
     query = query.or(`title.ilike.${s},ticket_number.ilike.${s}`);
   }
 
   const { data, error, count } = await query;
-  if (error) { sendError(res, 500, "REPORTS_QUERY_FAILED", error.message); return; }
+  if (error) {
+    sendError(res, 500, "REPORTS_QUERY_FAILED", error.message);
+    return;
+  }
   ok(res, {
-    items: (data ?? []).map((r) => mapReport({ ...r, reporter_name: (r.reporter as Row)?.full_name, reporter_email: (r.reporter as Row)?.email })),
+    items: (data ?? []).map((r) =>
+      mapReport({
+        ...r,
+        reporter_name: (r.reporter as Row)?.full_name,
+        reporter_email: (r.reporter as Row)?.email,
+      }),
+    ),
     total: count ?? 0,
     page,
     pageSize,
@@ -545,7 +596,12 @@ app.post("/v1/reports", requireAuth, async (req, res) => {
   if (!client) return;
   const parsed = createReportSchema.safeParse(req.body);
   if (!parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid input.");
+    sendError(
+      res,
+      400,
+      "VALIDATION_ERROR",
+      parsed.error.issues[0]?.message ?? "Invalid input.",
+    );
     return;
   }
   const user = (req as AuthenticatedRequest).user;
@@ -564,8 +620,18 @@ app.post("/v1/reports", requireAuth, async (req, res) => {
     })
     .select("*")
     .single();
-  if (error) { sendError(res, 500, "REPORT_CREATE_FAILED", error.message); return; }
-  await audit(client, user.id, "report.created", "maintenance_report", data.id as string, { ticket: data.ticket_number });
+  if (error) {
+    sendError(res, 500, "REPORT_CREATE_FAILED", error.message);
+    return;
+  }
+  await audit(
+    client,
+    user.id,
+    "report.created",
+    "maintenance_report",
+    data.id as string,
+    { ticket: data.ticket_number },
+  );
   ok(res, mapReport(data as Row), 201);
 });
 
@@ -574,57 +640,107 @@ app.get("/v1/reports/:id", requireAuth, async (req, res) => {
   if (!client) return;
   const user = (req as AuthenticatedRequest).user;
   const idParsed = uuidSchema.safeParse(req.params.id);
-  if (!idParsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID."); return; }
+  if (!idParsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID.");
+    return;
+  }
 
   let query = client
     .from("maintenance_reports")
-    .select(`*, reporter:reporter_id(full_name, email), cat:category_id(name), sub:subcategory_id(name), dept:assigned_department_id(name), tech:assigned_to(full_name)`)
+    .select(
+      `*, reporter:reporter_id(full_name, email), cat:category_id(name), sub:subcategory_id(name), dept:assigned_department_id(name), tech:assigned_to(full_name)`,
+    )
     .eq("id", idParsed.data);
 
   if (user.role === "student") query = query.eq("reporter_id", user.id);
-  else if (user.role === "technician") query = query.or(`reporter_id.eq.${user.id},assigned_to.eq.${user.id}`);
+  else if (user.role === "technician")
+    query = query.or(`reporter_id.eq.${user.id},assigned_to.eq.${user.id}`);
 
   const { data, error } = await query.maybeSingle();
-  if (error) { sendError(res, 500, "REPORT_QUERY_FAILED", error.message); return; }
-  if (!data) { sendError(res, 404, "REPORT_NOT_FOUND", "Maintenance report not found."); return; }
-  ok(res, mapReport({
-    ...data,
-    reporter_name: (data.reporter as Row)?.full_name,
-    reporter_email: (data.reporter as Row)?.email,
-    category_name: (data.cat as Row)?.name,
-    subcategory_name: (data.sub as Row)?.name,
-    dept_name: (data.dept as Row)?.name,
-    technician_name: (data.tech as Row)?.full_name,
-  } as Row));
-});
-
-app.patch("/v1/reports/:id", requireAuth, requireRole("supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const idParsed = uuidSchema.safeParse(req.params.id);
-  const parsed = updateReportSchema.safeParse(req.body);
-  if (!idParsed.success || !parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+  if (error) {
+    sendError(res, 500, "REPORT_QUERY_FAILED", error.message);
     return;
   }
-  const user = (req as AuthenticatedRequest).user;
-  const { data: old } = await client.from("maintenance_reports").select("*").eq("id", idParsed.data).single();
-  const updates: Row = {};
-  if (parsed.data.status !== undefined) updates.status = parsed.data.status;
-  if (parsed.data.priority !== undefined) updates.priority = parsed.data.priority;
-  if (parsed.data.assignedDepartmentId !== undefined) updates.assigned_department_id = parsed.data.assignedDepartmentId;
-  if (parsed.data.assignedTo !== undefined) updates.assigned_to = parsed.data.assignedTo;
-  if (parsed.data.rejectionReason !== undefined) updates.rejection_reason = parsed.data.rejectionReason;
-  if (parsed.data.completionNotes !== undefined) updates.completion_notes = parsed.data.completionNotes;
-  if (parsed.data.dueDate !== undefined) updates.due_date = parsed.data.dueDate;
-  if (parsed.data.status === "under_review") { updates.reviewed_by = user.id; updates.reviewed_at = new Date().toISOString(); }
-  if (parsed.data.status === "closed") updates.closed_at = new Date().toISOString();
-
-  const { data, error } = await client.from("maintenance_reports").update(updates).eq("id", idParsed.data).select("*").single();
-  if (error) { sendError(res, 500, "REPORT_UPDATE_FAILED", error.message); return; }
-  await audit(client, user.id, "report.updated", "maintenance_report", idParsed.data, updates, old as Row);
-  ok(res, mapReport(data as Row));
+  if (!data) {
+    sendError(res, 404, "REPORT_NOT_FOUND", "Maintenance report not found.");
+    return;
+  }
+  ok(
+    res,
+    mapReport({
+      ...data,
+      reporter_name: (data.reporter as Row)?.full_name,
+      reporter_email: (data.reporter as Row)?.email,
+      category_name: (data.cat as Row)?.name,
+      subcategory_name: (data.sub as Row)?.name,
+      dept_name: (data.dept as Row)?.name,
+      technician_name: (data.tech as Row)?.full_name,
+    } as Row),
+  );
 });
+
+app.patch(
+  "/v1/reports/:id",
+  requireAuth,
+  requireRole("supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const idParsed = uuidSchema.safeParse(req.params.id);
+    const parsed = updateReportSchema.safeParse(req.body);
+    if (!idParsed.success || !parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    const { data: old } = await client
+      .from("maintenance_reports")
+      .select("*")
+      .eq("id", idParsed.data)
+      .single();
+    const updates: Row = {};
+    if (parsed.data.status !== undefined) updates.status = parsed.data.status;
+    if (parsed.data.priority !== undefined)
+      updates.priority = parsed.data.priority;
+    if (parsed.data.assignedDepartmentId !== undefined)
+      updates.assigned_department_id = parsed.data.assignedDepartmentId;
+    if (parsed.data.assignedTo !== undefined)
+      updates.assigned_to = parsed.data.assignedTo;
+    if (parsed.data.rejectionReason !== undefined)
+      updates.rejection_reason = parsed.data.rejectionReason;
+    if (parsed.data.completionNotes !== undefined)
+      updates.completion_notes = parsed.data.completionNotes;
+    if (parsed.data.dueDate !== undefined)
+      updates.due_date = parsed.data.dueDate;
+    if (parsed.data.status === "under_review") {
+      updates.reviewed_by = user.id;
+      updates.reviewed_at = new Date().toISOString();
+    }
+    if (parsed.data.status === "closed")
+      updates.closed_at = new Date().toISOString();
+
+    const { data, error } = await client
+      .from("maintenance_reports")
+      .update(updates)
+      .eq("id", idParsed.data)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "REPORT_UPDATE_FAILED", error.message);
+      return;
+    }
+    await audit(
+      client,
+      user.id,
+      "report.updated",
+      "maintenance_report",
+      idParsed.data,
+      updates,
+      old as Row,
+    );
+    ok(res, mapReport(data as Row));
+  },
+);
 
 // ─────────────────────────────────────────
 // Timeline
@@ -633,14 +749,25 @@ app.get("/v1/reports/:id/timeline", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
   const idParsed = uuidSchema.safeParse(req.params.id);
-  if (!idParsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID."); return; }
+  if (!idParsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID.");
+    return;
+  }
   const { data, error } = await client
     .from("report_timeline")
     .select("*, actor:created_by(full_name, role)")
     .eq("report_id", idParsed.data)
     .order("created_at", { ascending: true });
-  if (error) { sendError(res, 500, "TIMELINE_QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => mapTimeline({ ...r, actor_name: (r.actor as Row)?.full_name } as Row)));
+  if (error) {
+    sendError(res, 500, "TIMELINE_QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map((r) =>
+      mapTimeline({ ...r, actor_name: (r.actor as Row)?.full_name } as Row),
+    ),
+  );
 });
 
 // ─────────────────────────────────────────
@@ -650,13 +777,19 @@ app.get("/v1/reports/:id/attachments", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
   const idParsed = uuidSchema.safeParse(req.params.id);
-  if (!idParsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID."); return; }
+  if (!idParsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID.");
+    return;
+  }
   const { data, error } = await client
     .from("report_attachments")
     .select("*")
     .eq("report_id", idParsed.data)
     .order("created_at", { ascending: true });
-  if (error) { sendError(res, 500, "ATTACHMENTS_QUERY_FAILED", error.message); return; }
+  if (error) {
+    sendError(res, 500, "ATTACHMENTS_QUERY_FAILED", error.message);
+    return;
+  }
   // Generate signed URLs for each attachment
   const withUrls = await Promise.all(
     (data ?? []).map(async (a) => {
@@ -683,16 +816,37 @@ app.post("/v1/reports/:id/attachments/sign", requireAuth, async (req, res) => {
   const folder = input.data.isEvidence ? "evidence" : "attachments";
   const storagePath = `${user.id}/${idParsed.data}/${folder}/${crypto.randomUUID()}-${input.data.fileName}`;
 
-  const { data, error } = await client.storage.from(bucket).createSignedUploadUrl(storagePath);
-  if (error || !data) { sendError(res, 502, "STORAGE_SIGN_FAILED", error?.message ?? "Could not create upload URL."); return; }
+  const { data, error } = await client.storage
+    .from(bucket)
+    .createSignedUploadUrl(storagePath);
+  if (error || !data) {
+    sendError(
+      res,
+      502,
+      "STORAGE_SIGN_FAILED",
+      error?.message ?? "Could not create upload URL.",
+    );
+    return;
+  }
 
-  const table = input.data.isEvidence ? "completion_evidence" : "report_attachments";
+  const table = input.data.isEvidence
+    ? "completion_evidence"
+    : "report_attachments";
   const { data: record, error: recErr } = await client
     .from(table)
-    .insert({ report_id: idParsed.data, uploaded_by: user.id, storage_path: storagePath, file_name: input.data.fileName, content_type: input.data.contentType })
+    .insert({
+      report_id: idParsed.data,
+      uploaded_by: user.id,
+      storage_path: storagePath,
+      file_name: input.data.fileName,
+      content_type: input.data.contentType,
+    })
     .select("id, storage_path, file_name, content_type")
     .single();
-  if (recErr) { sendError(res, 500, "ATTACHMENT_CREATE_FAILED", recErr.message); return; }
+  if (recErr) {
+    sendError(res, 500, "ATTACHMENT_CREATE_FAILED", recErr.message);
+    return;
+  }
   ok(res, { ...record, token: data.token, path: storagePath }, 201);
 });
 
@@ -703,7 +857,10 @@ app.get("/v1/reports/:id/notes", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
   const idParsed = uuidSchema.safeParse(req.params.id);
-  if (!idParsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID."); return; }
+  if (!idParsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID.");
+    return;
+  }
   const user = (req as AuthenticatedRequest).user;
   let query = client
     .from("maintenance_notes")
@@ -712,157 +869,334 @@ app.get("/v1/reports/:id/notes", requireAuth, async (req, res) => {
     .order("created_at", { ascending: true });
   if (user.role === "student") query = query.eq("is_visible_to_student", true);
   const { data, error } = await query;
-  if (error) { sendError(res, 500, "NOTES_QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => mapNote({ ...r, author_name: (r.author as Row)?.full_name } as Row)));
-});
-
-app.post("/v1/reports/:id/notes", requireAuth, requireRole("technician", "supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const idParsed = uuidSchema.safeParse(req.params.id);
-  const parsed = createNoteSchema.safeParse(req.body);
-  if (!idParsed.success || !parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", parsed.success ? "Invalid report ID." : (parsed.error.issues[0]?.message ?? "Invalid input."));
+  if (error) {
+    sendError(res, 500, "NOTES_QUERY_FAILED", error.message);
     return;
   }
-  const user = (req as AuthenticatedRequest).user;
-  const { data, error } = await client
-    .from("maintenance_notes")
-    .insert({ report_id: idParsed.data, author_id: user.id, content: parsed.data.content, note_type: parsed.data.noteType, is_visible_to_student: parsed.data.isVisibleToStudent })
-    .select("*, author:author_id(full_name)")
-    .single();
-  if (error) { sendError(res, 500, "NOTE_CREATE_FAILED", error.message); return; }
-  ok(res, mapNote({ ...data, author_name: (data.author as Row)?.full_name } as Row), 201);
+  ok(
+    res,
+    (data ?? []).map((r) =>
+      mapNote({ ...r, author_name: (r.author as Row)?.full_name } as Row),
+    ),
+  );
 });
+
+app.post(
+  "/v1/reports/:id/notes",
+  requireAuth,
+  requireRole("technician", "supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const idParsed = uuidSchema.safeParse(req.params.id);
+    const parsed = createNoteSchema.safeParse(req.body);
+    if (!idParsed.success || !parsed.success) {
+      sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        parsed.success
+          ? "Invalid report ID."
+          : (parsed.error.issues[0]?.message ?? "Invalid input."),
+      );
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    const { data, error } = await client
+      .from("maintenance_notes")
+      .insert({
+        report_id: idParsed.data,
+        author_id: user.id,
+        content: parsed.data.content,
+        note_type: parsed.data.noteType,
+        is_visible_to_student: parsed.data.isVisibleToStudent,
+      })
+      .select("*, author:author_id(full_name)")
+      .single();
+    if (error) {
+      sendError(res, 500, "NOTE_CREATE_FAILED", error.message);
+      return;
+    }
+    ok(
+      res,
+      mapNote({ ...data, author_name: (data.author as Row)?.full_name } as Row),
+      201,
+    );
+  },
+);
 
 // ─────────────────────────────────────────
 // Assignments
 // ─────────────────────────────────────────
-app.get("/v1/reports/:id/assignments", requireAuth, requireRole("technician", "supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const idParsed = uuidSchema.safeParse(req.params.id);
-  if (!idParsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID."); return; }
-  const { data, error } = await client
-    .from("assignments")
-    .select("*, tech:technician_id(full_name), by:assigned_by(full_name), dept:department_id(name)")
-    .eq("report_id", idParsed.data)
-    .order("assigned_at", { ascending: false });
-  if (error) { sendError(res, 500, "ASSIGNMENTS_QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => mapAssignment({ ...r, technician_name: (r.tech as Row)?.full_name, assigned_by_name: (r.by as Row)?.full_name, department_name: (r.dept as Row)?.name } as Row)));
-});
+app.get(
+  "/v1/reports/:id/assignments",
+  requireAuth,
+  requireRole("technician", "supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const idParsed = uuidSchema.safeParse(req.params.id);
+    if (!idParsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID.");
+      return;
+    }
+    const { data, error } = await client
+      .from("assignments")
+      .select(
+        "*, tech:technician_id(full_name), by:assigned_by(full_name), dept:department_id(name)",
+      )
+      .eq("report_id", idParsed.data)
+      .order("assigned_at", { ascending: false });
+    if (error) {
+      sendError(res, 500, "ASSIGNMENTS_QUERY_FAILED", error.message);
+      return;
+    }
+    ok(
+      res,
+      (data ?? []).map((r) =>
+        mapAssignment({
+          ...r,
+          technician_name: (r.tech as Row)?.full_name,
+          assigned_by_name: (r.by as Row)?.full_name,
+          department_name: (r.dept as Row)?.name,
+        } as Row),
+      ),
+    );
+  },
+);
 
-app.post("/v1/reports/:id/assignments", requireAuth, requireRole("supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const idParsed = uuidSchema.safeParse(req.params.id);
-  const parsed = createAssignmentSchema.safeParse(req.body);
-  if (!idParsed.success || !parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
-    return;
-  }
-  const user = (req as AuthenticatedRequest).user;
-  // Mark previous current assignment as not current
-  await client.from("assignments").update({ is_current: false }).eq("report_id", idParsed.data).eq("is_current", true);
-  const { data, error } = await client
-    .from("assignments")
-    .insert({ report_id: idParsed.data, technician_id: parsed.data.technicianId, assigned_by: user.id, department_id: parsed.data.departmentId ?? null, notes: parsed.data.notes ?? null, status: "assigned", is_current: true })
-    .select("*")
-    .single();
-  if (error) { sendError(res, 500, "ASSIGNMENT_CREATE_FAILED", error.message); return; }
-  // Update report status and assigned_to
-  await client.from("maintenance_reports").update({ status: "assigned", assigned_to: parsed.data.technicianId, assigned_department_id: parsed.data.departmentId ?? null }).eq("id", idParsed.data);
-  // Notify the technician
-  const { data: report } = await client.from("maintenance_reports").select("ticket_number, title").eq("id", idParsed.data).single();
-  await notify(client, parsed.data.technicianId, "assignment", "New maintenance assignment", `You have been assigned ticket ${(report as Row)?.ticket_number}: ${(report as Row)?.title}`, idParsed.data);
-  await audit(client, user.id, "assignment.created", "assignment", data.id as string, { technicianId: parsed.data.technicianId });
-  ok(res, mapAssignment(data as Row), 201);
-});
+app.post(
+  "/v1/reports/:id/assignments",
+  requireAuth,
+  requireRole("supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const idParsed = uuidSchema.safeParse(req.params.id);
+    const parsed = createAssignmentSchema.safeParse(req.body);
+    if (!idParsed.success || !parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    // Mark previous current assignment as not current
+    await client
+      .from("assignments")
+      .update({ is_current: false })
+      .eq("report_id", idParsed.data)
+      .eq("is_current", true);
+    const { data, error } = await client
+      .from("assignments")
+      .insert({
+        report_id: idParsed.data,
+        technician_id: parsed.data.technicianId,
+        assigned_by: user.id,
+        department_id: parsed.data.departmentId ?? null,
+        notes: parsed.data.notes ?? null,
+        status: "assigned",
+        is_current: true,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "ASSIGNMENT_CREATE_FAILED", error.message);
+      return;
+    }
+    // Update report status and assigned_to
+    await client
+      .from("maintenance_reports")
+      .update({
+        status: "assigned",
+        assigned_to: parsed.data.technicianId,
+        assigned_department_id: parsed.data.departmentId ?? null,
+      })
+      .eq("id", idParsed.data);
+    // Notify the technician
+    const { data: report } = await client
+      .from("maintenance_reports")
+      .select("ticket_number, title")
+      .eq("id", idParsed.data)
+      .single();
+    await notify(
+      client,
+      parsed.data.technicianId,
+      "assignment",
+      "New maintenance assignment",
+      `You have been assigned ticket ${(report as Row)?.ticket_number}: ${(report as Row)?.title}`,
+      idParsed.data,
+    );
+    await audit(
+      client,
+      user.id,
+      "assignment.created",
+      "assignment",
+      data.id as string,
+      { technicianId: parsed.data.technicianId },
+    );
+    ok(res, mapAssignment(data as Row), 201);
+  },
+);
 
-app.patch("/v1/assignments/:id", requireAuth, requireRole("technician", "supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const idParsed = uuidSchema.safeParse(req.params.id);
-  const parsed = assignmentUpdateSchema.safeParse(req.body);
-  if (!idParsed.success || !parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
-    return;
-  }
-  const user = (req as AuthenticatedRequest).user;
-  const updates: Row = { status: parsed.data.status };
-  if (parsed.data.status === "accepted") updates.accepted_at = new Date().toISOString();
-  if (parsed.data.rejectedReason) updates.rejected_reason = parsed.data.rejectedReason;
-  const { data, error } = await client
-    .from("assignments")
-    .update(updates)
-    .eq("id", idParsed.data)
-    .select("*")
-    .single();
-  if (error) { sendError(res, 500, "ASSIGNMENT_UPDATE_FAILED", error.message); return; }
-  // Mirror status to report
-  if (parsed.data.status === "accepted") {
-    await client.from("maintenance_reports").update({ status: "accepted" }).eq("id", data.report_id as string);
-  }
-  await audit(client, user.id, "assignment.updated", "assignment", idParsed.data, updates);
-  ok(res, mapAssignment(data as Row));
-});
+app.patch(
+  "/v1/assignments/:id",
+  requireAuth,
+  requireRole("technician", "supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const idParsed = uuidSchema.safeParse(req.params.id);
+    const parsed = assignmentUpdateSchema.safeParse(req.body);
+    if (!idParsed.success || !parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    const updates: Row = { status: parsed.data.status };
+    if (parsed.data.status === "accepted")
+      updates.accepted_at = new Date().toISOString();
+    if (parsed.data.rejectedReason)
+      updates.rejected_reason = parsed.data.rejectedReason;
+    const { data, error } = await client
+      .from("assignments")
+      .update(updates)
+      .eq("id", idParsed.data)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "ASSIGNMENT_UPDATE_FAILED", error.message);
+      return;
+    }
+    // Mirror status to report
+    if (parsed.data.status === "accepted") {
+      await client
+        .from("maintenance_reports")
+        .update({ status: "accepted" })
+        .eq("id", data.report_id as string);
+    }
+    await audit(
+      client,
+      user.id,
+      "assignment.updated",
+      "assignment",
+      idParsed.data,
+      updates,
+    );
+    ok(res, mapAssignment(data as Row));
+  },
+);
 
 // ─────────────────────────────────────────
 // Staff tasks view
 // ─────────────────────────────────────────
-app.get("/v1/tasks", requireAuth, requireRole("technician", "supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const user = (req as AuthenticatedRequest).user;
-  const page = Math.max(1, parseInt(String(req.query.page ?? "1")));
-  const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize ?? "20"))));
-  const from = (page - 1) * pageSize;
+app.get(
+  "/v1/tasks",
+  requireAuth,
+  requireRole("technician", "supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const user = (req as AuthenticatedRequest).user;
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1")));
+    const pageSize = Math.min(
+      100,
+      Math.max(1, parseInt(String(req.query.pageSize ?? "20"))),
+    );
+    const from = (page - 1) * pageSize;
 
-  let query = client
-    .from("maintenance_reports")
-    .select("*, reporter:reporter_id(full_name, email), dept:assigned_department_id(name)", { count: "exact" })
-    .not("status", "in", `(closed,cancelled,rejected,duplicate)`)
-    .order("priority", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: true })
-    .range(from, from + pageSize - 1);
+    let query = client
+      .from("maintenance_reports")
+      .select(
+        "*, reporter:reporter_id(full_name, email), dept:assigned_department_id(name)",
+        { count: "exact" },
+      )
+      .not("status", "in", `(closed,cancelled,rejected,duplicate)`)
+      .order("priority", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true })
+      .range(from, from + pageSize - 1);
 
-  if (user.role === "technician") query = query.eq("assigned_to", user.id);
-  if (req.query.status) query = query.eq("status", String(req.query.status));
+    if (user.role === "technician") query = query.eq("assigned_to", user.id);
+    if (req.query.status) query = query.eq("status", String(req.query.status));
 
-  const { data, error, count } = await query;
-  if (error) { sendError(res, 500, "TASKS_QUERY_FAILED", error.message); return; }
-  ok(res, {
-    items: (data ?? []).map((r) => mapReport({ ...r, reporter_name: (r.reporter as Row)?.full_name, dept_name: (r.dept as Row)?.name } as Row)),
-    total: count ?? 0, page, pageSize, totalPages: Math.ceil((count ?? 0) / pageSize),
-  });
-});
+    const { data, error, count } = await query;
+    if (error) {
+      sendError(res, 500, "TASKS_QUERY_FAILED", error.message);
+      return;
+    }
+    ok(res, {
+      items: (data ?? []).map((r) =>
+        mapReport({
+          ...r,
+          reporter_name: (r.reporter as Row)?.full_name,
+          dept_name: (r.dept as Row)?.name,
+        } as Row),
+      ),
+      total: count ?? 0,
+      page,
+      pageSize,
+      totalPages: Math.ceil((count ?? 0) / pageSize),
+    });
+  },
+);
 
-app.patch("/v1/tasks/:id", requireAuth, requireRole("technician", "supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const idParsed = uuidSchema.safeParse(req.params.id);
-  const parsed = updateReportSchema.safeParse(req.body);
-  if (!idParsed.success || !parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
-    return;
-  }
-  const user = (req as AuthenticatedRequest).user;
-  const updates: Row = {};
-  if (parsed.data.status !== undefined) updates.status = parsed.data.status;
-  if (parsed.data.completionNotes !== undefined) updates.completion_notes = parsed.data.completionNotes;
-  if (parsed.data.status === "closed") updates.closed_at = new Date().toISOString();
+app.patch(
+  "/v1/tasks/:id",
+  requireAuth,
+  requireRole("technician", "supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const idParsed = uuidSchema.safeParse(req.params.id);
+    const parsed = updateReportSchema.safeParse(req.body);
+    if (!idParsed.success || !parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    const updates: Row = {};
+    if (parsed.data.status !== undefined) updates.status = parsed.data.status;
+    if (parsed.data.completionNotes !== undefined)
+      updates.completion_notes = parsed.data.completionNotes;
+    if (parsed.data.status === "closed")
+      updates.closed_at = new Date().toISOString();
 
-  let query = client.from("maintenance_reports").update(updates).eq("id", idParsed.data);
-  if (user.role === "technician") query = query.eq("assigned_to", user.id);
+    let query = client
+      .from("maintenance_reports")
+      .update(updates)
+      .eq("id", idParsed.data);
+    if (user.role === "technician") query = query.eq("assigned_to", user.id);
 
-  const { data, error } = await query.select("*").maybeSingle();
-  if (error) { sendError(res, 500, "TASK_UPDATE_FAILED", error.message); return; }
-  if (!data) { sendError(res, 404, "TASK_NOT_FOUND", "Task not found or not assigned to you."); return; }
-  // Insert timeline event
-  await client.from("report_timeline").insert({ report_id: idParsed.data, status: parsed.data.status, created_by: user.id, note: (req.body as Row).note ?? null });
-  await audit(client, user.id, "task.updated", "maintenance_report", idParsed.data, updates);
-  ok(res, mapReport(data as Row));
-});
+    const { data, error } = await query.select("*").maybeSingle();
+    if (error) {
+      sendError(res, 500, "TASK_UPDATE_FAILED", error.message);
+      return;
+    }
+    if (!data) {
+      sendError(
+        res,
+        404,
+        "TASK_NOT_FOUND",
+        "Task not found or not assigned to you.",
+      );
+      return;
+    }
+    // Insert timeline event
+    await client.from("report_timeline").insert({
+      report_id: idParsed.data,
+      status: parsed.data.status,
+      created_by: user.id,
+      note: (req.body as Row).note ?? null,
+    });
+    await audit(
+      client,
+      user.id,
+      "task.updated",
+      "maintenance_report",
+      idParsed.data,
+      updates,
+    );
+    ok(res, mapReport(data as Row));
+  },
+);
 
 // ─────────────────────────────────────────
 // Material requests
@@ -871,73 +1205,179 @@ app.get("/v1/reports/:id/materials", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
   const idParsed = uuidSchema.safeParse(req.params.id);
-  if (!idParsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID."); return; }
+  if (!idParsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID.");
+    return;
+  }
   const { data, error } = await client
     .from("material_requests")
-    .select("*, requester:requested_by(full_name), approver:approved_by(full_name)")
+    .select(
+      "*, requester:requested_by(full_name), approver:approved_by(full_name)",
+    )
     .eq("report_id", idParsed.data)
     .order("created_at", { ascending: false });
-  if (error) { sendError(res, 500, "MATERIALS_QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => mapMaterialRequest({ ...r, requester_name: (r.requester as Row)?.full_name, approver_name: (r.approver as Row)?.full_name } as Row)));
-});
-
-app.post("/v1/reports/:id/materials", requireAuth, requireRole("technician", "supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const idParsed = uuidSchema.safeParse(req.params.id);
-  const parsed = materialRequestSchema.safeParse(req.body);
-  if (!idParsed.success || !parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", parsed.success ? "Invalid report ID." : (parsed.error.issues[0]?.message ?? "Invalid input."));
+  if (error) {
+    sendError(res, 500, "MATERIALS_QUERY_FAILED", error.message);
     return;
   }
-  const user = (req as AuthenticatedRequest).user;
-  const { data, error } = await client
-    .from("material_requests")
-    .insert({ report_id: idParsed.data, requested_by: user.id, material_name: parsed.data.materialName, quantity: parsed.data.quantity, unit: parsed.data.unit, reason: parsed.data.reason, status: "requested" })
-    .select("*")
-    .single();
-  if (error) { sendError(res, 500, "MATERIAL_REQUEST_CREATE_FAILED", error.message); return; }
-  // Update report status to waiting_for_materials
-  await client.from("maintenance_reports").update({ status: "waiting_for_materials" }).eq("id", idParsed.data).eq("status", "in_progress");
-  await audit(client, user.id, "material.requested", "material_request", data.id as string, { material: parsed.data.materialName });
-  ok(res, mapMaterialRequest(data as Row), 201);
+  ok(
+    res,
+    (data ?? []).map((r) =>
+      mapMaterialRequest({
+        ...r,
+        requester_name: (r.requester as Row)?.full_name,
+        approver_name: (r.approver as Row)?.full_name,
+      } as Row),
+    ),
+  );
 });
 
-app.patch("/v1/materials/:id", requireAuth, requireRole("supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const idParsed = uuidSchema.safeParse(req.params.id);
-  const parsed = materialRequestUpdateSchema.safeParse(req.body);
-  if (!idParsed.success || !parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
-    return;
-  }
-  const user = (req as AuthenticatedRequest).user;
-  const updates: Row = { status: parsed.data.status, decided_at: new Date().toISOString(), approved_by: user.id };
-  if (parsed.data.rejectionReason) updates.rejection_reason = parsed.data.rejectionReason;
-  if (parsed.data.status === "issued") updates.issued_at = new Date().toISOString();
-  if (parsed.data.status === "received") updates.received_at = new Date().toISOString();
-  const { data, error } = await client.from("material_requests").update(updates).eq("id", idParsed.data).select("*").single();
-  if (error) { sendError(res, 500, "MATERIAL_UPDATE_FAILED", error.message); return; }
-  await notify(client, (data as Row).requested_by as string, "material_decision", `Material request ${parsed.data.status}`, `Your material request for "${(data as Row).material_name}" has been ${parsed.data.status}.`, (data as Row).report_id as string);
-  await audit(client, user.id, `material.${parsed.data.status}`, "material_request", idParsed.data, updates);
-  ok(res, mapMaterialRequest(data as Row));
-});
+app.post(
+  "/v1/reports/:id/materials",
+  requireAuth,
+  requireRole("technician", "supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const idParsed = uuidSchema.safeParse(req.params.id);
+    const parsed = materialRequestSchema.safeParse(req.body);
+    if (!idParsed.success || !parsed.success) {
+      sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        parsed.success
+          ? "Invalid report ID."
+          : (parsed.error.issues[0]?.message ?? "Invalid input."),
+      );
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    const { data, error } = await client
+      .from("material_requests")
+      .insert({
+        report_id: idParsed.data,
+        requested_by: user.id,
+        material_name: parsed.data.materialName,
+        quantity: parsed.data.quantity,
+        unit: parsed.data.unit,
+        reason: parsed.data.reason,
+        status: "requested",
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "MATERIAL_REQUEST_CREATE_FAILED", error.message);
+      return;
+    }
+    // Update report status to waiting_for_materials
+    await client
+      .from("maintenance_reports")
+      .update({ status: "waiting_for_materials" })
+      .eq("id", idParsed.data)
+      .eq("status", "in_progress");
+    await audit(
+      client,
+      user.id,
+      "material.requested",
+      "material_request",
+      data.id as string,
+      { material: parsed.data.materialName },
+    );
+    ok(res, mapMaterialRequest(data as Row), 201);
+  },
+);
+
+app.patch(
+  "/v1/materials/:id",
+  requireAuth,
+  requireRole("supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const idParsed = uuidSchema.safeParse(req.params.id);
+    const parsed = materialRequestUpdateSchema.safeParse(req.body);
+    if (!idParsed.success || !parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    const updates: Row = {
+      status: parsed.data.status,
+      decided_at: new Date().toISOString(),
+      approved_by: user.id,
+    };
+    if (parsed.data.rejectionReason)
+      updates.rejection_reason = parsed.data.rejectionReason;
+    if (parsed.data.status === "issued")
+      updates.issued_at = new Date().toISOString();
+    if (parsed.data.status === "received")
+      updates.received_at = new Date().toISOString();
+    const { data, error } = await client
+      .from("material_requests")
+      .update(updates)
+      .eq("id", idParsed.data)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "MATERIAL_UPDATE_FAILED", error.message);
+      return;
+    }
+    await notify(
+      client,
+      (data as Row).requested_by as string,
+      "material_decision",
+      `Material request ${parsed.data.status}`,
+      `Your material request for "${(data as Row).material_name}" has been ${parsed.data.status}.`,
+      (data as Row).report_id as string,
+    );
+    await audit(
+      client,
+      user.id,
+      `material.${parsed.data.status}`,
+      "material_request",
+      idParsed.data,
+      updates,
+    );
+    ok(res, mapMaterialRequest(data as Row));
+  },
+);
 
 // List all pending material requests (for supervisors/admins)
-app.get("/v1/materials", requireAuth, requireRole("supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  let query = client
-    .from("material_requests")
-    .select("*, requester:requested_by(full_name), report:report_id(ticket_number, title)")
-    .order("created_at", { ascending: false });
-  if (req.query.status) query = query.eq("status", String(req.query.status));
-  else query = query.eq("status", "requested");
-  const { data, error } = await query;
-  if (error) { sendError(res, 500, "MATERIALS_QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => mapMaterialRequest({ ...r, requester_name: (r.requester as Row)?.full_name, ticket_number: (r.report as Row)?.ticket_number } as Row)));
-});
+app.get(
+  "/v1/materials",
+  requireAuth,
+  requireRole("technician", "supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const user = (req as AuthenticatedRequest).user;
+    let query = client
+      .from("material_requests")
+      .select(
+        "*, requester:requested_by(full_name), report:report_id(ticket_number, title)",
+      )
+      .order("created_at", { ascending: false });
+    if (user.role === "technician") query = query.eq("requested_by", user.id);
+    if (req.query.status) query = query.eq("status", String(req.query.status));
+    else query = query.eq("status", "requested");
+    const { data, error } = await query;
+    if (error) {
+      sendError(res, 500, "MATERIALS_QUERY_FAILED", error.message);
+      return;
+    }
+    ok(
+      res,
+      (data ?? []).map((r) =>
+        mapMaterialRequest({
+          ...r,
+          requester_name: (r.requester as Row)?.full_name,
+          ticket_number: (r.report as Row)?.ticket_number,
+        } as Row),
+      ),
+    );
+  },
+);
 
 // ─────────────────────────────────────────
 // Feedback
@@ -954,19 +1394,48 @@ app.post("/v1/reports/:id/feedback", requireAuth, async (req, res) => {
   const user = (req as AuthenticatedRequest).user;
   const { data, error } = await client
     .from("report_feedback")
-    .upsert({ report_id: idParsed.data, submitted_by: user.id, ...parsed.data }, { onConflict: "report_id" })
+    .upsert(
+      { report_id: idParsed.data, submitted_by: user.id, ...parsed.data },
+      { onConflict: "report_id" },
+    )
     .select("*")
     .single();
-  if (error) { sendError(res, 500, "FEEDBACK_SAVE_FAILED", error.message); return; }
+  if (error) {
+    sendError(res, 500, "FEEDBACK_SAVE_FAILED", error.message);
+    return;
+  }
   // If not resolved, reopen the ticket
   if (!parsed.data.resolved) {
-    await client.from("maintenance_reports").update({ status: "reopened" }).eq("id", idParsed.data);
-    await client.from("report_timeline").insert({ report_id: idParsed.data, status: "reopened", created_by: user.id, note: "Student indicated issue is not resolved." });
+    await client
+      .from("maintenance_reports")
+      .update({ status: "reopened" })
+      .eq("id", idParsed.data);
+    await client.from("report_timeline").insert({
+      report_id: idParsed.data,
+      status: "reopened",
+      created_by: user.id,
+      note: "Student indicated issue is not resolved.",
+    });
   } else {
-    await client.from("maintenance_reports").update({ status: "closed", closed_at: new Date().toISOString() }).eq("id", idParsed.data);
-    await client.from("report_timeline").insert({ report_id: idParsed.data, status: "closed", created_by: user.id, note: "Student confirmed issue resolved." });
+    await client
+      .from("maintenance_reports")
+      .update({ status: "closed", closed_at: new Date().toISOString() })
+      .eq("id", idParsed.data);
+    await client.from("report_timeline").insert({
+      report_id: idParsed.data,
+      status: "closed",
+      created_by: user.id,
+      note: "Student confirmed issue resolved.",
+    });
   }
-  await audit(client, user.id, "feedback.submitted", "report_feedback", data.id as string, parsed.data as Record<string, unknown>);
+  await audit(
+    client,
+    user.id,
+    "feedback.submitted",
+    "report_feedback",
+    data.id as string,
+    parsed.data as Record<string, unknown>,
+  );
   ok(res, data, 201);
 });
 
@@ -983,7 +1452,10 @@ app.get("/v1/notifications", requireAuth, async (req, res) => {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(60);
-  if (error) { sendError(res, 500, "NOTIFICATIONS_QUERY_FAILED", error.message); return; }
+  if (error) {
+    sendError(res, 500, "NOTIFICATIONS_QUERY_FAILED", error.message);
+    return;
+  }
   ok(res, (data ?? []).map(mapNotification));
 });
 
@@ -991,7 +1463,10 @@ app.patch("/v1/notifications/:id/read", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
   const idParsed = uuidSchema.safeParse(req.params.id);
-  if (!idParsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid notification ID."); return; }
+  if (!idParsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", "Invalid notification ID.");
+    return;
+  }
   const user = (req as AuthenticatedRequest).user;
   const { data, error } = await client
     .from("notifications")
@@ -1000,8 +1475,14 @@ app.patch("/v1/notifications/:id/read", requireAuth, async (req, res) => {
     .eq("user_id", user.id)
     .select("*")
     .maybeSingle();
-  if (error) { sendError(res, 500, "NOTIFICATION_UPDATE_FAILED", error.message); return; }
-  if (!data) { sendError(res, 404, "NOTIFICATION_NOT_FOUND", "Notification not found."); return; }
+  if (error) {
+    sendError(res, 500, "NOTIFICATION_UPDATE_FAILED", error.message);
+    return;
+  }
+  if (!data) {
+    sendError(res, 404, "NOTIFICATION_NOT_FOUND", "Notification not found.");
+    return;
+  }
   ok(res, mapNotification(data as Row));
 });
 
@@ -1009,7 +1490,11 @@ app.patch("/v1/notifications/read-all", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
   const user = (req as AuthenticatedRequest).user;
-  await client.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", user.id).is("read_at", null);
+  await client
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("read_at", null);
   ok(res, { success: true });
 });
 
@@ -1020,41 +1505,150 @@ app.patch("/v1/notifications/read-all", requireAuth, async (req, res) => {
 app.get("/v1/campuses", requireAuth, async (_req, res) => {
   const client = getClient(res);
   if (!client) return;
-  const { data, error } = await client.from("campuses").select("*").eq("is_active", true).order("name");
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => ({ id: r.id, name: r.name, code: r.code, address: r.address, isActive: r.is_active, createdAt: r.created_at, updatedAt: r.updated_at } as Campus)));
+  const { data, error } = await client
+    .from("campuses")
+    .select("*")
+    .eq("is_active", true)
+    .order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          name: r.name,
+          code: r.code,
+          address: r.address,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Campus,
+    ),
+  );
 });
 
 app.get("/v1/campuses/:id/areas", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
-  const { data, error } = await client.from("areas").select("*").eq("campus_id", req.params.id).eq("is_active", true).order("name");
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => ({ id: r.id, campusId: r.campus_id, name: r.name, isActive: r.is_active, createdAt: r.created_at, updatedAt: r.updated_at } as Area)));
+  const { data, error } = await client
+    .from("areas")
+    .select("*")
+    .eq("campus_id", req.params.id)
+    .eq("is_active", true)
+    .order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          campusId: r.campus_id,
+          name: r.name,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Area,
+    ),
+  );
 });
 
 app.get("/v1/areas/:id/buildings", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
-  const { data, error } = await client.from("buildings").select("*").eq("area_id", req.params.id).eq("is_active", true).order("name");
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => ({ id: r.id, areaId: r.area_id, name: r.name, code: r.code, isActive: r.is_active, createdAt: r.created_at, updatedAt: r.updated_at } as Building)));
+  const { data, error } = await client
+    .from("buildings")
+    .select("*")
+    .eq("area_id", req.params.id)
+    .eq("is_active", true)
+    .order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          areaId: r.area_id,
+          name: r.name,
+          code: r.code,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Building,
+    ),
+  );
 });
 
 app.get("/v1/buildings/:id/floors", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
-  const { data, error } = await client.from("floors").select("*").eq("building_id", req.params.id).eq("is_active", true).order("level_number", { ascending: true });
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => ({ id: r.id, buildingId: r.building_id, name: r.name, levelNumber: r.level_number, isActive: r.is_active, createdAt: r.created_at, updatedAt: r.updated_at } as Floor)));
+  const { data, error } = await client
+    .from("floors")
+    .select("*")
+    .eq("building_id", req.params.id)
+    .eq("is_active", true)
+    .order("level_number", { ascending: true });
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          buildingId: r.building_id,
+          name: r.name,
+          levelNumber: r.level_number,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Floor,
+    ),
+  );
 });
 
 app.get("/v1/floors/:id/rooms", requireAuth, async (req, res) => {
   const client = getClient(res);
   if (!client) return;
-  const { data, error } = await client.from("rooms").select("*").eq("floor_id", req.params.id).eq("is_active", true).order("name");
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => ({ id: r.id, floorId: r.floor_id, name: r.name, roomNumber: r.room_number, roomType: r.room_type, isActive: r.is_active, createdAt: r.created_at, updatedAt: r.updated_at } as Room)));
+  const { data, error } = await client
+    .from("rooms")
+    .select("*")
+    .eq("floor_id", req.params.id)
+    .eq("is_active", true)
+    .order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          floorId: r.floor_id,
+          name: r.name,
+          roomNumber: r.room_number,
+          roomType: r.room_type,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Room,
+    ),
+  );
 });
 
 // Categories
@@ -1066,314 +1660,748 @@ app.get("/v1/categories", requireAuth, async (_req, res) => {
     .select("*, subcategories(*)")
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => ({
-    id: r.id, name: r.name, icon: r.icon, description: r.description, sortOrder: r.sort_order, isActive: r.is_active,
-    subcategories: ((r.subcategories as Row[]) ?? []).map((s) => ({ id: s.id, categoryId: s.category_id, name: s.name, sortOrder: s.sort_order, isActive: s.is_active } as Subcategory)),
-    createdAt: r.created_at, updatedAt: r.updated_at,
-  } as Category)));
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          name: r.name,
+          icon: r.icon,
+          description: r.description,
+          sortOrder: r.sort_order,
+          isActive: r.is_active,
+          subcategories: ((r.subcategories as Row[]) ?? []).map(
+            (s) =>
+              ({
+                id: s.id,
+                categoryId: s.category_id,
+                name: s.name,
+                sortOrder: s.sort_order,
+                isActive: s.is_active,
+              }) as Subcategory,
+          ),
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Category,
+    ),
+  );
 });
 
 // Departments (readable by all staff)
 app.get("/v1/departments", requireAuth, async (_req, res) => {
   const client = getClient(res);
   if (!client) return;
-  const { data, error } = await client.from("departments").select("*").eq("is_active", true).order("name");
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, (data ?? []).map((r) => ({ id: r.id, name: r.name, description: r.description, isActive: r.is_active, createdAt: r.created_at, updatedAt: r.updated_at })));
+  const { data, error } = await client
+    .from("departments")
+    .select("*")
+    .eq("is_active", true)
+    .order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    })),
+  );
 });
 
 // Staff list (for assignments)
-app.get("/v1/staff", requireAuth, requireRole("supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  let query = client.from("profiles").select("id, full_name, email, role, department_id, is_active").in("role", ["technician", "supervisor"]).eq("is_active", true);
-  if (req.query.departmentId) query = query.eq("department_id", String(req.query.departmentId));
-  const { data, error } = await query.order("full_name");
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, data ?? []);
-});
+app.get(
+  "/v1/staff",
+  requireAuth,
+  requireRole("supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    let query = client
+      .from("profiles")
+      .select("id, full_name, email, role, department_id, is_active")
+      .in("role", ["technician", "supervisor"])
+      .eq("is_active", true);
+    if (req.query.departmentId)
+      query = query.eq("department_id", String(req.query.departmentId));
+    const { data, error } = await query.order("full_name");
+    if (error) {
+      sendError(res, 500, "QUERY_FAILED", error.message);
+      return;
+    }
+    ok(res, data ?? []);
+  },
+);
 
 // ─────────────────────────────────────────
 // Analytics
 // ─────────────────────────────────────────
-app.get("/v1/analytics/dashboard", requireAuth, requireRole("supervisor", "administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const q = analyticsQuerySchema.safeParse(req.query);
-  const from = q.data?.from ? q.data.from : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const to = q.data?.to ? q.data.to : new Date().toISOString();
+app.get(
+  "/v1/analytics/dashboard",
+  requireAuth,
+  requireRole("supervisor", "administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const q = analyticsQuerySchema.safeParse(req.query);
+    const from = q.data?.from
+      ? q.data.from
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const to = q.data?.to ? q.data.to : new Date().toISOString();
 
-  const { data: reports, error } = await client
-    .from("maintenance_reports")
-    .select("id, status, priority, category_id, assigned_department_id, assigned_to, created_at, closed_at, is_overdue");
-  if (error) { sendError(res, 500, "ANALYTICS_FAILED", error.message); return; }
+    const { data: reports, error } = await client
+      .from("maintenance_reports")
+      .select(
+        "id, status, priority, category_id, assigned_department_id, assigned_to, created_at, closed_at, is_overdue",
+      );
+    if (error) {
+      sendError(res, 500, "ANALYTICS_FAILED", error.message);
+      return;
+    }
 
-  const all = reports ?? [];
-  const stats: DashboardStats = {
-    total: all.length,
-    pending: all.filter((r) => ["submitted", "under_review"].includes(r.status)).length,
-    assigned: all.filter((r) => ["assigned", "accepted"].includes(r.status)).length,
-    inProgress: all.filter((r) => r.status === "in_progress").length,
-    waitingMaterials: all.filter((r) => r.status === "waiting_for_materials").length,
-    overdue: all.filter((r) => r.is_overdue).length,
-    critical: all.filter((r) => r.priority === "critical").length,
-    completed: all.filter((r) => ["repair_completed", "under_verification"].includes(r.status)).length,
-    closed: all.filter((r) => r.status === "closed").length,
-    reopened: all.filter((r) => r.status === "reopened").length,
-    rejected: all.filter((r) => ["rejected", "cancelled", "duplicate"].includes(r.status)).length,
-  };
+    const all = reports ?? [];
+    const stats: DashboardStats = {
+      total: all.length,
+      pending: all.filter((r) =>
+        ["submitted", "under_review"].includes(r.status),
+      ).length,
+      assigned: all.filter((r) => ["assigned", "accepted"].includes(r.status))
+        .length,
+      inProgress: all.filter((r) => r.status === "in_progress").length,
+      waitingMaterials: all.filter((r) => r.status === "waiting_for_materials")
+        .length,
+      overdue: all.filter((r) => r.is_overdue).length,
+      critical: all.filter((r) => r.priority === "critical").length,
+      completed: all.filter((r) =>
+        ["repair_completed", "under_verification"].includes(r.status),
+      ).length,
+      closed: all.filter((r) => r.status === "closed").length,
+      reopened: all.filter((r) => r.status === "reopened").length,
+      rejected: all.filter((r) =>
+        ["rejected", "cancelled", "duplicate"].includes(r.status),
+      ).length,
+    };
 
-  // By status
-  const statusCounts: Record<string, number> = {};
-  all.forEach((r) => { statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1; });
-  const byStatus = Object.entries(statusCounts).map(([label, value]) => ({ label, value }));
+    // By status
+    const statusCounts: Record<string, number> = {};
+    all.forEach((r) => {
+      statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1;
+    });
+    const byStatus = Object.entries(statusCounts).map(([label, value]) => ({
+      label,
+      value,
+    }));
 
-  // By priority
-  const priorityCounts: Record<string, number> = {};
-  all.forEach((r) => { if (r.priority) { priorityCounts[r.priority] = (priorityCounts[r.priority] ?? 0) + 1; } });
-  const byPriority = Object.entries(priorityCounts).map(([label, value]) => ({ label, value }));
+    // By priority
+    const priorityCounts: Record<string, number> = {};
+    all.forEach((r) => {
+      if (r.priority) {
+        priorityCounts[r.priority] = (priorityCounts[r.priority] ?? 0) + 1;
+      }
+    });
+    const byPriority = Object.entries(priorityCounts).map(([label, value]) => ({
+      label,
+      value,
+    }));
 
-  // Trend: group by day
-  const trendMap: Record<string, number> = {};
-  all.filter((r) => r.created_at >= from && r.created_at <= to).forEach((r) => {
-    const day = r.created_at.slice(0, 10);
-    trendMap[day] = (trendMap[day] ?? 0) + 1;
-  });
-  const trend = Object.entries(trendMap).sort().map(([label, value]) => ({ label, value }));
+    // Trend: group by day
+    const trendMap: Record<string, number> = {};
+    all
+      .filter((r) => r.created_at >= from && r.created_at <= to)
+      .forEach((r) => {
+        const day = r.created_at.slice(0, 10);
+        trendMap[day] = (trendMap[day] ?? 0) + 1;
+      });
+    const trend = Object.entries(trendMap)
+      .sort()
+      .map(([label, value]) => ({ label, value }));
 
-  ok(res, { stats, byStatus, byPriority, byCategory: [], byDepartment: [], byBuilding: [], byTechnician: [], trend, avgResolutionByCategory: [], overdueByDepartment: [] });
-});
+    ok(res, {
+      stats,
+      byStatus,
+      byPriority,
+      byCategory: [],
+      byDepartment: [],
+      byBuilding: [],
+      byTechnician: [],
+      trend,
+      avgResolutionByCategory: [],
+      overdueByDepartment: [],
+    });
+  },
+);
 
 // ─────────────────────────────────────────
 // Admin: CRUD for locations, categories, departments, users
 // ─────────────────────────────────────────
 
 // --- Campuses CRUD ---
-app.post("/v1/admin/campuses", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = locationSchema.safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid input."); return; }
-  const { data, error } = await client.from("campuses").insert({ name: parsed.data.name, code: parsed.data.code ?? parsed.data.name.toUpperCase().slice(0, 6), address: parsed.data.address ?? null }).select("*").single();
-  if (error) { sendError(res, 500, "CREATE_FAILED", error.message); return; }
-  await audit(client, (req as AuthenticatedRequest).user.id, "campus.created", "campus", data.id as string, { name: data.name });
-  ok(res, data, 201);
-});
+app.post(
+  "/v1/admin/campuses",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        parsed.error.issues[0]?.message ?? "Invalid input.",
+      );
+      return;
+    }
+    const { data, error } = await client
+      .from("campuses")
+      .insert({
+        name: parsed.data.name,
+        code: parsed.data.code ?? parsed.data.name.toUpperCase().slice(0, 6),
+        address: parsed.data.address ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "CREATE_FAILED", error.message);
+      return;
+    }
+    await audit(
+      client,
+      (req as AuthenticatedRequest).user.id,
+      "campus.created",
+      "campus",
+      data.id as string,
+      { name: data.name },
+    );
+    ok(res, data, 201);
+  },
+);
 
-app.patch("/v1/admin/campuses/:id", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = locationSchema.partial().safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid input."); return; }
-  const updates: Row = {};
-  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
-  if (parsed.data.code !== undefined) updates.code = parsed.data.code;
-  if (parsed.data.address !== undefined) updates.address = parsed.data.address;
-  if (parsed.data.isActive !== undefined) updates.is_active = parsed.data.isActive;
-  const { data, error } = await client.from("campuses").update(updates).eq("id", req.params.id).select("*").single();
-  if (error) { sendError(res, 500, "UPDATE_FAILED", error.message); return; }
-  ok(res, data);
-});
+app.patch(
+  "/v1/admin/campuses/:id",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const updates: Row = {};
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.code !== undefined) updates.code = parsed.data.code;
+    if (parsed.data.address !== undefined)
+      updates.address = parsed.data.address;
+    if (parsed.data.isActive !== undefined)
+      updates.is_active = parsed.data.isActive;
+    const { data, error } = await client
+      .from("campuses")
+      .update(updates)
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "UPDATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data);
+  },
+);
 
 // --- Areas CRUD ---
-app.post("/v1/admin/areas", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = locationSchema.safeParse(req.body);
-  if (!parsed.success || !parsed.data.campusId) { sendError(res, 400, "VALIDATION_ERROR", "campusId is required."); return; }
-  const { data, error } = await client.from("areas").insert({ campus_id: parsed.data.campusId, name: parsed.data.name }).select("*").single();
-  if (error) { sendError(res, 500, "CREATE_FAILED", error.message); return; }
-  ok(res, data, 201);
-});
+app.post(
+  "/v1/admin/areas",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.safeParse(req.body);
+    if (!parsed.success || !parsed.data.campusId) {
+      sendError(res, 400, "VALIDATION_ERROR", "campusId is required.");
+      return;
+    }
+    const { data, error } = await client
+      .from("areas")
+      .insert({ campus_id: parsed.data.campusId, name: parsed.data.name })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "CREATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data, 201);
+  },
+);
 
-app.patch("/v1/admin/areas/:id", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = locationSchema.partial().safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid input."); return; }
-  const updates: Row = {};
-  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
-  if (parsed.data.isActive !== undefined) updates.is_active = parsed.data.isActive;
-  const { data, error } = await client.from("areas").update(updates).eq("id", req.params.id).select("*").single();
-  if (error) { sendError(res, 500, "UPDATE_FAILED", error.message); return; }
-  ok(res, data);
-});
+app.patch(
+  "/v1/admin/areas/:id",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const updates: Row = {};
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.isActive !== undefined)
+      updates.is_active = parsed.data.isActive;
+    const { data, error } = await client
+      .from("areas")
+      .update(updates)
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "UPDATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data);
+  },
+);
 
 // --- Buildings CRUD ---
-app.post("/v1/admin/buildings", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = locationSchema.safeParse(req.body);
-  if (!parsed.success || !parsed.data.areaId) { sendError(res, 400, "VALIDATION_ERROR", "areaId is required."); return; }
-  const { data, error } = await client.from("buildings").insert({ area_id: parsed.data.areaId, name: parsed.data.name, code: parsed.data.code ?? null }).select("*").single();
-  if (error) { sendError(res, 500, "CREATE_FAILED", error.message); return; }
-  ok(res, data, 201);
-});
+app.post(
+  "/v1/admin/buildings",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.safeParse(req.body);
+    if (!parsed.success || !parsed.data.areaId) {
+      sendError(res, 400, "VALIDATION_ERROR", "areaId is required.");
+      return;
+    }
+    const { data, error } = await client
+      .from("buildings")
+      .insert({
+        area_id: parsed.data.areaId,
+        name: parsed.data.name,
+        code: parsed.data.code ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "CREATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data, 201);
+  },
+);
 
-app.patch("/v1/admin/buildings/:id", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = locationSchema.partial().safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid input."); return; }
-  const updates: Row = {};
-  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
-  if (parsed.data.code !== undefined) updates.code = parsed.data.code;
-  if (parsed.data.isActive !== undefined) updates.is_active = parsed.data.isActive;
-  const { data, error } = await client.from("buildings").update(updates).eq("id", req.params.id).select("*").single();
-  if (error) { sendError(res, 500, "UPDATE_FAILED", error.message); return; }
-  ok(res, data);
-});
+app.patch(
+  "/v1/admin/buildings/:id",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const updates: Row = {};
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.code !== undefined) updates.code = parsed.data.code;
+    if (parsed.data.isActive !== undefined)
+      updates.is_active = parsed.data.isActive;
+    const { data, error } = await client
+      .from("buildings")
+      .update(updates)
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "UPDATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data);
+  },
+);
 
 // --- Floors CRUD ---
-app.post("/v1/admin/floors", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = locationSchema.safeParse(req.body);
-  if (!parsed.success || !parsed.data.buildingId) { sendError(res, 400, "VALIDATION_ERROR", "buildingId is required."); return; }
-  const { data, error } = await client.from("floors").insert({ building_id: parsed.data.buildingId, name: parsed.data.name, level_number: parsed.data.levelNumber ?? null }).select("*").single();
-  if (error) { sendError(res, 500, "CREATE_FAILED", error.message); return; }
-  ok(res, data, 201);
-});
+app.post(
+  "/v1/admin/floors",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.safeParse(req.body);
+    if (!parsed.success || !parsed.data.buildingId) {
+      sendError(res, 400, "VALIDATION_ERROR", "buildingId is required.");
+      return;
+    }
+    const { data, error } = await client
+      .from("floors")
+      .insert({
+        building_id: parsed.data.buildingId,
+        name: parsed.data.name,
+        level_number: parsed.data.levelNumber ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "CREATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data, 201);
+  },
+);
 
 // --- Rooms CRUD ---
-app.post("/v1/admin/rooms", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = locationSchema.safeParse(req.body);
-  if (!parsed.success || !parsed.data.floorId) { sendError(res, 400, "VALIDATION_ERROR", "floorId is required."); return; }
-  const { data, error } = await client.from("rooms").insert({ floor_id: parsed.data.floorId, name: parsed.data.name, room_number: parsed.data.roomNumber ?? null, room_type: parsed.data.roomType ?? null }).select("*").single();
-  if (error) { sendError(res, 500, "CREATE_FAILED", error.message); return; }
-  ok(res, data, 201);
-});
+app.post(
+  "/v1/admin/rooms",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.safeParse(req.body);
+    if (!parsed.success || !parsed.data.floorId) {
+      sendError(res, 400, "VALIDATION_ERROR", "floorId is required.");
+      return;
+    }
+    const { data, error } = await client
+      .from("rooms")
+      .insert({
+        floor_id: parsed.data.floorId,
+        name: parsed.data.name,
+        room_number: parsed.data.roomNumber ?? null,
+        room_type: parsed.data.roomType ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "CREATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data, 201);
+  },
+);
 
 // --- Categories CRUD ---
-app.post("/v1/admin/categories", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = categorySchema.safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid input."); return; }
-  const { data, error } = await client.from("categories").insert({ name: parsed.data.name, icon: parsed.data.icon ?? null, description: parsed.data.description ?? null, sort_order: parsed.data.sortOrder }).select("*").single();
-  if (error) { sendError(res, 500, "CREATE_FAILED", error.message); return; }
-  ok(res, data, 201);
-});
+app.post(
+  "/v1/admin/categories",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = categorySchema.safeParse(req.body);
+    if (!parsed.success) {
+      sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        parsed.error.issues[0]?.message ?? "Invalid input.",
+      );
+      return;
+    }
+    const { data, error } = await client
+      .from("categories")
+      .insert({
+        name: parsed.data.name,
+        icon: parsed.data.icon ?? null,
+        description: parsed.data.description ?? null,
+        sort_order: parsed.data.sortOrder,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "CREATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data, 201);
+  },
+);
 
-app.patch("/v1/admin/categories/:id", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = categorySchema.partial().safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid input."); return; }
-  const updates: Row = {};
-  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
-  if (parsed.data.icon !== undefined) updates.icon = parsed.data.icon;
-  if (parsed.data.description !== undefined) updates.description = parsed.data.description;
-  if (parsed.data.isActive !== undefined) updates.is_active = parsed.data.isActive;
-  if (parsed.data.sortOrder !== undefined) updates.sort_order = parsed.data.sortOrder;
-  const { data, error } = await client.from("categories").update(updates).eq("id", req.params.id).select("*").single();
-  if (error) { sendError(res, 500, "UPDATE_FAILED", error.message); return; }
-  ok(res, data);
-});
+app.patch(
+  "/v1/admin/categories/:id",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = categorySchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const updates: Row = {};
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.icon !== undefined) updates.icon = parsed.data.icon;
+    if (parsed.data.description !== undefined)
+      updates.description = parsed.data.description;
+    if (parsed.data.isActive !== undefined)
+      updates.is_active = parsed.data.isActive;
+    if (parsed.data.sortOrder !== undefined)
+      updates.sort_order = parsed.data.sortOrder;
+    const { data, error } = await client
+      .from("categories")
+      .update(updates)
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "UPDATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data);
+  },
+);
 
 // --- Subcategories CRUD ---
-app.post("/v1/admin/subcategories", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = subcategorySchema.safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid input."); return; }
-  const { data, error } = await client.from("subcategories").insert({ category_id: parsed.data.categoryId, name: parsed.data.name, description: parsed.data.description ?? null, sort_order: parsed.data.sortOrder }).select("*").single();
-  if (error) { sendError(res, 500, "CREATE_FAILED", error.message); return; }
-  ok(res, data, 201);
-});
+app.post(
+  "/v1/admin/subcategories",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = subcategorySchema.safeParse(req.body);
+    if (!parsed.success) {
+      sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        parsed.error.issues[0]?.message ?? "Invalid input.",
+      );
+      return;
+    }
+    const { data, error } = await client
+      .from("subcategories")
+      .insert({
+        category_id: parsed.data.categoryId,
+        name: parsed.data.name,
+        description: parsed.data.description ?? null,
+        sort_order: parsed.data.sortOrder,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "CREATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data, 201);
+  },
+);
 
 // --- Departments CRUD ---
-app.post("/v1/admin/departments", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = departmentSchema.safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid input."); return; }
-  const { data, error } = await client.from("departments").insert({ name: parsed.data.name, description: parsed.data.description ?? null }).select("*").single();
-  if (error) { sendError(res, 500, "CREATE_FAILED", error.message); return; }
-  ok(res, data, 201);
-});
+app.post(
+  "/v1/admin/departments",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = departmentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        parsed.error.issues[0]?.message ?? "Invalid input.",
+      );
+      return;
+    }
+    const { data, error } = await client
+      .from("departments")
+      .insert({
+        name: parsed.data.name,
+        description: parsed.data.description ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "CREATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data, 201);
+  },
+);
 
-app.patch("/v1/admin/departments/:id", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const parsed = departmentSchema.partial().safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid input."); return; }
-  const updates: Row = {};
-  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
-  if (parsed.data.description !== undefined) updates.description = parsed.data.description;
-  if (parsed.data.isActive !== undefined) updates.is_active = parsed.data.isActive;
-  const { data, error } = await client.from("departments").update(updates).eq("id", req.params.id).select("*").single();
-  if (error) { sendError(res, 500, "UPDATE_FAILED", error.message); return; }
-  ok(res, data);
-});
+app.patch(
+  "/v1/admin/departments/:id",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = departmentSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const updates: Row = {};
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.description !== undefined)
+      updates.description = parsed.data.description;
+    if (parsed.data.isActive !== undefined)
+      updates.is_active = parsed.data.isActive;
+    const { data, error } = await client
+      .from("departments")
+      .update(updates)
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "UPDATE_FAILED", error.message);
+      return;
+    }
+    ok(res, data);
+  },
+);
 
 // --- User management ---
-app.get("/v1/admin/users", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const page = Math.max(1, parseInt(String(req.query.page ?? "1")));
-  const pageSize = Math.min(100, parseInt(String(req.query.pageSize ?? "20")));
-  const from = (page - 1) * pageSize;
-  let query = client.from("profiles").select("*", { count: "exact" }).order("full_name").range(from, from + pageSize - 1);
-  if (req.query.role) query = query.eq("role", String(req.query.role));
-  if (req.query.search) {
-    const s = `%${String(req.query.search)}%`;
-    query = query.or(`full_name.ilike.${s},email.ilike.${s}`);
-  }
-  const { data, error, count } = await query;
-  if (error) { sendError(res, 500, "QUERY_FAILED", error.message); return; }
-  ok(res, { items: data ?? [], total: count ?? 0, page, pageSize, totalPages: Math.ceil((count ?? 0) / pageSize) });
-});
+app.get(
+  "/v1/admin/users",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1")));
+    const pageSize = Math.min(
+      100,
+      parseInt(String(req.query.pageSize ?? "20")),
+    );
+    const from = (page - 1) * pageSize;
+    let query = client
+      .from("profiles")
+      .select("*", { count: "exact" })
+      .order("full_name")
+      .range(from, from + pageSize - 1);
+    if (req.query.role) query = query.eq("role", String(req.query.role));
+    if (req.query.search) {
+      const s = `%${String(req.query.search)}%`;
+      query = query.or(`full_name.ilike.${s},email.ilike.${s}`);
+    }
+    const { data, error, count } = await query;
+    if (error) {
+      sendError(res, 500, "QUERY_FAILED", error.message);
+      return;
+    }
+    ok(res, {
+      items: data ?? [],
+      total: count ?? 0,
+      page,
+      pageSize,
+      totalPages: Math.ceil((count ?? 0) / pageSize),
+    });
+  },
+);
 
-app.patch("/v1/admin/users/:id", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const userUpdateSchema = z.object({
-    role: z.enum(["student", "technician", "supervisor", "administrator"]).optional(),
-    departmentId: z.string().uuid().optional(),
-    isActive: z.boolean().optional(),
-    fullName: z.string().trim().min(2).max(120).optional(),
-  });
-  const parsed = userUpdateSchema.safeParse(req.body);
-  if (!parsed.success) { sendError(res, 400, "VALIDATION_ERROR", "Invalid input."); return; }
-  const updates: Row = {};
-  if (parsed.data.role !== undefined) updates.role = parsed.data.role;
-  if (parsed.data.departmentId !== undefined) updates.department_id = parsed.data.departmentId;
-  if (parsed.data.isActive !== undefined) updates.is_active = parsed.data.isActive;
-  if (parsed.data.fullName !== undefined) updates.full_name = parsed.data.fullName;
-  const { data, error } = await client.from("profiles").update(updates).eq("id", req.params.id).select("*").single();
-  if (error) { sendError(res, 500, "UPDATE_FAILED", error.message); return; }
-  const user = (req as AuthenticatedRequest).user;
-  await audit(client, user.id, "user.updated", "profile", req.params.id, updates);
-  ok(res, data);
-});
+app.patch(
+  "/v1/admin/users/:id",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const userUpdateSchema = z.object({
+      role: z
+        .enum(["student", "technician", "supervisor", "administrator"])
+        .optional(),
+      departmentId: z.string().uuid().optional(),
+      isActive: z.boolean().optional(),
+      fullName: z.string().trim().min(2).max(120).optional(),
+    });
+    const parsed = userUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const updates: Row = {};
+    if (parsed.data.role !== undefined) updates.role = parsed.data.role;
+    if (parsed.data.departmentId !== undefined)
+      updates.department_id = parsed.data.departmentId;
+    if (parsed.data.isActive !== undefined)
+      updates.is_active = parsed.data.isActive;
+    if (parsed.data.fullName !== undefined)
+      updates.full_name = parsed.data.fullName;
+    const { data, error } = await client
+      .from("profiles")
+      .update(updates)
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+    if (error) {
+      sendError(res, 500, "UPDATE_FAILED", error.message);
+      return;
+    }
+    const user = (req as AuthenticatedRequest).user;
+    await audit(
+      client,
+      user.id,
+      "user.updated",
+      "profile",
+      String(req.params.id),
+      updates,
+    );
+    ok(res, data);
+  },
+);
 
 // ─────────────────────────────────────────
 // Audit logs
 // ─────────────────────────────────────────
-app.get("/v1/audit", requireAuth, requireRole("administrator"), async (req, res) => {
-  const client = getClient(res);
-  if (!client) return;
-  const page = Math.max(1, parseInt(String(req.query.page ?? "1")));
-  const pageSize = Math.min(100, parseInt(String(req.query.pageSize ?? "20")));
-  const from = (page - 1) * pageSize;
-  let query = client
-    .from("audit_logs")
-    .select("*, actor:actor_id(full_name)", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from, from + pageSize - 1);
-  if (req.query.entityType) query = query.eq("entity_type", String(req.query.entityType));
-  if (req.query.actorId) query = query.eq("actor_id", String(req.query.actorId));
-  const { data, error, count } = await query;
-  if (error) { sendError(res, 500, "AUDIT_QUERY_FAILED", error.message); return; }
-  ok(res, {
-    items: (data ?? []).map((r) => mapAuditLog({ ...r, actor_name: (r.actor as Row)?.full_name } as Row)),
-    total: count ?? 0, page, pageSize, totalPages: Math.ceil((count ?? 0) / pageSize),
-  });
-});
+app.get(
+  "/v1/audit",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1")));
+    const pageSize = Math.min(
+      100,
+      parseInt(String(req.query.pageSize ?? "20")),
+    );
+    const from = (page - 1) * pageSize;
+    let query = client
+      .from("audit_logs")
+      .select("*, actor:actor_id(full_name)", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (req.query.entityType)
+      query = query.eq("entity_type", String(req.query.entityType));
+    if (req.query.actorId)
+      query = query.eq("actor_id", String(req.query.actorId));
+    const { data, error, count } = await query;
+    if (error) {
+      sendError(res, 500, "AUDIT_QUERY_FAILED", error.message);
+      return;
+    }
+    ok(res, {
+      items: (data ?? []).map((r) =>
+        mapAuditLog({ ...r, actor_name: (r.actor as Row)?.full_name } as Row),
+      ),
+      total: count ?? 0,
+      page,
+      pageSize,
+      totalPages: Math.ceil((count ?? 0) / pageSize),
+    });
+  },
+);
 
 // ─────────────────────────────────────────
 // Generic error handler
