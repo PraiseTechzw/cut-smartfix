@@ -12,17 +12,18 @@ export default function AdminHome() {
       <section className="metrics">
         <div>
           <span>Open requests</span>
-          <strong>--</strong>
+          <strong>Live</strong>
         </div>
         <div>
           <span>Assigned today</span>
-          <strong>--</strong>
+          <strong>Live</strong>
         </div>
         <div>
           <span>Average resolution</span>
-          <strong>--</strong>
+          <strong>Live</strong>
         </div>
       </section>
+      <nav className="modules" aria-label="Administration modules"><a href="/requests">Requests</a><a href="/assignments">Assignments</a><a href="/staff">Staff</a><a href="/buildings">Buildings and rooms</a><a href="/analytics">Analytics</a><a href="/audit">Audit logs</a></nav>
     </main>
   );
 }

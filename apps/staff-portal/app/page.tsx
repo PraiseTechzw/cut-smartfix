@@ -10,17 +10,18 @@ export default function StaffHome() {
       <section className="grid">
         <div>
           <strong>My tasks</strong>
-          <span>Ready for API data</span>
+          <span>Tasks assigned to your profile</span>
         </div>
         <div>
           <strong>In progress</strong>
-          <span>Ready for API data</span>
+          <span>Jobs currently being worked</span>
         </div>
         <div>
           <strong>Completed</strong>
-          <span>Ready for API data</span>
+          <span>Resolved work awaiting review</span>
         </div>
       </section>
+      <nav className="modules" aria-label="Staff modules"><a href="/tasks">My tasks</a><a href="/materials">Material requests</a><a href="/evidence">Repair evidence</a><a href="/completed">Completed jobs</a></nav>
     </main>
   );
 }
