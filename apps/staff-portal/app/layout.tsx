@@ -1,16 +1,22 @@
-import type { Metadata } from "next";
-import "./styles.css";
+import type { Metadata } from 'next';
+import './globals.css';
+import { AuthProvider } from '../lib/auth';
 
 export const metadata: Metadata = {
-  title: "CUT SmartFix | Staff Portal",
-  description: "Maintenance staff workspace",
+  title: 'CUT SmartFix | Staff Portal',
+  description: 'Maintenance staff workspace – Chinhoyi University of Technology',
 };
-export default function Layout({
+
+export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
