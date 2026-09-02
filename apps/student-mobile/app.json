@@ -5,6 +5,7 @@
     "scheme": "cutsmartfix",
     "version": "0.1.0",
     "orientation": "portrait",
+    "newArchEnabled": true,
     "plugins": ["expo-router"],
     "experiments": { "typedRoutes": true }
   }
