@@ -234,6 +234,52 @@ function FadeSlideIn({ delay, children }: { delay: number; children: React.React
   return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
 }
 
+// ─── Success overlay (shown on successful login) ──────────────
+function SuccessOverlay() {
+  const scale   = useRef(new Animated.Value(0.4)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 14, bounciness: 14 }),
+      Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <Animated.View style={[overlayStyles.wrap, { opacity }]}>
+      <Animated.View style={[overlayStyles.circle, { transform: [{ scale }] }]}>
+        <Text style={overlayStyles.tick}>✓</Text>
+      </Animated.View>
+      <Text style={overlayStyles.label}>Signed in!</Text>
+      <Text style={overlayStyles.sub}>Taking you to your dashboard…</Text>
+    </Animated.View>
+  );
+}
+
+const overlayStyles = StyleSheet.create({
+  wrap: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(245,248,246,0.97)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 99,
+    gap: 14,
+  },
+  circle: {
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: GREEN,
+    alignItems: "center", justifyContent: "center",
+    shadowColor: GREEN_DARK,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4, shadowRadius: 20, elevation: 12,
+  },
+  tick: { color: "#fff", fontSize: 40, fontWeight: "800" },
+  label: { color: TEXT_PRIMARY, fontSize: 22, fontWeight: "800", letterSpacing: -0.3 },
+  sub: { color: TEXT_MUTED, fontSize: 14 },
+});
+
 // ─── Main screen ──────────────────────────────────────────────
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -273,10 +319,16 @@ export default function LoginScreen() {
     try {
       await login(email.trim().toLowerCase(), password);
       setSuccess(true);
-      // Small delay so the success state is visible before navigation
-      setTimeout(() => router.replace("/(tabs)"), 600);
+      // Brief pause so the mascot success state is visible before navigating
+      setTimeout(() => router.replace("/(tabs)"), 800);
     } catch (err) {
-      setErrors({ password: (err as Error).message ?? "Incorrect email or password. Try again." });
+      const error = err as Error & { code?: string };
+      // Email not confirmed → send to OTP verification screen
+      if (error.code === "email_not_confirmed") {
+        router.replace("/auth/verify");
+        return;
+      }
+      setErrors({ password: error.message ?? "Incorrect email or password. Try again." });
     } finally {
       setLoading(false);
     }
@@ -285,6 +337,10 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.page}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
+
+      {/* ── Success overlay ── */}
+      {success && <SuccessOverlay />}
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.flex}

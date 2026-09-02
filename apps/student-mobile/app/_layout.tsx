@@ -5,10 +5,16 @@ import { useOfflineSync } from "../hooks/useOfflineSync";
 
 // ---------------------------------------------------------------------------
 // Auth guard — watches auth state and redirects accordingly.
-// Runs inside AuthProvider so it can call useAuth().
+//
+// States handled:
+//   1. loading          → do nothing (wait for session restore from storage)
+//   2. pendingEmail     → user registered but hasn't confirmed email yet
+//                         → must be on /auth/verify
+//   3. no token         → unauthenticated → must be on an auth/* screen
+//   4. token + user     → authenticated → must NOT be on auth/* screens
 // ---------------------------------------------------------------------------
 function AuthGuard() {
-  const { user, token, loading } = useAuth();
+  const { user, token, loading, pendingEmail } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -16,19 +22,34 @@ function AuthGuard() {
   useOfflineSync();
 
   useEffect(() => {
-    if (loading) return; // wait for session restore
+    if (loading) return; // wait for storage restore
 
-    // First segment tells us which "group" we're in
-    const inAuthGroup = segments[0] === "auth";
+    const inAuthGroup   = segments[0] === "auth";
+    const onVerifyScreen = segments[0] === "auth" && segments[1] === "verify";
 
-    if (!user && !token && !inAuthGroup) {
-      // Not authenticated, not already on an auth screen → redirect to login
-      router.replace("/auth/login");
-    } else if (user && inAuthGroup) {
-      // Authenticated but still on auth screen → send to dashboard
+    // ── Case 1: Awaiting email confirmation ──────────────────
+    // User signed up, email is pending verification.
+    // Keep them on the verify screen regardless of token state.
+    if (pendingEmail) {
+      if (!onVerifyScreen) {
+        router.replace("/auth/verify");
+      }
+      return;
+    }
+
+    // ── Case 2: Not authenticated ────────────────────────────
+    if (!token) {
+      if (!inAuthGroup) {
+        router.replace("/auth/login");
+      }
+      return;
+    }
+
+    // ── Case 3: Authenticated, but lingering on auth screen ──
+    if (token && user && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [user, token, loading, segments, router]);
+  }, [user, token, loading, pendingEmail, segments, router]);
 
   return null;
 }

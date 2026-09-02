@@ -1058,7 +1058,10 @@ export default function RegisterScreen() {
         password,
         studentId.trim(),
       );
-      router.replace("/(tabs)");
+      // If email confirmation is required, auth context sets pendingEmail
+      // and returns without a token — route to OTP verify screen.
+      // If confirmation is disabled, token is set → auth guard sends to tabs.
+      router.replace("/auth/verify");
     } catch (err) {
       // Go back to step 1 and show the API error on email
       setErrors({

@@ -31,7 +31,6 @@ const memoryStorage = {
 async function getStorage() {
   if (asyncStorageModule) return asyncStorageModule;
   try {
-    // Dynamic require so bundler doesn't hard-fail when package absent
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const mod = require("@react-native-async-storage/async-storage");
     asyncStorageModule = mod.default ?? mod;
@@ -41,7 +40,8 @@ async function getStorage() {
   }
 }
 
-const TOKEN_KEY = "cut_smartfix_token";
+const TOKEN_KEY         = "cut_smartfix_token";
+const PENDING_EMAIL_KEY = "cut_smartfix_pending_email";
 
 async function loadToken(): Promise<string | null> {
   const s = await getStorage();
@@ -55,9 +55,21 @@ async function clearToken(): Promise<void> {
   const s = await getStorage();
   return s.removeItem(TOKEN_KEY);
 }
+async function loadPendingEmail(): Promise<string | null> {
+  const s = await getStorage();
+  return s.getItem(PENDING_EMAIL_KEY);
+}
+async function savePendingEmail(email: string): Promise<void> {
+  const s = await getStorage();
+  return s.setItem(PENDING_EMAIL_KEY, email);
+}
+async function clearPendingEmail(): Promise<void> {
+  const s = await getStorage();
+  return s.removeItem(PENDING_EMAIL_KEY);
+}
 
 // ---------------------------------------------------------------------------
-// Push token registration
+// Push token registration (non-fatal)
 // ---------------------------------------------------------------------------
 async function registerPushToken(apiToken: string): Promise<void> {
   try {
@@ -87,8 +99,27 @@ async function registerPushToken(apiToken: string): Promise<void> {
       },
     );
   } catch {
-    // Non-fatal — push notifications degrade gracefully
+    // Non-fatal
   }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers — detect Supabase "email not confirmed" error
+// ---------------------------------------------------------------------------
+function isEmailNotConfirmedError(json: Record<string, unknown>): boolean {
+  const msg = (
+    (json?.error_description as string) ??
+    (json?.msg as string) ??
+    (json?.message as string) ??
+    ""
+  ).toLowerCase();
+  return (
+    msg.includes("email not confirmed") ||
+    msg.includes("email_not_confirmed") ||
+    msg.includes("confirm your email") ||
+    // Supabase also returns error code
+    json?.error_code === "email_not_confirmed"
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +129,13 @@ export interface AuthContextValue {
   user: UserProfile | null;
   token: string | null;
   loading: boolean;
+  /**
+   * When a user has signed up / logged in but their email is not yet confirmed,
+   * this holds their email so the verify screen can show it and send OTPs.
+   * Persisted across app restarts.
+   */
+  pendingEmail: string | null;
+
   login: (email: string, password: string) => Promise<void>;
   register: (
     name: string,
@@ -105,19 +143,25 @@ export interface AuthContextValue {
     password: string,
     studentId: string,
   ) => Promise<void>;
+  /**
+   * Verify a 6-digit OTP sent to pendingEmail.
+   * On success clears pendingEmail and logs the user in.
+   */
+  verifyOtp: (otp: string) => Promise<void>;
+  /** Re-send the confirmation OTP to pendingEmail. */
+  resendOtp: () => Promise<void>;
   logout: () => Promise<void>;
-  /** Re-fetch profile from API (e.g. after updating preferences) */
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
+const API_URL          = process.env.EXPO_PUBLIC_API_URL          ?? "http://localhost:4000";
+const SUPABASE_URL     = process.env.EXPO_PUBLIC_SUPABASE_URL     ?? "";
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 // ---------------------------------------------------------------------------
-// Supabase minimal REST auth helpers (no SDK needed)
+// Supabase minimal REST helpers
 // ---------------------------------------------------------------------------
 async function supabaseSignIn(
   email: string,
@@ -125,15 +169,22 @@ async function supabaseSignIn(
 ): Promise<string> {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY,
-    },
+    headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
     body: JSON.stringify({ email, password }),
   });
   const json = await res.json();
   if (!res.ok) {
-    throw new Error(json?.error_description ?? json?.msg ?? "Login failed");
+    if (isEmailNotConfirmedError(json)) {
+      // Surface a typed error so callers can route to verify screen
+      const err = new Error("Email not confirmed. Please verify your email.");
+      (err as Error & { code: string }).code = "email_not_confirmed";
+      throw err;
+    }
+    throw new Error(
+      (json?.error_description as string) ??
+        (json?.msg as string) ??
+        "Login failed",
+    );
   }
   return json.access_token as string;
 }
@@ -143,13 +194,10 @@ async function supabaseSignUp(
   password: string,
   fullName: string,
   studentId: string,
-): Promise<string> {
+): Promise<{ access_token: string | null; needsConfirmation: boolean }> {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY,
-    },
+    headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
     body: JSON.stringify({
       email,
       password,
@@ -159,22 +207,70 @@ async function supabaseSignUp(
   const json = await res.json();
   if (!res.ok) {
     throw new Error(
-      json?.error_description ?? json?.msg ?? "Registration failed",
+      (json?.error_description as string) ??
+        (json?.msg as string) ??
+        "Registration failed",
     );
   }
-  // After signup, sign in to get a usable token
-  return supabaseSignIn(email, password);
+
+  // If Supabase requires email confirmation it returns a user with
+  // identities[] but no session / access_token.
+  const needsConfirmation =
+    !json?.session?.access_token &&
+    (json?.user?.identities?.length > 0 || json?.user != null);
+
+  if (needsConfirmation) {
+    return { access_token: null, needsConfirmation: true };
+  }
+
+  // Email confirmations disabled → token present immediately
+  const token = (json?.session?.access_token ?? json?.access_token) as string;
+  return { access_token: token, needsConfirmation: false };
+}
+
+async function supabaseVerifyOtp(
+  email: string,
+  token: string,
+): Promise<string> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+    body: JSON.stringify({ type: "signup", email, token }),
+  });
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      (json?.error_description as string) ??
+        (json?.msg as string) ??
+        "Invalid or expired code",
+    );
+  }
+  return (json?.access_token ?? json?.session?.access_token) as string;
+}
+
+async function supabaseResendOtp(email: string): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/resend`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+    body: JSON.stringify({ type: "signup", email }),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(
+      (json?.error_description as string) ?? "Could not resend code",
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser]                 = useState<UserProfile | null>(null);
+  const [token, setToken]               = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [loading, setLoading]           = useState(true);
 
-  // Fetch the profile from our API using an auth token
   const fetchProfile = useCallback(async (accessToken: string) => {
     try {
       const res = await fetch(`${API_URL}/v1/me`, {
@@ -184,13 +280,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const json = await res.json();
         setUser(json.data as UserProfile);
       } else {
-        // Token invalid/expired
         setUser(null);
         setToken(null);
         await clearToken();
       }
     } catch {
-      // Network error — keep token so we can retry later
+      // Network error — keep token, retry later
     }
   }, []);
 
@@ -198,32 +293,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const stored = await loadToken();
-      if (!cancelled) {
-        if (stored) {
-          setToken(stored);
-          await fetchProfile(stored);
-        }
-        setLoading(false);
+      const [stored, pending] = await Promise.all([
+        loadToken(),
+        loadPendingEmail(),
+      ]);
+      if (cancelled) return;
+
+      if (pending) setPendingEmail(pending);
+
+      if (stored) {
+        setToken(stored);
+        await fetchProfile(stored);
       }
+      setLoading(false);
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [fetchProfile]);
 
+  // ── login ──────────────────────────────────────────────────
   const login = useCallback(
     async (email: string, password: string) => {
-      const accessToken = await supabaseSignIn(email, password);
-      await saveToken(accessToken);
-      setToken(accessToken);
-      await fetchProfile(accessToken);
-      // Register push token — non-blocking, fires and forgets
-      registerPushToken(accessToken);
+      try {
+        const accessToken = await supabaseSignIn(email, password);
+        // Sign-in succeeded → clear any pending confirmation state
+        await clearPendingEmail();
+        setPendingEmail(null);
+        await saveToken(accessToken);
+        setToken(accessToken);
+        await fetchProfile(accessToken);
+        registerPushToken(accessToken);
+      } catch (err) {
+        const error = err as Error & { code?: string };
+        if (error.code === "email_not_confirmed") {
+          // Persist the email so AuthGuard keeps the user on /auth/verify
+          // across re-renders and app restarts, then re-throw so the login
+          // screen can navigate to the verify page.
+          await savePendingEmail(email);
+          setPendingEmail(email);
+        }
+        throw err;
+      }
     },
     [fetchProfile],
   );
 
+  // ── register ───────────────────────────────────────────────
   const register = useCallback(
     async (
       name: string,
@@ -231,34 +345,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password: string,
       studentId: string,
     ) => {
-      const accessToken = await supabaseSignUp(
-        email,
-        password,
-        name,
-        studentId,
-      );
-      await saveToken(accessToken);
-      setToken(accessToken);
-      await fetchProfile(accessToken);
-      // Register push token — non-blocking, fires and forgets
-      registerPushToken(accessToken);
+      const result = await supabaseSignUp(email, password, name, studentId);
+
+      if (result.needsConfirmation || !result.access_token) {
+        // Store email so verify screen can use it across restarts
+        await savePendingEmail(email);
+        setPendingEmail(email);
+        // Do NOT store a token or set user — they're not authenticated yet
+        return;
+      }
+
+      // Confirmation not required — log straight in
+      await clearPendingEmail();
+      setPendingEmail(null);
+      await saveToken(result.access_token);
+      setToken(result.access_token);
+      await fetchProfile(result.access_token);
+      registerPushToken(result.access_token);
     },
     [fetchProfile],
   );
 
+  // ── verifyOtp ──────────────────────────────────────────────
+  const verifyOtp = useCallback(
+    async (otp: string) => {
+      if (!pendingEmail) throw new Error("No pending email to verify");
+      const accessToken = await supabaseVerifyOtp(pendingEmail, otp);
+      await clearPendingEmail();
+      setPendingEmail(null);
+      await saveToken(accessToken);
+      setToken(accessToken);
+      await fetchProfile(accessToken);
+      registerPushToken(accessToken);
+    },
+    [pendingEmail, fetchProfile],
+  );
+
+  // ── resendOtp ──────────────────────────────────────────────
+  const resendOtp = useCallback(async () => {
+    if (!pendingEmail) throw new Error("No pending email");
+    await supabaseResendOtp(pendingEmail);
+  }, [pendingEmail]);
+
+  // ── refreshProfile ─────────────────────────────────────────
   const refreshProfile = useCallback(async () => {
     if (token) await fetchProfile(token);
   }, [token, fetchProfile]);
 
+  // ── logout ─────────────────────────────────────────────────
   const logout = useCallback(async () => {
     setUser(null);
     setToken(null);
+    setPendingEmail(null);
     await clearToken();
+    await clearPendingEmail();
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, refreshProfile }}
+      value={{
+        user,
+        token,
+        loading,
+        pendingEmail,
+        login,
+        register,
+        verifyOtp,
+        resendOtp,
+        logout,
+        refreshProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>
@@ -267,8 +423,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used inside <AuthProvider>");
-  }
+  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
   return ctx;
 }
