@@ -32,6 +32,26 @@ export interface MaintenanceReport {
   updatedAt: string;
 }
 
+export interface CreateMaintenanceReportInput {
+  title: string;
+  description: string;
+  urgency: Urgency;
+  location: {
+    campus: string;
+    building: string;
+    floor?: string;
+    room?: string;
+  };
+}
+
+export interface ReportTimelineEvent {
+  id: string;
+  status: ReportStatus;
+  note?: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
 export interface ApiError {
   code: string;
   message: string;

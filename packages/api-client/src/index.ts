@@ -1,6 +1,8 @@
 import type {
   ApiResponse,
+  CreateMaintenanceReportInput,
   MaintenanceReport,
+  ReportTimelineEvent,
   UserProfile,
 } from "@cut-smartfix/contracts";
 
@@ -28,5 +30,12 @@ export function createApiClient(
     getMe: () => request<UserProfile>("/v1/me"),
     listReports: () => request<MaintenanceReport[]>("/v1/reports"),
     getReport: (id: string) => request<MaintenanceReport>(`/v1/reports/${id}`),
+    createReport: (input: CreateMaintenanceReportInput) =>
+      request<MaintenanceReport>("/v1/reports", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    getReportTimeline: (id: string) =>
+      request<ReportTimelineEvent[]>(`/v1/reports/${id}/timeline`),
   };
 }
