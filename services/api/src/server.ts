@@ -2426,7 +2426,12 @@ app.post("/v1/auth/check", async (req, res) => {
 
   const parsed = checkSchema.safeParse(req.body);
   if (!parsed.success) {
-    sendError(res, 400, "VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid input");
+    sendError(
+      res,
+      400,
+      "VALIDATION_ERROR",
+      parsed.error.issues[0]?.message ?? "Invalid input",
+    );
     return;
   }
 

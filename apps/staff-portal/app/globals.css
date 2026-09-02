@@ -4,25 +4,40 @@
 
 /* ─── CSS Variables ───────────────────────────────────────── */
 :root {
-  font-family: "DM Sans", system-ui, sans-serif;
-  --text: #17231f;
-  --muted: #52615b;
-  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  /* ── Colours ── */
+  --green:        #0b6b57;
+  --green-dark:   #084f41;
+  --green-light:  #d4eee7;
+  --green-muted:  #e8f4f0;
 
-  /* Spacing */
+  --bg:           #f4f7f5;
+  --surface:      #ffffff;
+  --border:       #dde8e3;
+
+  --text:         #17231f;
+  --muted:        #52615b;
+
+  --red:          #dc2626;
+  --amber:        #d97706;
+  --blue:         #2563eb;
+
+  /* ── Typography ── */
+  font-family: "Space Grotesk", "DM Sans", system-ui, sans-serif;
+
+  /* ── Spacing ── */
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-pill: 9999px;
 
-  /* Shadows */
+  /* ── Shadows ── */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md:
     0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
   --shadow-lg:
     0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
 
-  /* Sidebar */
+  /* ── Sidebar ── */
   --sidebar-w: 240px;
   --sidebar-collapsed-w: 60px;
 }
@@ -957,6 +972,146 @@ ol {
   font-size: 0.82rem;
   line-height: 1.5;
   margin-top: 8px;
+}
+
+.auth-eye {
+  background: none;
+  border: 0;
+  color: var(--green);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 0 6px 8px;
+}
+.auth-eye:hover {
+  color: var(--green-dark);
+}
+.auth-mascot {
+  height: 150px;
+  margin: -12px auto 8px;
+  position: relative;
+  width: 164px;
+}
+.mascot-shadow {
+  background: rgba(11, 107, 87, 0.13);
+  border-radius: 50%;
+  bottom: 8px;
+  filter: blur(3px);
+  height: 15px;
+  left: 30px;
+  position: absolute;
+  width: 104px;
+}
+.mascot-body {
+  background: #0b6b57;
+  border-radius: 48% 48% 42% 42%;
+  bottom: 18px;
+  box-shadow: inset -10px -8px 0 rgba(0, 0, 0, 0.08);
+  height: 108px;
+  left: 31px;
+  position: absolute;
+  transition: transform 0.25s ease;
+  width: 102px;
+}
+.mascot-ear {
+  background: #0b6b57;
+  border-radius: 8px 34px 0;
+  height: 34px;
+  position: absolute;
+  top: -16px;
+  width: 34px;
+}
+.mascot-ear-left {
+  left: 5px;
+  transform: rotate(-28deg);
+}
+.mascot-ear-right {
+  right: 5px;
+  transform: scaleX(-1) rotate(-28deg);
+}
+.mascot-face {
+  background: #f6fbf8;
+  border-radius: 50%;
+  height: 72px;
+  left: 15px;
+  position: absolute;
+  top: 12px;
+  width: 72px;
+}
+.mascot-eyes {
+  display: flex;
+  gap: 17px;
+  justify-content: center;
+  padding-top: 24px;
+}
+.mascot-eyes i {
+  background: #17231f;
+  border: 3px solid #bde3d5;
+  border-radius: 50%;
+  display: block;
+  height: 13px;
+  position: relative;
+  width: 13px;
+}
+.mascot-eyes i::after {
+  background: #fff;
+  border-radius: 50%;
+  content: "";
+  height: 3px;
+  left: 2px;
+  position: absolute;
+  top: 1px;
+  width: 3px;
+}
+.mascot-eyes i.blink {
+  height: 3px;
+  margin-top: 5px;
+}
+.mascot-beak {
+  background: #e3b23c;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  height: 12px;
+  left: 30px;
+  position: absolute;
+  top: 42px;
+  width: 14px;
+}
+.mascot-cheek {
+  background: #f3a6a0;
+  border-radius: 50%;
+  height: 7px;
+  opacity: 0.7;
+  position: absolute;
+  top: 49px;
+  width: 10px;
+}
+.mascot-cheek-left {
+  left: 8px;
+}
+.mascot-cheek-right {
+  right: 8px;
+}
+.mascot-paws {
+  bottom: -6px;
+  display: flex;
+  gap: 31px;
+  left: 22px;
+  position: absolute;
+}
+.mascot-paws i {
+  background: #e3b23c;
+  border-radius: 50%;
+  height: 19px;
+  width: 27px;
+}
+.mascot-peek .mascot-body {
+  transform: translateY(7px) rotate(-2deg);
+}
+.mascot-error .mascot-body {
+  transform: rotate(-5deg);
+}
+.mascot-success .mascot-body {
+  transform: translateY(-7px);
 }
 
 .profile-layout {

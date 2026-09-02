@@ -98,9 +98,7 @@ function useUniquenessCheck(
         }
         const json = await res.json();
         const taken =
-          field === "email"
-            ? json.data?.emailTaken
-            : json.data?.studentIdTaken;
+          field === "email" ? json.data?.emailTaken : json.data?.studentIdTaken;
         setStatus(taken ? "taken" : "available");
       } catch {
         setStatus("idle");
@@ -150,9 +148,19 @@ function UniquenessIndicator({ status }: { status: CheckStatus }) {
     Exclude<CheckStatus, "idle">,
     { icon: string; text: string; color: string; bg: string }
   > = {
-    checking:  { icon: "⏳", text: "Checking…",      color: TEXT_MUTED, bg: "#f0f4f1" },
-    available: { icon: "✓",  text: "Available",       color: "#27ae60",  bg: "#eafaf1" },
-    taken:     { icon: "✕",  text: "Already in use",  color: ERROR,      bg: "#fdf0f0" },
+    checking: {
+      icon: "⏳",
+      text: "Checking…",
+      color: TEXT_MUTED,
+      bg: "#f0f4f1",
+    },
+    available: {
+      icon: "✓",
+      text: "Available",
+      color: "#27ae60",
+      bg: "#eafaf1",
+    },
+    taken: { icon: "✕", text: "Already in use", color: ERROR, bg: "#fdf0f0" },
   };
   const c = config[status];
 
@@ -340,7 +348,12 @@ interface FieldProps {
   keyboardType?: "default" | "email-address";
   autoCapitalize?: "none" | "words" | "sentences" | "characters";
   autoComplete?: "email" | "password" | "name" | "username";
-  textContentType?: "emailAddress" | "password" | "newPassword" | "name" | "username";
+  textContentType?:
+    | "emailAddress"
+    | "password"
+    | "newPassword"
+    | "name"
+    | "username";
   secureTextEntry?: boolean;
   editable?: boolean;
   error?: string;
@@ -390,10 +403,19 @@ function AnimatedField({
 
   const borderColor = error
     ? ERROR
-    : borderAnim.interpolate({ inputRange: [0, 1], outputRange: [BORDER, BORDER_FOCUS] });
+    : borderAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [BORDER, BORDER_FOCUS],
+      });
 
-  const labelTop = labelAnim.interpolate({ inputRange: [0, 1], outputRange: [17, -8] });
-  const labelSize = labelAnim.interpolate({ inputRange: [0, 1], outputRange: [16, 11] });
+  const labelTop = labelAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [17, -8],
+  });
+  const labelSize = labelAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, 11],
+  });
   const labelColor = error ? ERROR : focused ? BORDER_FOCUS : TEXT_MUTED;
 
   return (
@@ -409,7 +431,12 @@ function AnimatedField({
           <Animated.Text
             style={[
               fieldStyles.floatingLabel,
-              { top: labelTop, fontSize: labelSize, color: labelColor, backgroundColor: BG },
+              {
+                top: labelTop,
+                fontSize: labelSize,
+                color: labelColor,
+                backgroundColor: BG,
+              },
             ]}
           >
             {label}
@@ -436,7 +463,9 @@ function AnimatedField({
           onBlur={() => setFocused(false)}
         />
 
-        {rightElement && <View style={fieldStyles.rightSlot}>{rightElement}</View>}
+        {rightElement && (
+          <View style={fieldStyles.rightSlot}>{rightElement}</View>
+        )}
       </Animated.View>
 
       {error && (
@@ -502,7 +531,13 @@ const fieldStyles = StyleSheet.create({
 // ─────────────────────────────────────────────────────────────
 // Eye toggle
 // ─────────────────────────────────────────────────────────────
-function EyeToggle({ visible, onPress }: { visible: boolean; onPress: () => void }) {
+function EyeToggle({
+  visible,
+  onPress,
+}: {
+  visible: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable onPress={onPress} hitSlop={8}>
       <Text style={{ fontSize: 18, opacity: visible ? 1 : 0.4 }}>
@@ -515,7 +550,11 @@ function EyeToggle({ visible, onPress }: { visible: boolean; onPress: () => void
 // ─────────────────────────────────────────────────────────────
 // Password strength
 // ─────────────────────────────────────────────────────────────
-function getStrength(pw: string): { score: number; label: string; color: string } {
+function getStrength(pw: string): {
+  score: number;
+  label: string;
+  color: string;
+} {
   if (!pw) return { score: 0, label: "", color: "transparent" };
   let s = 0;
   if (pw.length >= 8) s++;
@@ -554,7 +593,10 @@ function StrengthBar({ password }: { password: string }) {
             sbStyles.fill,
             {
               backgroundColor: color,
-              width: widthAnim.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }),
+              width: widthAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ["0%", "100%"],
+              }),
             },
           ]}
         />
@@ -573,7 +615,13 @@ const sbStyles = StyleSheet.create({
     marginBottom: 18,
     paddingHorizontal: 2,
   },
-  track: { flex: 1, height: 4, borderRadius: 2, backgroundColor: "#e4ede7", overflow: "hidden" },
+  track: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#e4ede7",
+    overflow: "hidden",
+  },
   fill: { height: "100%", borderRadius: 2 },
   label: { fontSize: 11, fontWeight: "700", width: 44, textAlign: "right" },
 });
@@ -586,14 +634,27 @@ function PasswordRule({ met, text }: { met: boolean; text: string }) {
   useEffect(() => {
     if (met) {
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.3, duration: 110, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1, duration: 110, useNativeDriver: true }),
+        Animated.timing(scale, {
+          toValue: 1.3,
+          duration: 110,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 110,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }, [met, scale]);
   return (
     <View style={ruleStyles.row}>
-      <Animated.Text style={[ruleStyles.icon, { color: met ? "#27ae60" : TEXT_MUTED, transform: [{ scale }] }]}>
+      <Animated.Text
+        style={[
+          ruleStyles.icon,
+          { color: met ? "#27ae60" : TEXT_MUTED, transform: [{ scale }] },
+        ]}
+      >
         {met ? "✓" : "○"}
       </Animated.Text>
       <Text style={[ruleStyles.text, met && ruleStyles.textMet]}>{text}</Text>
@@ -611,16 +672,28 @@ const ruleStyles = StyleSheet.create({
 // ─────────────────────────────────────────────────────────────
 // Match indicator
 // ─────────────────────────────────────────────────────────────
-function MatchIndicator({ password, confirm }: { password: string; confirm: string }) {
+function MatchIndicator({
+  password,
+  confirm,
+}: {
+  password: string;
+  confirm: string;
+}) {
   if (!confirm) return null;
   const match = password === confirm;
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   }, [opacity]);
   return (
     <Animated.View style={[miStyles.row, { opacity }]}>
-      <Text style={[miStyles.icon, { color: match ? "#27ae60" : ERROR }]}>{match ? "✓" : "✕"}</Text>
+      <Text style={[miStyles.icon, { color: match ? "#27ae60" : ERROR }]}>
+        {match ? "✓" : "✕"}
+      </Text>
       <Text style={[miStyles.text, { color: match ? "#27ae60" : ERROR }]}>
         {match ? "Passwords match" : "Passwords do not match"}
       </Text>
@@ -629,7 +702,14 @@ function MatchIndicator({ password, confirm }: { password: string; confirm: stri
 }
 
 const miStyles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: -12, marginBottom: 18, paddingHorizontal: 2 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: -12,
+    marginBottom: 18,
+    paddingHorizontal: 2,
+  },
   icon: { fontSize: 12, fontWeight: "800" },
   text: { fontSize: 12, fontWeight: "600" },
 });
@@ -652,10 +732,20 @@ function PrimaryButton({
 }) {
   const scale = useRef(new Animated.Value(1)).current;
   function pressIn() {
-    Animated.spring(scale, { toValue: 0.965, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+    Animated.spring(scale, {
+      toValue: 0.965,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
   }
   function pressOut() {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6 }).start();
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 6,
+    }).start();
   }
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
@@ -673,7 +763,10 @@ function PrimaryButton({
             colors={[GREEN, GREEN_DARK]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[primaryBtnStyles.gradient, (disabled || loading) && primaryBtnStyles.disabled]}
+            style={[
+              primaryBtnStyles.gradient,
+              (disabled || loading) && primaryBtnStyles.disabled,
+            ]}
           >
             {loading ? (
               <View style={primaryBtnStyles.loadingRow}>
@@ -703,7 +796,12 @@ const primaryBtnStyles = StyleSheet.create({
   },
   disabled: { opacity: 0.65 },
   label: { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: 0.3 },
-  loadingRow: { flexDirection: "row", gap: 6, alignItems: "center", height: 20 },
+  loadingRow: {
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "center",
+    height: 20,
+  },
 });
 
 const secondaryBtnStyles = StyleSheet.create({
@@ -732,8 +830,16 @@ function LoadingDots() {
       Animated.loop(
         Animated.sequence([
           Animated.delay(i * 140),
-          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
         ]),
       ),
     );
@@ -747,9 +853,22 @@ function LoadingDots() {
         <Animated.View
           key={i}
           style={{
-            width: 7, height: 7, borderRadius: 4, backgroundColor: "#fff",
-            opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-            transform: [{ translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }],
+            width: 7,
+            height: 7,
+            borderRadius: 4,
+            backgroundColor: "#fff",
+            opacity: dot.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.3, 1],
+            }),
+            transform: [
+              {
+                translateY: dot.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -4],
+                }),
+              },
+            ],
           }}
         />
       ))}
@@ -760,13 +879,23 @@ function LoadingDots() {
 // ─────────────────────────────────────────────────────────────
 // Review row (step 3 summary)
 // ─────────────────────────────────────────────────────────────
-function ReviewRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+function ReviewRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+}) {
   return (
     <View style={reviewRowStyles.row}>
       <Text style={reviewRowStyles.icon}>{icon}</Text>
       <View style={reviewRowStyles.text}>
         <Text style={reviewRowStyles.label}>{label}</Text>
-        <Text style={reviewRowStyles.value} numberOfLines={1}>{value}</Text>
+        <Text style={reviewRowStyles.value} numberOfLines={1}>
+          {value}
+        </Text>
       </View>
     </View>
   );
@@ -783,7 +912,13 @@ const reviewRowStyles = StyleSheet.create({
   },
   icon: { fontSize: 20, width: 28, textAlign: "center" },
   text: { flex: 1, gap: 2 },
-  label: { color: TEXT_MUTED, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+  label: {
+    color: TEXT_MUTED,
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
   value: { color: TEXT_PRIMARY, fontSize: 15, fontWeight: "600" },
 });
 
@@ -858,6 +993,7 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<{
     fullName?: string;
     email?: string;
+    studentId?: string;
     password?: string;
     confirmPassword?: string;
   }>({});
@@ -873,6 +1009,9 @@ export default function RegisterScreen() {
     if (!fullName.trim()) e.fullName = "Full name is required";
     if (!email.trim()) e.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(email)) e.email = "Enter a valid email";
+    if (!studentId.trim()) e.studentId = "Student ID is required";
+    else if (!/^[A-Za-z0-9-]{4,40}$/.test(studentId.trim()))
+      e.studentId = "Enter a valid Student ID";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -882,7 +1021,8 @@ export default function RegisterScreen() {
     if (!password) e.password = "Password is required";
     else if (password.length < 8) e.password = "Min. 8 characters";
     if (!confirmPassword) e.confirmPassword = "Please confirm your password";
-    else if (password !== confirmPassword) e.confirmPassword = "Passwords do not match";
+    else if (password !== confirmPassword)
+      e.confirmPassword = "Passwords do not match";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -907,12 +1047,15 @@ export default function RegisterScreen() {
         fullName.trim(),
         email.trim().toLowerCase(),
         password,
-        studentId.trim() || undefined,
+        studentId.trim(),
       );
       router.replace("/(tabs)");
     } catch (err) {
       // Go back to step 1 and show the API error on email
-      setErrors({ email: (err as Error).message ?? "Registration failed. Please try again." });
+      setErrors({
+        email:
+          (err as Error).message ?? "Registration failed. Please try again.",
+      });
       setStep(1);
     } finally {
       setLoading(false);
@@ -963,7 +1106,6 @@ export default function RegisterScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-
             {/* ══════════ STEP 1: Identity ══════════ */}
             {step === 1 && (
               <View style={styles.stepContent}>
@@ -971,7 +1113,8 @@ export default function RegisterScreen() {
                   <Text style={styles.stepEmoji}>👤</Text>
                   <Text style={styles.stepTitle}>Who are you?</Text>
                   <Text style={styles.stepSubtitle}>
-                    Tell us a bit about yourself so we can personalise your experience.
+                    Tell us a bit about yourself so we can personalise your
+                    experience.
                   </Text>
                 </View>
 
@@ -981,7 +1124,8 @@ export default function RegisterScreen() {
                     value={fullName}
                     onChangeText={(v) => {
                       setFullName(v);
-                      if (errors.fullName) setErrors((e) => ({ ...e, fullName: undefined }));
+                      if (errors.fullName)
+                        setErrors((e) => ({ ...e, fullName: undefined }));
                     }}
                     placeholder="e.g. Tendai Moyo"
                     autoCapitalize="words"
@@ -999,7 +1143,8 @@ export default function RegisterScreen() {
                     value={email}
                     onChangeText={(v) => {
                       setEmail(v);
-                      if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                      if (errors.email)
+                        setErrors((e) => ({ ...e, email: undefined }));
                     }}
                     placeholder="your@student.cut.ac.zw"
                     keyboardType="email-address"
@@ -1015,20 +1160,29 @@ export default function RegisterScreen() {
                   />
 
                   <AnimatedField
-                    label="Student ID  (optional)"
+                    label="Student ID"
                     value={studentId}
-                    onChangeText={setStudentId}
+                    onChangeText={(v) => {
+                      setStudentId(v);
+                      if (errors.studentId)
+                        setErrors((e) => ({ ...e, studentId: undefined }));
+                    }}
                     placeholder="e.g. C123456789"
                     autoCapitalize="characters"
                     editable={!loading}
                     returnKeyType="done"
                     onSubmitEditing={goNext}
                     inputRef={studentIdRef}
+                    error={errors.studentId}
                   />
                 </View>
 
                 <View style={styles.actions}>
-                  <PrimaryButton label="Continue →" onPress={goNext} loading={false} />
+                  <PrimaryButton
+                    label="Continue →"
+                    onPress={goNext}
+                    loading={false}
+                  />
                 </View>
               </View>
             )}
@@ -1050,7 +1204,8 @@ export default function RegisterScreen() {
                     value={password}
                     onChangeText={(v) => {
                       setPassword(v);
-                      if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+                      if (errors.password)
+                        setErrors((e) => ({ ...e, password: undefined }));
                     }}
                     placeholder="Min. 8 characters"
                     secureTextEntry={!showPassword}
@@ -1062,7 +1217,10 @@ export default function RegisterScreen() {
                     blurOnSubmit={false}
                     onSubmitEditing={() => confirmRef.current?.focus()}
                     rightElement={
-                      <EyeToggle visible={showPassword} onPress={() => setShowPassword((v) => !v)} />
+                      <EyeToggle
+                        visible={showPassword}
+                        onPress={() => setShowPassword((v) => !v)}
+                      />
                     }
                   />
 
@@ -1074,7 +1232,10 @@ export default function RegisterScreen() {
                     onChangeText={(v) => {
                       setConfirmPassword(v);
                       if (errors.confirmPassword)
-                        setErrors((e) => ({ ...e, confirmPassword: undefined }));
+                        setErrors((e) => ({
+                          ...e,
+                          confirmPassword: undefined,
+                        }));
                     }}
                     placeholder="Re-enter password"
                     secureTextEntry={!showConfirm}
@@ -1086,26 +1247,42 @@ export default function RegisterScreen() {
                     onSubmitEditing={goNext}
                     inputRef={confirmRef}
                     rightElement={
-                      <EyeToggle visible={showConfirm} onPress={() => setShowConfirm((v) => !v)} />
+                      <EyeToggle
+                        visible={showConfirm}
+                        onPress={() => setShowConfirm((v) => !v)}
+                      />
                     }
                   />
 
-                  <MatchIndicator password={password} confirm={confirmPassword} />
+                  <MatchIndicator
+                    password={password}
+                    confirm={confirmPassword}
+                  />
 
                   {/* Password rules */}
                   <View style={styles.rulesBox}>
                     <Text style={styles.rulesTitle}>Password must have</Text>
-                    <PasswordRule met={password.length >= 8} text="At least 8 characters" />
+                    <PasswordRule
+                      met={password.length >= 8}
+                      text="At least 8 characters"
+                    />
                     <PasswordRule
                       met={/[A-Z]/.test(password) && /[a-z]/.test(password)}
                       text="Upper & lowercase letters"
                     />
-                    <PasswordRule met={/[0-9]/.test(password)} text="At least one number" />
+                    <PasswordRule
+                      met={/[0-9]/.test(password)}
+                      text="At least one number"
+                    />
                   </View>
                 </View>
 
                 <View style={styles.actions}>
-                  <PrimaryButton label="Review →" onPress={goNext} loading={false} />
+                  <PrimaryButton
+                    label="Review →"
+                    onPress={goNext}
+                    loading={false}
+                  />
                 </View>
               </View>
             )}
@@ -1129,23 +1306,28 @@ export default function RegisterScreen() {
                   {studentId ? (
                     <ReviewRow icon="🎓" label="Student ID" value={studentId} />
                   ) : null}
-                  <ReviewRow icon="🔒" label="Password" value={"•".repeat(Math.min(password.length, 12))} />
+                  <ReviewRow
+                    icon="🔒"
+                    label="Password"
+                    value={"•".repeat(Math.min(password.length, 12))}
+                  />
                 </View>
 
                 {/* Edit prompts */}
                 <View style={styles.editRow}>
                   <Pressable onPress={() => setStep(1)} style={styles.editBtn}>
-                    <Text style={styles.editBtnText}>✏️  Edit identity</Text>
+                    <Text style={styles.editBtnText}>✏️ Edit identity</Text>
                   </Pressable>
                   <Pressable onPress={() => setStep(2)} style={styles.editBtn}>
-                    <Text style={styles.editBtnText}>✏️  Edit password</Text>
+                    <Text style={styles.editBtnText}>✏️ Edit password</Text>
                   </Pressable>
                 </View>
 
                 {/* T&C note */}
                 <View style={styles.termsBox}>
                   <Text style={styles.termsText}>
-                    By creating an account you agree to CUT SmartFix's terms of service and privacy policy.
+                    By creating an account you agree to CUT SmartFix's terms of
+                    service and privacy policy.
                   </Text>
                 </View>
 
@@ -1161,7 +1343,7 @@ export default function RegisterScreen() {
 
             {/* Sign-in link (all steps) */}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account?  </Text>
+              <Text style={styles.footerText}>Already have an account? </Text>
               <Link href="/auth/login" asChild>
                 <Pressable>
                   <Text style={styles.footerLink}>Sign in →</Text>
@@ -1170,9 +1352,10 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.bottomNote}>
-              <Text style={styles.bottomNoteText}>🔒  Your data is encrypted and secure</Text>
+              <Text style={styles.bottomNoteText}>
+                🔒 Your data is encrypted and secure
+              </Text>
             </View>
-
           </ScrollView>
         </SlideContainer>
       </KeyboardAvoidingView>
@@ -1196,7 +1379,13 @@ const styles = StyleSheet.create({
   backBtn: { width: 60 },
   backBtnText: { color: GREEN, fontSize: 16, fontWeight: "600" },
   topTitle: { color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" },
-  cancelText: { color: TEXT_MUTED, fontSize: 14, fontWeight: "600", width: 60, textAlign: "right" },
+  cancelText: {
+    color: TEXT_MUTED,
+    fontSize: 14,
+    fontWeight: "600",
+    width: 60,
+    textAlign: "right",
+  },
 
   // Scroll
   scrollContent: {

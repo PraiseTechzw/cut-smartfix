@@ -103,7 +103,7 @@ export interface AuthContextValue {
     name: string,
     email: string,
     password: string,
-    studentId?: string,
+    studentId: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
   /** Re-fetch profile from API (e.g. after updating preferences) */
@@ -112,8 +112,7 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const API_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
@@ -124,17 +123,14 @@ async function supabaseSignIn(
   email: string,
   password: string,
 ): Promise<string> {
-  const res = await fetch(
-    `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({ email, password }),
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_ANON_KEY,
     },
-  );
+    body: JSON.stringify({ email, password }),
+  });
   const json = await res.json();
   if (!res.ok) {
     throw new Error(json?.error_description ?? json?.msg ?? "Login failed");
@@ -146,7 +142,7 @@ async function supabaseSignUp(
   email: string,
   password: string,
   fullName: string,
-  studentId?: string,
+  studentId: string,
 ): Promise<string> {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
     method: "POST",
@@ -233,9 +229,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name: string,
       email: string,
       password: string,
-      studentId?: string,
+      studentId: string,
     ) => {
-      const accessToken = await supabaseSignUp(email, password, name, studentId);
+      const accessToken = await supabaseSignUp(
+        email,
+        password,
+        name,
+        studentId,
+      );
       await saveToken(accessToken);
       setToken(accessToken);
       await fetchProfile(accessToken);
