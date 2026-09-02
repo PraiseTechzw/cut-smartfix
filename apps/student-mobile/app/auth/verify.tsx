@@ -196,11 +196,8 @@ export default function VerifyScreen() {
   const [resendSuccess, setResendSuccess] = useState(false);
 
   // Animations
-  const shake         = useRef(new Animated.Value(0)).current;
+  const shake          = useRef(new Animated.Value(0)).current;
   const hiddenInputRef = useRef<TextInput>(null);
-
-  // Kept for backward compat — no longer used for individual inputs
-  const inputRefs = useRef<(TextInput | null)[]>(Array(OTP_LENGTH).fill(null));
 
   // ── Redirect if no pending email ──────────────────────────
   useEffect(() => {
@@ -294,9 +291,6 @@ export default function VerifyScreen() {
       Animated.timing(fadeAnim, { toValue: 1, duration: 450, easing: Easing.out(Easing.quad), useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 450, easing: Easing.out(Easing.back(1.1)), useNativeDriver: true }),
     ]).start();
-    // Focus the hidden input after mount
-    const t = setTimeout(() => hiddenInputRef.current?.focus(), 300);
-    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -337,11 +331,11 @@ export default function VerifyScreen() {
             </View>
           </View>
 
-          {/* ── OTP boxes + single hidden input ── */}
-          <Pressable
-            onPress={() => hiddenInputRef.current?.focus()}
-            style={styles.boxRow}
-          >
+          {/* ── OTP boxes + hidden input overlay ── */}
+          {/* The TextInput sits on top of the boxes at opacity:0 so the OS
+              treats it as a real on-screen input → keyboard appears.
+              Tapping anywhere on the row focuses it. */}
+          <View style={styles.boxRow}>
             {digits.map((digit, i) => (
               <OtpBox
                 key={i}
@@ -351,39 +345,43 @@ export default function VerifyScreen() {
                 shake={shake}
               />
             ))}
-          </Pressable>
 
-          {/* Single hidden input captures all keyboard input */}
-          <TextInput
-            ref={hiddenInputRef}
-            style={styles.hiddenInput}
-            value={digits.join("")}
-            onChangeText={(text) => {
-              const clean = text.replace(/\D/g, "").slice(0, OTP_LENGTH);
-              const next = Array(OTP_LENGTH).fill("");
-              clean.split("").forEach((d, i) => { next[i] = d; });
-              setDigits(next);
-              setFocused(Math.min(clean.length, OTP_LENGTH - 1));
-              setErrorMsg(null);
-            }}
-            onKeyPress={({ nativeEvent }) => {
-              if (nativeEvent.key === "Backspace") {
-                const currentFill = digits.join("").length;
-                if (currentFill === 0) return;
-                const next = [...digits];
-                const lastFilled = currentFill - 1;
-                next[lastFilled] = "";
+            {/* Invisible input stretched across the whole row */}
+            <TextInput
+              ref={hiddenInputRef}
+              style={styles.hiddenInput}
+              value={digits.join("")}
+              onChangeText={(text) => {
+                // Strip non-digits, clamp to OTP_LENGTH (handles paste too)
+                const clean = text.replace(/\D/g, "").slice(0, OTP_LENGTH);
+                const next = Array(OTP_LENGTH).fill("") as string[];
+                clean.split("").forEach((d, i) => { next[i] = d; });
                 setDigits(next);
-                setFocused(Math.max(0, lastFilled));
-              }
-            }}
-            onFocus={() => { setInputFocused(true); setFocused(digits.filter(Boolean).length < OTP_LENGTH ? digits.filter(Boolean).length : OTP_LENGTH - 1); }}
-            onBlur={() => setInputFocused(false)}
-            keyboardType="number-pad"
-            maxLength={OTP_LENGTH}
-            caretHidden
-            autoFocus
-          />
+                setFocused(Math.min(clean.length, OTP_LENGTH - 1));
+                setErrorMsg(null);
+              }}
+              onKeyPress={({ nativeEvent }) => {
+                if (nativeEvent.key === "Backspace") {
+                  const filled = digits.join("").length;
+                  if (filled === 0) return;
+                  const next = [...digits];
+                  next[filled - 1] = "";
+                  setDigits(next);
+                  setFocused(Math.max(0, filled - 1));
+                }
+              }}
+              onFocus={() => {
+                setInputFocused(true);
+                const filled = digits.filter((d) => d !== "").length;
+                setFocused(Math.min(filled, OTP_LENGTH - 1));
+              }}
+              onBlur={() => setInputFocused(false)}
+              keyboardType="number-pad"
+              maxLength={OTP_LENGTH}
+              caretHidden
+              autoFocus
+            />
+          </View>
 
           {/* ── Error / success message ── */}
           {errorMsg ? (
@@ -550,15 +548,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 24,
     width: "100%",
+    // Must have a defined height so the absolute input has a parent to fill
+    height: 58,
   },
   hiddenInput: {
-    // Absolutely invisible — placed off screen so keyboard stays up
+    // Stretched over the entire box row — on-screen so keyboard appears,
+    // but fully transparent so users only see the visual boxes.
     position: "absolute",
-    width: 1,
-    height: 1,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     opacity: 0,
-    top: -999,
-    left: -999,
+    color: "transparent",
+    backgroundColor: "transparent",
   },
 
   // Messages
