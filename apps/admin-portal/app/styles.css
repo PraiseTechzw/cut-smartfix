@@ -60,5 +60,14 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
-.modules { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 42px; }
-.modules a { color: #315c91; font-weight: 700; text-decoration: none; }
+.modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 42px;
+}
+.modules a {
+  color: #315c91;
+  font-weight: 700;
+  text-decoration: none;
+}

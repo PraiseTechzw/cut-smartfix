@@ -21,7 +21,12 @@ export default function StaffHome() {
           <span>Resolved work awaiting review</span>
         </div>
       </section>
-      <nav className="modules" aria-label="Staff modules"><a href="/tasks">My tasks</a><a href="/materials">Material requests</a><a href="/evidence">Repair evidence</a><a href="/completed">Completed jobs</a></nav>
+      <nav className="modules" aria-label="Staff modules">
+        <a href="/tasks">My tasks</a>
+        <a href="/materials">Material requests</a>
+        <a href="/evidence">Repair evidence</a>
+        <a href="/completed">Completed jobs</a>
+      </nav>
     </main>
   );
 }

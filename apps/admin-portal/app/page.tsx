@@ -23,7 +23,14 @@ export default function AdminHome() {
           <strong>Live</strong>
         </div>
       </section>
-      <nav className="modules" aria-label="Administration modules"><a href="/requests">Requests</a><a href="/assignments">Assignments</a><a href="/staff">Staff</a><a href="/buildings">Buildings and rooms</a><a href="/analytics">Analytics</a><a href="/audit">Audit logs</a></nav>
+      <nav className="modules" aria-label="Administration modules">
+        <a href="/requests">Requests</a>
+        <a href="/assignments">Assignments</a>
+        <a href="/staff">Staff</a>
+        <a href="/buildings">Buildings and rooms</a>
+        <a href="/analytics">Analytics</a>
+        <a href="/audit">Audit logs</a>
+      </nav>
     </main>
   );
 }
