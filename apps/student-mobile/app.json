@@ -9,6 +9,7 @@
     "experiments": { "typedRoutes": true },
     "plugins": [
       "expo-router",
+      "expo-linear-gradient",
       [
         "expo-image-picker",
         {

@@ -45,7 +45,7 @@ interface FieldProps {
   returnKeyType?: "next" | "done" | "go";
   onSubmitEditing?: () => void;
   blurOnSubmit?: boolean;
-  inputRef?: React.RefObject<TextInput | null>;
+  inputRef?: React.RefObject<TextInput>;
   rightElement?: React.ReactNode;
 }
 
@@ -116,21 +116,25 @@ function AnimatedField({
           focused && fieldStyles.containerFocused,
         ]}
       >
-        {/* Floating label */}
-        <Animated.Text
-          style={[
-            fieldStyles.floatingLabel,
-            {
-              top: labelTop,
-              fontSize: labelSize,
-              color: labelColor,
-              backgroundColor: BG,
-            },
-          ]}
+        {/* Floating label — wrapped in View so pointerEvents works */}
+        <View
           pointerEvents="none"
+          style={fieldStyles.floatingLabelWrapper}
         >
-          {label}
-        </Animated.Text>
+          <Animated.Text
+            style={[
+              fieldStyles.floatingLabel,
+              {
+                top: labelTop,
+                fontSize: labelSize,
+                color: labelColor,
+                backgroundColor: BG,
+              },
+            ]}
+          >
+            {label}
+          </Animated.Text>
+        </View>
 
         <TextInput
           ref={inputRef}
@@ -192,12 +196,17 @@ const fieldStyles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  floatingLabel: {
+  floatingLabelWrapper: {
     position: "absolute",
     left: 14,
+    zIndex: 1,
+    top: 0,
+    bottom: 0,
+    justifyContent: "flex-start",
+  },
+  floatingLabel: {
     paddingHorizontal: 4,
     fontWeight: "600",
-    zIndex: 1,
   },
   input: {
     flex: 1,
