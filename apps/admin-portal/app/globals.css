@@ -406,12 +406,95 @@ a:hover {
   border-left-color: var(--amber);
 }
 .stat-card.red {
-  .analytics-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-  }
   border-left-color: var(--red);
+}
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.date-chip {
+  background: var(--green-light);
+  color: var(--green);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+}
+.loading-state {
+  color: var(--muted);
+  padding: 48px 0;
+  text-align: center;
+}
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.category-card {
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+}
+.category-icon {
+  align-items: center;
+  background: var(--green-light);
+  border-radius: 8px;
+  color: var(--green);
+  display: flex;
+  flex: 0 0 38px;
+  font-size: 14px;
+  font-weight: 700;
+  height: 38px;
+  justify-content: center;
+}
+.category-card h3 {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.category-card p,
+.category-card span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.category-card span {
+  display: block;
+  margin-top: 10px;
+}
+.admin-notification {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+}
+.admin-notification:last-child {
+  border-bottom: 0;
+}
+.admin-notification strong {
+  font-size: 13px;
+}
+.admin-notification p,
+.admin-notification small {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.notification-status {
+  background: var(--red);
+  border-radius: 50%;
+  flex: 0 0 8px;
+  height: 8px;
+  margin-top: 6px;
+}
+.notification-status.read {
+  background: var(--border);
 }
 .stat-card.blue {
   border-left-color: var(--blue);
@@ -1456,4 +1539,5 @@ input[type="radio"] {
   .analytics-grid {
     grid-template-columns: 1fr;
   }
+  .category-grid { grid-template-columns: 1fr; }
 }

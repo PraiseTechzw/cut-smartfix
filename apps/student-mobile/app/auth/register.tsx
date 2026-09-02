@@ -2,6 +2,8 @@
  * Registration Wizard — 3 steps, each on its own full-screen page.
  *
  * Step 1 — Your Identity   (full name, email, student ID)
+ *           Real-time uniqueness checks on email + student ID via
+ *           POST /v1/auth/check (debounced 600 ms).
  * Step 2 — Secure Account  (password, confirm, strength meter)
  * Step 3 — Review & Create (summary card + submit)
  *
@@ -28,6 +30,8 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
+
 // ─── Constants ────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get("window");
 const TOTAL_STEPS = 3;
@@ -43,6 +47,144 @@ const BORDER = "#d0ddd8";
 const BORDER_FOCUS = "#0b6b57";
 const ERROR = "#c0392b";
 const BG = "#f5f8f6";
+
+// ─────────────────────────────────────────────────────────────
+// Uniqueness check
+// ─────────────────────────────────────────────────────────────
+
+type CheckStatus = "idle" | "checking" | "taken" | "available";
+
+/**
+ * Debounced uniqueness check against POST /v1/auth/check.
+ * Fires after the user stops typing for 600 ms.
+ */
+function useUniquenessCheck(
+  field: "email" | "studentId",
+  value: string,
+  debounceMs = 600,
+): CheckStatus {
+  const [status, setStatus] = useState<CheckStatus>("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!value.trim()) {
+      setStatus("idle");
+      return;
+    }
+    // Don't fire email check until it looks like a real address
+    if (field === "email" && !/\S+@\S+\.\S+/.test(value)) {
+      setStatus("idle");
+      return;
+    }
+
+    setStatus("checking");
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    const captured = value;
+    timerRef.current = setTimeout(async () => {
+      const body =
+        field === "email"
+          ? { email: captured.trim().toLowerCase() }
+          : { studentId: captured.trim() };
+      try {
+        const res = await fetch(`${API_URL}/v1/auth/check`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          setStatus("idle");
+          return;
+        }
+        const json = await res.json();
+        const taken =
+          field === "email"
+            ? json.data?.emailTaken
+            : json.data?.studentIdTaken;
+        setStatus(taken ? "taken" : "available");
+      } catch {
+        setStatus("idle");
+      }
+    }, debounceMs);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [value, field, debounceMs]);
+
+  return status;
+}
+
+// Live indicator badge shown below an input
+function UniquenessIndicator({ status }: { status: CheckStatus }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    if (status === "idle") {
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 40,
+        bounciness: 10,
+      }),
+    ]).start();
+  }, [status, opacity, scale]);
+
+  if (status === "idle") return null;
+
+  const config: Record<
+    Exclude<CheckStatus, "idle">,
+    { icon: string; text: string; color: string; bg: string }
+  > = {
+    checking:  { icon: "⏳", text: "Checking…",      color: TEXT_MUTED, bg: "#f0f4f1" },
+    available: { icon: "✓",  text: "Available",       color: "#27ae60",  bg: "#eafaf1" },
+    taken:     { icon: "✕",  text: "Already in use",  color: ERROR,      bg: "#fdf0f0" },
+  };
+  const c = config[status];
+
+  return (
+    <Animated.View
+      style={[
+        uniqueStyles.badge,
+        { backgroundColor: c.bg, opacity, transform: [{ scale }] },
+      ]}
+    >
+      <Text style={[uniqueStyles.icon, { color: c.color }]}>{c.icon}</Text>
+      <Text style={[uniqueStyles.text, { color: c.color }]}>{c.text}</Text>
+    </Animated.View>
+  );
+}
+
+const uniqueStyles = StyleSheet.create({
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 100,
+    marginTop: -12,
+    marginBottom: 14,
+    marginLeft: 2,
+  },
+  icon: { fontSize: 11, fontWeight: "800" },
+  text: { fontSize: 11, fontWeight: "700" },
+});
 
 // ─────────────────────────────────────────────────────────────
 // Step Progress Bar

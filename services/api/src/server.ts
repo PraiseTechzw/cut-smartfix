@@ -2404,6 +2404,58 @@ app.get(
 );
 
 // ─────────────────────────────────────────
+// Auth helpers (public — no auth required)
+// ─────────────────────────────────────────
+
+/**
+ * POST /v1/auth/check
+ * Body: { email?: string; studentId?: string }
+ * Response: { emailTaken: boolean; studentIdTaken: boolean }
+ *
+ * Used by the registration wizard for real-time uniqueness validation.
+ * Intentionally unauthenticated so it works before the user has an account.
+ */
+const checkSchema = z.object({
+  email: z.string().email().optional(),
+  studentId: z.string().trim().min(1).max(40).optional(),
+});
+
+app.post("/v1/auth/check", async (req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+
+  const parsed = checkSchema.safeParse(req.body);
+  if (!parsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid input");
+    return;
+  }
+
+  const { email, studentId } = parsed.data;
+  let emailTaken = false;
+  let studentIdTaken = false;
+
+  // Check email — look in auth.users via admin API (service role required)
+  if (email) {
+    const { data: users } = await client.auth.admin.listUsers();
+    emailTaken =
+      (users?.users ?? []).some(
+        (u) => u.email?.toLowerCase() === email.toLowerCase(),
+      ) ?? false;
+  }
+
+  // Check student ID — look in profiles table
+  if (studentId) {
+    const { count } = await client
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .ilike("student_id", studentId.trim());
+    studentIdTaken = (count ?? 0) > 0;
+  }
+
+  ok(res, { emailTaken, studentIdTaken });
+});
+
+// ─────────────────────────────────────────
 // Generic error handler
 // ─────────────────────────────────────────
 app.use(
