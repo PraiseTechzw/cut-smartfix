@@ -6,7 +6,43 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "newArchEnabled": true,
-    "plugins": ["expo-router"],
-    "experiments": { "typedRoutes": true }
+    "experiments": { "typedRoutes": true },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CUT SmartFix needs access to your photos so you can attach evidence to maintenance reports.",
+          "cameraPermission": "CUT SmartFix needs your camera so you can photograph maintenance issues."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0b6b57",
+          "defaultChannel": "default",
+          "sounds": []
+        }
+      ]
+    ],
+    "android": {
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.USE_EXACT_ALARM"
+      ],
+      "googleServicesFile": "./google-services.json"
+    },
+    "ios": {
+      "infoPlist": {
+        "NSCameraUsageDescription": "CUT SmartFix needs your camera so you can photograph maintenance issues.",
+        "NSPhotoLibraryUsageDescription": "CUT SmartFix needs access to your photos so you can attach evidence to maintenance reports.",
+        "NSPhotoLibraryAddUsageDescription": "CUT SmartFix saves captured photos to your library."
+      }
+    }
   }
 }

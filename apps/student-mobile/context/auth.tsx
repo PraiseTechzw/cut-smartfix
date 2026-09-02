@@ -57,6 +57,41 @@ async function clearToken(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Push token registration
+// ---------------------------------------------------------------------------
+async function registerPushToken(apiToken: string): Promise<void> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const Notifications = require("expo-notifications");
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") return;
+
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+    const pushToken: string = tokenData.data;
+
+    await fetch(
+      `${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000"}/v1/me/push-token`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiToken}`,
+        },
+        body: JSON.stringify({ token: pushToken }),
+      },
+    );
+  } catch {
+    // Non-fatal — push notifications degrade gracefully
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Context types
 // ---------------------------------------------------------------------------
 export interface AuthContextValue {
@@ -71,6 +106,8 @@ export interface AuthContextValue {
     studentId?: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
+  /** Re-fetch profile from API (e.g. after updating preferences) */
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -185,6 +222,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await saveToken(accessToken);
       setToken(accessToken);
       await fetchProfile(accessToken);
+      // Register push token — non-blocking, fires and forgets
+      registerPushToken(accessToken);
     },
     [fetchProfile],
   );
@@ -200,9 +239,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await saveToken(accessToken);
       setToken(accessToken);
       await fetchProfile(accessToken);
+      // Register push token — non-blocking, fires and forgets
+      registerPushToken(accessToken);
     },
     [fetchProfile],
   );
+
+  const refreshProfile = useCallback(async () => {
+    if (token) await fetchProfile(token);
+  }, [token, fetchProfile]);
 
   const logout = useCallback(async () => {
     setUser(null);
@@ -211,7 +256,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, loading, login, register, logout, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );

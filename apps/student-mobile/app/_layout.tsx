@@ -1,6 +1,7 @@
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "../context/auth";
+import { useOfflineSync } from "../hooks/useOfflineSync";
 
 // ---------------------------------------------------------------------------
 // Auth guard — watches auth state and redirects accordingly.
@@ -10,6 +11,9 @@ function AuthGuard() {
   const { user, token, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  // Wire up offline sync — flushes pending reports when connectivity returns
+  useOfflineSync();
 
   useEffect(() => {
     if (loading) return; // wait for session restore

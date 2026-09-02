@@ -802,6 +802,44 @@ ol {
   gap: 16px;
 }
 
+.profile-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  gap: 20px;
+}
+
+.profile-identity {
+  text-align: center;
+  padding: 32px 20px;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--green-light);
+  color: var(--green);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.profile-identity h3 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.profile-identity p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-bottom: 14px;
+  overflow-wrap: anywhere;
+}
+
+.status-good { color: var(--green) !important; font-weight: 600; }
+
 /* ─── Filter Tabs ─────────────────────────────────────────── */
 .filter-tabs {
   display: flex;

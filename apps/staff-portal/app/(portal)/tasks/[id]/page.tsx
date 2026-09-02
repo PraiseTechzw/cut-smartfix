@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useRef } from 'react';
-import { useParams } from 'next/navigation';
-import { api, formatDateTime, timeAgo } from '../../../../lib/api';
-import { useAuth } from '../../../../lib/auth';
+import { useEffect, useState, useRef } from "react";
+import { useParams } from "next/navigation";
+import { api, formatDateTime, timeAgo } from "../../../../lib/api";
+import { useAuth } from "../../../../lib/auth";
 import type {
   MaintenanceReport,
   ReportTimelineEvent,
@@ -16,21 +16,21 @@ import type {
   NoteType,
   CreateMaterialRequestInput,
   Assignment,
-} from '@cut-smartfix/contracts';
+} from "@cut-smartfix/contracts";
 
 const STATUS_OPTIONS: { value: ReportStatus; label: string }[] = [
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'waiting_for_materials', label: 'Waiting for Materials' },
-  { value: 'repair_completed', label: 'Repair Completed' },
+  { value: "accepted", label: "Accepted" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "waiting_for_materials", label: "Waiting for Materials" },
+  { value: "repair_completed", label: "Repair Completed" },
 ];
 
 const SUPERVISOR_STATUS_OPTIONS: { value: ReportStatus; label: string }[] = [
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'under_verification', label: 'Under Verification' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'rejected', label: 'Rejected' },
+  { value: "under_review", label: "Under Review" },
+  { value: "assigned", label: "Assigned" },
+  { value: "under_verification", label: "Under Verification" },
+  { value: "closed", label: "Closed" },
+  { value: "rejected", label: "Rejected" },
 ];
 
 export default function TaskDetailPage() {
@@ -48,27 +48,27 @@ export default function TaskDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Status update form
-  const [newStatus, setNewStatus] = useState<ReportStatus | ''>('');
-  const [statusNote, setStatusNote] = useState('');
+  const [newStatus, setNewStatus] = useState<ReportStatus | "">("");
+  const [statusNote, setStatusNote] = useState("");
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
   // Note form
-  const [noteContent, setNoteContent] = useState('');
-  const [noteType, setNoteType] = useState<NoteType>('work_note');
+  const [noteContent, setNoteContent] = useState("");
+  const [noteType, setNoteType] = useState<NoteType>("work_note");
   const [noteLoading, setNoteLoading] = useState(false);
 
   // Material request form
-  const [matName, setMatName] = useState('');
-  const [matQty, setMatQty] = useState('1');
-  const [matUnit, setMatUnit] = useState('pcs');
-  const [matReason, setMatReason] = useState('');
+  const [matName, setMatName] = useState("");
+  const [matQty, setMatQty] = useState("1");
+  const [matUnit, setMatUnit] = useState("pcs");
+  const [matReason, setMatReason] = useState("");
   const [matLoading, setMatLoading] = useState(false);
   const [matMsg, setMatMsg] = useState<string | null>(null);
 
   // Assignment form (supervisor)
-  const [assignTechId, setAssignTechId] = useState('');
-  const [assignNotes, setAssignNotes] = useState('');
+  const [assignTechId, setAssignTechId] = useState("");
+  const [assignNotes, setAssignNotes] = useState("");
   const [assignLoading, setAssignLoading] = useState(false);
   const [assignMsg, setAssignMsg] = useState<string | null>(null);
 
@@ -77,7 +77,7 @@ export default function TaskDetailPage() {
   const [uploadLoading, setUploadLoading] = useState(false);
 
   const isSupervisor =
-    user?.role === 'supervisor' || user?.role === 'administrator';
+    user?.role === "supervisor" || user?.role === "administrator";
 
   const statusOptions = isSupervisor
     ? [...STATUS_OPTIONS, ...SUPERVISOR_STATUS_OPTIONS]
@@ -92,7 +92,7 @@ export default function TaskDetailPage() {
         api.get<ReportTimelineEvent[]>(`/v1/reports/${id}/timeline`),
         api.get<MaintenanceNote[]>(`/v1/reports/${id}/notes`),
         api.get<ReportAttachment[]>(`/v1/reports/${id}/attachments`),
-        api.get<MaterialRequest[]>(`/v1/reports/${id}/material-requests`),
+        api.get<MaterialRequest[]>(`/v1/reports/${id}/materials`),
       ]);
 
       if (rRes.error) throw new Error(rRes.error.message);
@@ -103,12 +103,13 @@ export default function TaskDetailPage() {
       setMaterialReqs(matRes.data ?? []);
 
       // Try evidence endpoint
-      const evRes = await api.get<CompletionEvidence[]>(`/v1/reports/${id}/evidence`);
-      if (!evRes.error) setEvidence(evRes.data ?? []);
+      setEvidence([]);
 
       // Supervisor: load staff list
       if (isSupervisor) {
-        const staffRes = await api.get<UserProfile[]>('/v1/users?role=technician&pageSize=100');
+        const staffRes = await api.get<UserProfile[]>(
+          "/v1/users?role=technician&pageSize=100",
+        );
         if (!staffRes.error) {
           const staffData = staffRes.data as unknown;
           if (Array.isArray(staffData)) {
@@ -120,7 +121,7 @@ export default function TaskDetailPage() {
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load ticket');
+      setError(e instanceof Error ? e.message : "Failed to load ticket");
     } finally {
       setLoading(false);
     }
@@ -138,15 +139,15 @@ export default function TaskDetailPage() {
     try {
       const res = await api.patch(`/v1/reports/${id}`, {
         status: newStatus,
-        ...(statusNote ? { note: statusNote, noteType: 'work_note' } : {}),
+        ...(statusNote ? { note: statusNote, noteType: "work_note" } : {}),
       });
       if (res.error) throw new Error(res.error.message);
-      setStatusMsg('Status updated successfully.');
-      setStatusNote('');
-      setNewStatus('');
+      setStatusMsg("Status updated successfully.");
+      setStatusNote("");
+      setNewStatus("");
       loadAll();
     } catch (e) {
-      setStatusMsg(e instanceof Error ? e.message : 'Update failed');
+      setStatusMsg(e instanceof Error ? e.message : "Update failed");
     } finally {
       setStatusLoading(false);
     }
@@ -163,7 +164,7 @@ export default function TaskDetailPage() {
         isVisibleToStudent: false,
       });
       if (res.error) throw new Error(res.error.message);
-      setNoteContent('');
+      setNoteContent("");
       loadAll();
     } catch {
       // silent
@@ -184,13 +185,16 @@ export default function TaskDetailPage() {
         unit: matUnit,
         reason: matReason.trim(),
       };
-      const res = await api.post(`/v1/reports/${id}/material-requests`, body);
+      const res = await api.post(`/v1/reports/${id}/materials`, body);
       if (res.error) throw new Error(res.error.message);
-      setMatMsg('Material request submitted.');
-      setMatName(''); setMatQty('1'); setMatUnit('pcs'); setMatReason('');
+      setMatMsg("Material request submitted.");
+      setMatName("");
+      setMatQty("1");
+      setMatUnit("pcs");
+      setMatReason("");
       loadAll();
     } catch (e) {
-      setMatMsg(e instanceof Error ? e.message : 'Request failed');
+      setMatMsg(e instanceof Error ? e.message : "Request failed");
     } finally {
       setMatLoading(false);
     }
@@ -207,11 +211,12 @@ export default function TaskDetailPage() {
         ...(assignNotes ? { notes: assignNotes } : {}),
       });
       if (res.error) throw new Error(res.error.message);
-      setAssignMsg('Technician assigned successfully.');
-      setAssignTechId(''); setAssignNotes('');
+      setAssignMsg("Technician assigned successfully.");
+      setAssignTechId("");
+      setAssignNotes("");
       loadAll();
     } catch (e) {
-      setAssignMsg(e instanceof Error ? e.message : 'Assignment failed');
+      setAssignMsg(e instanceof Error ? e.message : "Assignment failed");
     } finally {
       setAssignLoading(false);
     }
@@ -220,9 +225,11 @@ export default function TaskDetailPage() {
   const handleVerify = async (approve: boolean) => {
     try {
       const res = await api.patch(`/v1/reports/${id}`, {
-        status: approve ? 'closed' : 'in_progress',
-        note: approve ? 'Verified and closed.' : 'Returned to in progress for rework.',
-        noteType: 'verification',
+        status: approve ? "closed" : "in_progress",
+        note: approve
+          ? "Verified and closed."
+          : "Returned to in progress for rework.",
+        noteType: "verification",
       });
       if (res.error) throw new Error(res.error.message);
       loadAll();
@@ -236,8 +243,8 @@ export default function TaskDetailPage() {
     setUploadLoading(true);
     try {
       const formData = new FormData();
-      Array.from(files).forEach((f) => formData.append('files', f));
-      formData.append('reportId', id);
+      Array.from(files).forEach((f) => formData.append("files", f));
+      formData.append("reportId", id);
       const res = await api.upload(`/v1/reports/${id}/evidence`, formData);
       if (res.error) throw new Error(res.error.message);
       loadAll();
@@ -258,9 +265,7 @@ export default function TaskDetailPage() {
 
   if (error || !report) {
     return (
-      <div className="alert alert-error">
-        {error ?? 'Ticket not found'}
-      </div>
+      <div className="alert alert-error">{error ?? "Ticket not found"}</div>
     );
   }
 
@@ -277,15 +282,33 @@ export default function TaskDetailPage() {
       {/* Header */}
       <div className="page-header">
         <div className="page-header-left">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', background: 'var(--border)', padding: '3px 8px', borderRadius: 4 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 6,
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "monospace",
+                fontSize: "0.85rem",
+                background: "var(--border)",
+                padding: "3px 8px",
+                borderRadius: 4,
+              }}
+            >
               {report.ticketNumber}
             </span>
             {report.priority && (
-              <span className={`badge badge-${report.priority}`}>{report.priority}</span>
+              <span className={`badge badge-${report.priority}`}>
+                {report.priority}
+              </span>
             )}
             <span className={`badge badge-${report.status}`}>
-              {report.status.replace(/_/g, ' ')}
+              {report.status.replace(/_/g, " ")}
             </span>
             {report.isOverdue && (
               <span className="badge badge-critical">OVERDUE</span>
@@ -295,25 +318,36 @@ export default function TaskDetailPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 340px",
+          gap: 20,
+          alignItems: "start",
+        }}
+      >
         {/* Left column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Details */}
           <div className="card">
-            <h3 className="card-title" style={{ marginBottom: 16 }}>Ticket Details</h3>
+            <h3 className="card-title" style={{ marginBottom: 16 }}>
+              Ticket Details
+            </h3>
             <div className="detail-grid">
               <div className="detail-item">
                 <label>Category</label>
-                <p>{report.categoryName ?? '–'}{report.subcategoryName ? ` › ${report.subcategoryName}` : ''}</p>
+                <p>
+                  {report.categoryName ?? "–"}
+                  {report.subcategoryName ? ` › ${report.subcategoryName}` : ""}
+                </p>
               </div>
               <div className="detail-item">
                 <label>Location</label>
-                <p>{locationParts.join(' › ') || '–'}</p>
+                <p>{locationParts.join(" › ") || "–"}</p>
               </div>
               <div className="detail-item">
                 <label>Reporter</label>
-                <p>{report.reporterName ?? '–'}</p>
+                <p>{report.reporterName ?? "–"}</p>
               </div>
               <div className="detail-item">
                 <label>Reported</label>
@@ -321,16 +355,20 @@ export default function TaskDetailPage() {
               </div>
               <div className="detail-item">
                 <label>Assigned To</label>
-                <p>{report.assignedToName ?? '–'}</p>
+                <p>{report.assignedToName ?? "–"}</p>
               </div>
               <div className="detail-item">
                 <label>Department</label>
-                <p>{report.assignedDepartmentName ?? '–'}</p>
+                <p>{report.assignedDepartmentName ?? "–"}</p>
               </div>
               {report.dueDate && (
                 <div className="detail-item">
                   <label>Due Date</label>
-                  <p style={{ color: report.isOverdue ? 'var(--red)' : undefined }}>
+                  <p
+                    style={{
+                      color: report.isOverdue ? "var(--red)" : undefined,
+                    }}
+                  >
                     {formatDateTime(report.dueDate)}
                   </p>
                 </div>
@@ -341,7 +379,13 @@ export default function TaskDetailPage() {
 
             <div className="detail-item">
               <label>Description</label>
-              <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, marginTop: 6 }}>
+              <p
+                style={{
+                  whiteSpace: "pre-wrap",
+                  lineHeight: 1.6,
+                  marginTop: 6,
+                }}
+              >
                 {report.description}
               </p>
             </div>
@@ -349,9 +393,13 @@ export default function TaskDetailPage() {
 
           {/* Status update (technician) */}
           <div className="card">
-            <h3 className="card-title" style={{ marginBottom: 16 }}>Update Status</h3>
+            <h3 className="card-title" style={{ marginBottom: 16 }}>
+              Update Status
+            </h3>
             {statusMsg && (
-              <div className={`alert ${statusMsg.includes('success') ? 'alert-success' : 'alert-error'}`}>
+              <div
+                className={`alert ${statusMsg.includes("success") ? "alert-success" : "alert-error"}`}
+              >
                 {statusMsg}
               </div>
             )}
@@ -364,7 +412,9 @@ export default function TaskDetailPage() {
               >
                 <option value="">— Select status —</option>
                 {statusOptions.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -383,50 +433,93 @@ export default function TaskDetailPage() {
               onClick={handleStatusUpdate}
               disabled={!newStatus || statusLoading}
             >
-              {statusLoading ? 'Updating…' : 'Update Status'}
+              {statusLoading ? "Updating…" : "Update Status"}
             </button>
           </div>
 
           {/* Notes */}
           <div className="card">
-            <h3 className="card-title" style={{ marginBottom: 16 }}>Notes</h3>
+            <h3 className="card-title" style={{ marginBottom: 16 }}>
+              Notes
+            </h3>
 
             {notes.length === 0 ? (
-              <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: 16 }}>
+              <p
+                style={{
+                  color: "var(--muted)",
+                  fontSize: "0.875rem",
+                  marginBottom: 16,
+                }}
+              >
                 No notes yet.
               </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
                 {notes.map((note) => (
                   <div
                     key={note.id}
                     style={{
-                      padding: '10px 14px',
-                      border: '1px solid var(--border)',
+                      padding: "10px 14px",
+                      border: "1px solid var(--border)",
                       borderRadius: 8,
-                      background: 'var(--bg)',
+                      background: "var(--bg)",
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.82rem' }}>{note.authorName}</span>
-                      <span className="badge badge-medium" style={{ fontSize: '0.65rem' }}>
-                        {note.noteType.replace(/_/g, ' ')}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 6,
+                      }}
+                    >
+                      <span style={{ fontWeight: 600, fontSize: "0.82rem" }}>
+                        {note.authorName}
                       </span>
-                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--muted)' }}>
+                      <span
+                        className="badge badge-medium"
+                        style={{ fontSize: "0.65rem" }}
+                      >
+                        {note.noteType.replace(/_/g, " ")}
+                      </span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: "0.75rem",
+                          color: "var(--muted)",
+                        }}
+                      >
                         {timeAgo(note.createdAt)}
                       </span>
                     </div>
-                    <p style={{ fontSize: '0.875rem', whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                    <p style={{ fontSize: "0.875rem", whiteSpace: "pre-wrap" }}>
+                      {note.content}
+                    </p>
                   </div>
                 ))}
               </div>
             )}
 
             <hr className="divider" />
-            <h4 style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 12 }}>Add Note</h4>
+            <h4
+              style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 12 }}
+            >
+              Add Note
+            </h4>
             <div className="form-group">
               <label className="label">Note Type</label>
-              <select className="select" value={noteType} onChange={(e) => setNoteType(e.target.value as NoteType)}>
+              <select
+                className="select"
+                value={noteType}
+                onChange={(e) => setNoteType(e.target.value as NoteType)}
+              >
                 <option value="work_note">Work Note</option>
                 <option value="diagnosis">Diagnosis</option>
                 <option value="general">General</option>
@@ -448,30 +541,52 @@ export default function TaskDetailPage() {
               onClick={handleAddNote}
               disabled={!noteContent.trim() || noteLoading}
             >
-              {noteLoading ? 'Adding…' : 'Add Note'}
+              {noteLoading ? "Adding…" : "Add Note"}
             </button>
           </div>
 
           {/* Attachments & Evidence */}
           <div className="card">
-            <h3 className="card-title" style={{ marginBottom: 16 }}>Attachments & Evidence</h3>
+            <h3 className="card-title" style={{ marginBottom: 16 }}>
+              Attachments & Evidence
+            </h3>
 
             {attachments.length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
+                <p
+                  style={{
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    color: "var(--muted)",
+                    marginBottom: 8,
+                  }}
+                >
                   Original Attachments
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
                   {attachments.map((a) => (
                     <a
                       key={a.id}
                       href={a.signedUrl ?? a.storagePath}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: 'var(--green)' }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: "0.875rem",
+                        color: "var(--green)",
+                      }}
                     >
                       📎 {a.fileName}
-                      <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{a.contentType}</span>
+                      <span
+                        style={{ fontSize: "0.72rem", color: "var(--muted)" }}
+                      >
+                        {a.contentType}
+                      </span>
                     </a>
                   ))}
                 </div>
@@ -480,20 +595,42 @@ export default function TaskDetailPage() {
 
             {evidence.length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
+                <p
+                  style={{
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    color: "var(--muted)",
+                    marginBottom: 8,
+                  }}
+                >
                   Completion Evidence
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
                   {evidence.map((e) => (
                     <a
                       key={e.id}
                       href={e.signedUrl ?? e.storagePath}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: 'var(--green)' }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: "0.875rem",
+                        color: "var(--green)",
+                      }}
                     >
                       🖼 {e.fileName}
-                      {e.caption && <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>– {e.caption}</span>}
+                      {e.caption && (
+                        <span
+                          style={{ fontSize: "0.75rem", color: "var(--muted)" }}
+                        >
+                          – {e.caption}
+                        </span>
+                      )}
                     </a>
                   ))}
                 </div>
@@ -501,11 +638,11 @@ export default function TaskDetailPage() {
             )}
 
             <hr className="divider" />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <input
                 type="file"
                 ref={fileRef}
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 multiple
                 accept="image/*,application/pdf"
                 onChange={(e) => handleEvidenceUpload(e.target.files)}
@@ -515,9 +652,9 @@ export default function TaskDetailPage() {
                 onClick={() => fileRef.current?.click()}
                 disabled={uploadLoading}
               >
-                {uploadLoading ? 'Uploading…' : '📁 Upload Evidence'}
+                {uploadLoading ? "Uploading…" : "📁 Upload Evidence"}
               </button>
-              <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+              <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
                 Images or PDF files
               </span>
             </div>
@@ -525,10 +662,18 @@ export default function TaskDetailPage() {
 
           {/* Material Requests */}
           <div className="card">
-            <h3 className="card-title" style={{ marginBottom: 16 }}>Material Requests</h3>
+            <h3 className="card-title" style={{ marginBottom: 16 }}>
+              Material Requests
+            </h3>
 
             {materialReqs.length === 0 ? (
-              <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: 16 }}>
+              <p
+                style={{
+                  color: "var(--muted)",
+                  fontSize: "0.875rem",
+                  marginBottom: 16,
+                }}
+              >
                 No material requests yet.
               </p>
             ) : (
@@ -547,10 +692,24 @@ export default function TaskDetailPage() {
                     {materialReqs.map((m) => (
                       <tr key={m.id} className="no-hover">
                         <td>{m.materialName}</td>
-                        <td>{m.quantity} {m.unit}</td>
-                        <td style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>{m.reason}</td>
-                        <td><span className={`badge badge-${m.status}`}>{m.status}</span></td>
-                        <td style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>{timeAgo(m.createdAt)}</td>
+                        <td>
+                          {m.quantity} {m.unit}
+                        </td>
+                        <td
+                          style={{ fontSize: "0.82rem", color: "var(--muted)" }}
+                        >
+                          {m.reason}
+                        </td>
+                        <td>
+                          <span className={`badge badge-${m.status}`}>
+                            {m.status}
+                          </span>
+                        </td>
+                        <td
+                          style={{ fontSize: "0.82rem", color: "var(--muted)" }}
+                        >
+                          {timeAgo(m.createdAt)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -559,87 +718,145 @@ export default function TaskDetailPage() {
             )}
 
             <hr className="divider" />
-            <h4 style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 12 }}>Request Material</h4>
+            <h4
+              style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 12 }}
+            >
+              Request Material
+            </h4>
             {matMsg && (
-              <div className={`alert ${matMsg.includes('submitted') ? 'alert-success' : 'alert-error'}`}>
+              <div
+                className={`alert ${matMsg.includes("submitted") ? "alert-success" : "alert-error"}`}
+              >
                 {matMsg}
               </div>
             )}
             <div className="grid-2" style={{ marginBottom: 12 }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="label">Material Name</label>
-                <input className="input" value={matName} onChange={(e) => setMatName(e.target.value)} placeholder="e.g. PVC pipe" />
+                <input
+                  className="input"
+                  value={matName}
+                  onChange={(e) => setMatName(e.target.value)}
+                  placeholder="e.g. PVC pipe"
+                />
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: "flex", gap: 8 }}>
                 <div className="form-group" style={{ margin: 0, flex: 1 }}>
                   <label className="label">Qty</label>
-                  <input className="input" type="number" min="1" value={matQty} onChange={(e) => setMatQty(e.target.value)} />
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    value={matQty}
+                    onChange={(e) => setMatQty(e.target.value)}
+                  />
                 </div>
                 <div className="form-group" style={{ margin: 0, flex: 1 }}>
                   <label className="label">Unit</label>
-                  <input className="input" value={matUnit} onChange={(e) => setMatUnit(e.target.value)} placeholder="pcs" />
+                  <input
+                    className="input"
+                    value={matUnit}
+                    onChange={(e) => setMatUnit(e.target.value)}
+                    placeholder="pcs"
+                  />
                 </div>
               </div>
             </div>
             <div className="form-group">
               <label className="label">Reason</label>
-              <textarea className="textarea" rows={2} value={matReason} onChange={(e) => setMatReason(e.target.value)} placeholder="Why is this material needed?" />
+              <textarea
+                className="textarea"
+                rows={2}
+                value={matReason}
+                onChange={(e) => setMatReason(e.target.value)}
+                placeholder="Why is this material needed?"
+              />
             </div>
             <button
               className="btn btn-primary"
               onClick={handleMaterialRequest}
               disabled={!matName.trim() || !matReason.trim() || matLoading}
             >
-              {matLoading ? 'Submitting…' : 'Request Material'}
+              {matLoading ? "Submitting…" : "Request Material"}
             </button>
           </div>
 
           {/* Supervisor: Assignment */}
           {isSupervisor && (
             <div className="card">
-              <h3 className="card-title" style={{ marginBottom: 16 }}>Assign Technician</h3>
+              <h3 className="card-title" style={{ marginBottom: 16 }}>
+                Assign Technician
+              </h3>
               {assignMsg && (
-                <div className={`alert ${assignMsg.includes('success') ? 'alert-success' : 'alert-error'}`}>
+                <div
+                  className={`alert ${assignMsg.includes("success") ? "alert-success" : "alert-error"}`}
+                >
                   {assignMsg}
                 </div>
               )}
               <div className="form-group">
                 <label className="label">Select Technician</label>
-                <select className="select" value={assignTechId} onChange={(e) => setAssignTechId(e.target.value)}>
+                <select
+                  className="select"
+                  value={assignTechId}
+                  onChange={(e) => setAssignTechId(e.target.value)}
+                >
                   <option value="">— Choose technician —</option>
                   {staff.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.fullName}{s.departmentName ? ` (${s.departmentName})` : ''}
+                      {s.fullName}
+                      {s.departmentName ? ` (${s.departmentName})` : ""}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="form-group">
                 <label className="label">Assignment Notes</label>
-                <textarea className="textarea" rows={2} value={assignNotes} onChange={(e) => setAssignNotes(e.target.value)} placeholder="Any instructions…" />
+                <textarea
+                  className="textarea"
+                  rows={2}
+                  value={assignNotes}
+                  onChange={(e) => setAssignNotes(e.target.value)}
+                  placeholder="Any instructions…"
+                />
               </div>
               <button
                 className="btn btn-primary"
                 onClick={handleAssign}
                 disabled={!assignTechId || assignLoading}
               >
-                {assignLoading ? 'Assigning…' : 'Assign Technician'}
+                {assignLoading ? "Assigning…" : "Assign Technician"}
               </button>
             </div>
           )}
 
           {/* Supervisor: Verification */}
-          {isSupervisor && report.status === 'under_verification' && (
-            <div className="card" style={{ borderColor: '#fde68a' }}>
-              <h3 className="card-title" style={{ marginBottom: 8 }}>Verify Completion</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--muted)', marginBottom: 16 }}>
-                The technician has marked this ticket as repaired. Review and verify or send back.
+          {isSupervisor && report.status === "under_verification" && (
+            <div className="card" style={{ borderColor: "#fde68a" }}>
+              <h3 className="card-title" style={{ marginBottom: 8 }}>
+                Verify Completion
+              </h3>
+              <p
+                style={{
+                  fontSize: "0.875rem",
+                  color: "var(--muted)",
+                  marginBottom: 16,
+                }}
+              >
+                The technician has marked this ticket as repaired. Review and
+                verify or send back.
               </p>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button className="btn btn-primary" onClick={() => handleVerify(true)}>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => handleVerify(true)}
+                >
                   ✅ Approve & Close
                 </button>
-                <button className="btn btn-danger" onClick={() => handleVerify(false)}>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => handleVerify(false)}
+                >
                   ↩ Return for Rework
                 </button>
               </div>
@@ -648,29 +865,43 @@ export default function TaskDetailPage() {
         </div>
 
         {/* Right column: Timeline */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div className="card">
-            <h3 className="card-title" style={{ marginBottom: 16 }}>Timeline</h3>
+            <h3 className="card-title" style={{ marginBottom: 16 }}>
+              Timeline
+            </h3>
             {timeline.length === 0 ? (
-              <p style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>No events yet.</p>
+              <p style={{ fontSize: "0.875rem", color: "var(--muted)" }}>
+                No events yet.
+              </p>
             ) : (
               <div className="timeline">
                 {[...timeline].reverse().map((ev, idx) => (
                   <div key={ev.id} className="timeline-item">
-                    <div className={`timeline-dot${idx === 0 ? '' : ' muted'}`} />
+                    <div
+                      className={`timeline-dot${idx === 0 ? "" : " muted"}`}
+                    />
                     <div className="timeline-item-header">
                       <span className="timeline-item-title">
-                        <span className={`badge badge-${ev.status}`} style={{ fontSize: '0.7rem' }}>
-                          {ev.status.replace(/_/g, ' ')}
+                        <span
+                          className={`badge badge-${ev.status}`}
+                          style={{ fontSize: "0.7rem" }}
+                        >
+                          {ev.status.replace(/_/g, " ")}
                         </span>
                       </span>
-                      <span className="timeline-item-time">{timeAgo(ev.createdAt)}</span>
+                      <span className="timeline-item-time">
+                        {timeAgo(ev.createdAt)}
+                      </span>
                     </div>
                     {ev.actorName && (
                       <p className="timeline-item-note">by {ev.actorName}</p>
                     )}
                     {ev.note && (
-                      <p className="timeline-item-note" style={{ marginTop: 4, fontStyle: 'italic' }}>
+                      <p
+                        className="timeline-item-note"
+                        style={{ marginTop: 4, fontStyle: "italic" }}
+                      >
                         "{ev.note}"
                       </p>
                     )}
