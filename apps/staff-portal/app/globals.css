@@ -974,144 +974,523 @@ ol {
   margin-top: 8px;
 }
 
+/* ─── Auth / Login Page ───────────────────────────────────── */
+
+/* Show/hide password toggle */
 .auth-eye {
   background: none;
   border: 0;
-  color: var(--green);
+  color: var(--muted);
   cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 6px 0 6px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0 4px;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
 }
 .auth-eye:hover {
-  color: var(--green-dark);
+  color: var(--green);
+  background: var(--green-muted);
 }
-.auth-mascot {
-  height: 150px;
-  margin: -12px auto 8px;
+
+/* Password field wrapper for eye button positioning */
+.auth-password-wrapper {
   position: relative;
-  width: 164px;
 }
-.mascot-shadow {
-  background: rgba(11, 107, 87, 0.13);
-  border-radius: 50%;
-  bottom: 8px;
-  filter: blur(3px);
-  height: 15px;
-  left: 30px;
-  position: absolute;
-  width: 104px;
+.auth-password-wrapper .input {
+  padding-right: 52px;
 }
-.mascot-body {
-  background: #0b6b57;
-  border-radius: 48% 48% 42% 42%;
-  bottom: 18px;
-  box-shadow: inset -10px -8px 0 rgba(0, 0, 0, 0.08);
-  height: 108px;
-  left: 31px;
-  position: absolute;
-  transition: transform 0.25s ease;
-  width: 102px;
-}
-.mascot-ear {
-  background: #0b6b57;
-  border-radius: 8px 34px 0;
-  height: 34px;
-  position: absolute;
-  top: -16px;
-  width: 34px;
-}
-.mascot-ear-left {
-  left: 5px;
-  transform: rotate(-28deg);
-}
-.mascot-ear-right {
-  right: 5px;
-  transform: scaleX(-1) rotate(-28deg);
-}
-.mascot-face {
-  background: #f6fbf8;
-  border-radius: 50%;
-  height: 72px;
-  left: 15px;
-  position: absolute;
-  top: 12px;
-  width: 72px;
-}
-.mascot-eyes {
+
+/* ─── Login Two-Column Layout ─────────────────────────────── */
+.auth-page {
+  min-height: 100vh;
   display: flex;
-  gap: 17px;
-  justify-content: center;
-  padding-top: 24px;
+  background: var(--bg);
 }
-.mascot-eyes i {
-  background: #17231f;
-  border: 3px solid #bde3d5;
-  border-radius: 50%;
-  display: block;
-  height: 13px;
+
+/* Left hero panel — hidden on small screens */
+.auth-hero {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(160deg, #0b6b57 0%, #084f41 55%, #062e27 100%);
+  padding: 48px 40px;
   position: relative;
-  width: 13px;
+  overflow: hidden;
+  flex: 1 0 0;
 }
-.mascot-eyes i::after {
+
+.auth-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+}
+
+.auth-hero-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-hero-logo-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-hero-logo-text {
+  color: #fff;
+}
+
+.auth-hero-logo-text strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.auth-hero-logo-text span {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.auth-hero-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  gap: 32px;
+}
+
+.auth-hero-mascot-wrap {
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.25));
+}
+
+.auth-hero-tagline {
+  text-align: center;
+}
+
+.auth-hero-tagline h2 {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.auth-hero-tagline p {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+.auth-hero-footer {
+  text-align: center;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  position: relative;
+  z-index: 1;
+}
+
+/* Right form panel */
+.auth-form-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Mobile-only logo block (shown when hero is hidden) */
+.auth-mobile-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.auth-mobile-logo-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--green);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(11, 107, 87, 0.3);
+}
+
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+  padding: 36px 32px;
+}
+
+.auth-card-header {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.auth-card-header h1 {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.025em;
+  margin-bottom: 6px;
+}
+
+.auth-card-header p {
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-divider span {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Responsive: show hero on medium+ screens */
+@media (min-width: 860px) {
+  .auth-hero {
+    display: flex;
+    min-width: 380px;
+    max-width: 480px;
+  }
+
+  .auth-mobile-logo {
+    display: none;
+  }
+
+  .auth-form-panel {
+    flex: 1 0 0;
+    min-height: auto;
+  }
+
+  .auth-card {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* ─── Mascot (CUT Owl) ────────────────────────────────────── */
+.auth-mascot {
+  position: relative;
+  width: 140px;
+  height: 160px;
+  margin: 0 auto;
+}
+
+/* Ground shadow */
+.mascot-shadow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 50%;
+  filter: blur(4px);
+}
+
+/* Main body */
+.mascot-body {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 116px;
+  background: linear-gradient(175deg, #1a8570 0%, #0b6b57 60%, #084f41 100%);
+  border-radius: 44% 44% 40% 40% / 46% 46% 38% 38%;
+  box-shadow:
+    inset -8px -10px 0 rgba(0, 0, 0, 0.1),
+    inset 4px 0 0 rgba(255, 255, 255, 0.06);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Wing feather texture */
+.mascot-body::before {
+  content: "";
+  position: absolute;
+  bottom: 14px;
+  left: 8px;
+  width: 28px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 40% 60% 55% 45%;
+  transform: rotate(-15deg);
+}
+
+.mascot-body::after {
+  content: "";
+  position: absolute;
+  bottom: 14px;
+  right: 8px;
+  width: 28px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 60% 40% 45% 55%;
+  transform: rotate(15deg);
+}
+
+/* Ear tufts (owl horns) */
+.mascot-ear {
+  position: absolute;
+  top: -4px;
+  width: 22px;
+  height: 28px;
+  background: linear-gradient(180deg, #1a8570 0%, #0b6b57 100%);
+  border-radius: 50% 50% 30% 30%;
+  box-shadow: inset -2px -3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.mascot-ear-left {
+  left: 16px;
+  transform: rotate(-12deg);
+  transform-origin: bottom center;
+}
+
+.mascot-ear-right {
+  right: 16px;
+  transform: rotate(12deg);
+  transform-origin: bottom center;
+}
+
+/* Face disc */
+.mascot-face {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 68px;
+  height: 68px;
+  background: radial-gradient(ellipse at 40% 35%, #f0faf6 0%, #d8f0e8 100%);
+  border-radius: 50%;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Face stripe (facial disc detail) */
+.mascot-face::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -42%);
+  width: 46px;
+  height: 36px;
+  background: rgba(11, 107, 87, 0.07);
+  border-radius: 50%;
+}
+
+/* Eyes */
+.mascot-eyes {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Eye socket */
+.mascot-eye-socket {
+  width: 22px;
+  height: 22px;
+  background: radial-gradient(circle at 40% 35%, #2a4a3e, #17231f);
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pupil highlight */
+.mascot-eye-socket::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 5px;
+  height: 5px;
   background: #fff;
   border-radius: 50%;
-  content: "";
-  height: 3px;
-  left: 2px;
-  position: absolute;
-  top: 1px;
-  width: 3px;
+  opacity: 0.9;
 }
-.mascot-eyes i.blink {
-  height: 3px;
-  margin-top: 5px;
+
+/* Blink animation */
+.mascot-eye-socket.blink {
+  transform: scaleY(0.15);
 }
+
+/* Beak */
 .mascot-beak {
-  background: #e3b23c;
-  clip-path: polygon(50% 100%, 0 0, 100% 0);
-  height: 12px;
-  left: 30px;
   position: absolute;
-  top: 42px;
-  width: 14px;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 11px solid #e3a820;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
+
+/* Cheek blush */
 .mascot-cheek {
-  background: #f3a6a0;
-  border-radius: 50%;
+  position: absolute;
+  top: 46px;
+  width: 12px;
   height: 7px;
-  opacity: 0.7;
-  position: absolute;
-  top: 49px;
-  width: 10px;
-}
-.mascot-cheek-left {
-  left: 8px;
-}
-.mascot-cheek-right {
-  right: 8px;
-}
-.mascot-paws {
-  bottom: -6px;
-  display: flex;
-  gap: 31px;
-  left: 22px;
-  position: absolute;
-}
-.mascot-paws i {
-  background: #e3b23c;
+  background: #f9a8b0;
   border-radius: 50%;
-  height: 19px;
-  width: 27px;
+  opacity: 0.6;
 }
+
+.mascot-cheek-left  { left: 7px; }
+.mascot-cheek-right { right: 7px; }
+
+/* Talons */
+.mascot-paws {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.mascot-talon {
+  position: relative;
+  width: 30px;
+  height: 14px;
+  background: #e3a820;
+  border-radius: 4px 4px 2px 2px;
+}
+
+/* Three toe lines */
+.mascot-talon::before,
+.mascot-talon::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  height: 6px;
+  background: #c58c10;
+  border-radius: 0 0 2px 2px;
+}
+.mascot-talon::before { left: 8px; }
+.mascot-talon::after  { right: 8px; }
+
+/* ── State transforms ── */
 .mascot-peek .mascot-body {
-  transform: translateY(7px) rotate(-2deg);
+  transform: translateX(-50%) translateY(9px) rotate(-3deg);
 }
+.mascot-peek .mascot-ear-left {
+  transform: rotate(-20deg) scaleY(1.15);
+}
+.mascot-peek .mascot-ear-right {
+  transform: rotate(20deg) scaleY(1.15);
+}
+
 .mascot-error .mascot-body {
-  transform: rotate(-5deg);
+  transform: translateX(-50%) rotate(-6deg);
+}
+.mascot-error .mascot-ear-left {
+  transform: rotate(-6deg);
+}
+.mascot-error .mascot-ear-right {
+  transform: rotate(6deg);
+}
+.mascot-error .mascot-eye-socket {
+  background: radial-gradient(circle at 40% 35%, #7b2020, #4a0f0f);
+}
+
+.mascot-success .mascot-body {
+  transform: translateX(-50%) translateY(-8px) scale(1.04);
+}
+.mascot-success .mascot-ear-left {
+  transform: rotate(-18deg) scaleY(1.2);
+}
+.mascot-success .mascot-ear-right {
+  transform: rotate(18deg) scaleY(1.2);
+}
+
+/* Bounce on success */
+@keyframes mascotBounce {
+  0%   { transform: translateX(-50%) translateY(0); }
+  40%  { transform: translateX(-50%) translateY(-12px); }
+  70%  { transform: translateX(-50%) translateY(-4px); }
+  100% { transform: translateX(-50%) translateY(-8px); }
 }
 .mascot-success .mascot-body {
-  transform: translateY(-7px);
+  animation: mascotBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .profile-layout {
