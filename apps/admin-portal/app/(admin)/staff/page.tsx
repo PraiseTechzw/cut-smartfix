@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { fetchApi } from "../../../lib/api";
-import type { Department, UserProfile } from "@cut-smartfix/contracts";
+import type {
+  Department,
+  PaginatedList,
+  UserProfile,
+} from "@cut-smartfix/contracts";
 
 const ROLE_OPTIONS = ["technician", "supervisor", "administrator"];
 
@@ -44,10 +48,12 @@ export default function StaffPage() {
   useEffect(() => {
     async function load() {
       const [users, depts] = await Promise.all([
-        fetchApi<UserProfile[]>("/v1/admin/users").catch(() => []),
+        fetchApi<PaginatedList<UserProfile>>("/v1/admin/users").catch(() => ({
+          items: [], total: 0, page: 1, pageSize: 20, totalPages: 0,
+        })),
         fetchApi<Department[]>("/v1/admin/departments").catch(() => []),
       ]);
-      setStaff(users);
+      setStaff(users.items ?? []);
       setDepartments(depts);
       setLoading(false);
     }
