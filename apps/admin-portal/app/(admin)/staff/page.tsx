@@ -49,7 +49,11 @@ export default function StaffPage() {
     async function load() {
       const [users, depts] = await Promise.all([
         fetchApi<PaginatedList<UserProfile>>("/v1/admin/users").catch(() => ({
-          items: [], total: 0, page: 1, pageSize: 20, totalPages: 0,
+          items: [],
+          total: 0,
+          page: 1,
+          pageSize: 20,
+          totalPages: 0,
         })),
         fetchApi<Department[]>("/v1/admin/departments").catch(() => []),
       ]);
