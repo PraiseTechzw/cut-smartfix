@@ -12,6 +12,8 @@ import type {
   UserProfile,
 } from "@cut-smartfix/contracts";
 
+const CompatSuspense: any = Suspense;
+
 function AssignmentsPage() {
   const searchParams = useSearchParams();
   const preselectedId = searchParams.get("ticketId") ?? "";
@@ -42,9 +44,17 @@ function AssignmentsPage() {
       const [ticketsRes, depts, techs] = await Promise.all([
         fetchApi<PaginatedList<MaintenanceReport>>(
           "/v1/reports?status=submitted&pageSize=50",
-        ).catch(() => ({ items: [] as MaintenanceReport[], total: 0, page: 1, pageSize: 50, totalPages: 1 })),
+        ).catch(() => ({
+          items: [] as MaintenanceReport[],
+          total: 0,
+          page: 1,
+          pageSize: 50,
+          totalPages: 1,
+        })),
         fetchApi<Department[]>("/v1/admin/departments").catch(() => []),
-        fetchApi<UserProfile[]>("/v1/admin/users?role=technician").catch(() => []),
+        fetchApi<UserProfile[]>("/v1/admin/users?role=technician").catch(
+          () => [],
+        ),
       ]);
       setTickets(ticketsRes.items ?? []);
       setDepartments(depts);
@@ -62,7 +72,10 @@ function AssignmentsPage() {
 
   // Load current assignments for selected ticket
   useEffect(() => {
-    if (!selected) { setAssignments([]); return; }
+    if (!selected) {
+      setAssignments([]);
+      return;
+    }
     fetchApi<Assignment[]>(`/v1/reports/${selected.id}/assignments`)
       .then(setAssignments)
       .catch(() => setAssignments([]));
@@ -86,10 +99,15 @@ function AssignmentsPage() {
       setAssignments((prev) => [result, ...prev]);
       setTickets((prev) => prev.filter((t) => t.id !== selected.id));
       setSelected(null);
-      setTechId(""); setDeptId(""); setNotes("");
+      setTechId("");
+      setDeptId("");
+      setNotes("");
       showToast("Technician assigned successfully.");
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Assignment failed.", "error");
+      showToast(
+        err instanceof Error ? err.message : "Assignment failed.",
+        "error",
+      );
     } finally {
       setSaving(false);
     }
@@ -100,26 +118,42 @@ function AssignmentsPage() {
       <div className="page-header">
         <div>
           <div className="page-title">Assignments</div>
-          <div className="page-subtitle">Assign unreviewed tickets to technicians</div>
+          <div className="page-subtitle">
+            Assign unreviewed tickets to technicians
+          </div>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "48px", color: "var(--muted)" }}>Loading…</div>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "48px",
+            color: "var(--muted)",
+          }}
+        >
+          Loading…
+        </div>
       ) : (
         <div className="split-view">
           {/* Left: Unassigned Tickets */}
           <div>
             <div className="card">
               <div className="card-header">
-                <div className="card-title">Unassigned / Under Review ({tickets.length})</div>
+                <div className="card-title">
+                  Unassigned / Under Review ({tickets.length})
+                </div>
               </div>
               <div style={{ maxHeight: "600px", overflowY: "auto" }}>
                 {tickets.length === 0 ? (
                   <div className="empty-state">
                     <div className="empty-state-icon">✅</div>
-                    <div className="empty-state-title">All tickets assigned</div>
-                    <div className="empty-state-text">No pending tickets require assignment.</div>
+                    <div className="empty-state-title">
+                      All tickets assigned
+                    </div>
+                    <div className="empty-state-text">
+                      No pending tickets require assignment.
+                    </div>
                   </div>
                 ) : (
                   <div>
@@ -131,25 +165,57 @@ function AssignmentsPage() {
                           padding: "12px 16px",
                           borderBottom: "1px solid var(--border)",
                           cursor: "pointer",
-                          background: selected?.id === t.id ? "var(--green-light)" : "transparent",
+                          background:
+                            selected?.id === t.id
+                              ? "var(--green-light)"
+                              : "transparent",
                           transition: "background 0.15s",
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                          <span style={{ fontFamily: "monospace", fontSize: "12px", fontWeight: 600 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: "monospace",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                            }}
+                          >
                             {t.ticketNumber}
                           </span>
-                          <span className={`badge badge-${t.status}`}>{t.status.replace(/_/g, " ")}</span>
+                          <span className={`badge badge-${t.status}`}>
+                            {t.status.replace(/_/g, " ")}
+                          </span>
                           {t.priority && (
-                            <span className={`badge badge-${t.priority}`}>{t.priority}</span>
+                            <span className={`badge badge-${t.priority}`}>
+                              {t.priority}
+                            </span>
                           )}
                         </div>
-                        <div style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", marginBottom: "2px" }}>
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            color: "var(--text)",
+                            marginBottom: "2px",
+                          }}
+                        >
                           {t.title}
                         </div>
-                        <div style={{ fontSize: "11px", color: "var(--muted)" }}>
-                          {t.reporterName} · {t.location?.buildingName ?? t.location?.building ?? "No location"} ·{" "}
-                          {new Date(t.createdAt).toLocaleDateString()}
+                        <div
+                          style={{ fontSize: "11px", color: "var(--muted)" }}
+                        >
+                          {t.reporterName} ·{" "}
+                          {t.location?.buildingName ??
+                            t.location?.building ??
+                            "No location"}{" "}
+                          · {new Date(t.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                     ))}
@@ -164,14 +230,18 @@ function AssignmentsPage() {
             <div className="card">
               <div className="card-header">
                 <div className="card-title">
-                  {selected ? `Assign: ${selected.ticketNumber}` : "Select a Ticket"}
+                  {selected
+                    ? `Assign: ${selected.ticketNumber}`
+                    : "Select a Ticket"}
                 </div>
               </div>
               <div className="card-body">
                 {!selected ? (
                   <div className="empty-state" style={{ padding: "32px" }}>
                     <div className="empty-state-icon">👈</div>
-                    <div className="empty-state-text">Select a ticket on the left to assign it.</div>
+                    <div className="empty-state-text">
+                      Select a ticket on the left to assign it.
+                    </div>
                   </div>
                 ) : (
                   <div>
@@ -184,11 +254,15 @@ function AssignmentsPage() {
                         fontSize: "13px",
                       }}
                     >
-                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>{selected.title}</div>
+                      <div style={{ fontWeight: 600, marginBottom: "4px" }}>
+                        {selected.title}
+                      </div>
                       <div className="text-muted text-sm">
                         {selected.categoryName} ·{" "}
-                        {selected.location?.buildingName ?? selected.location?.building ?? "No location"} ·{" "}
-                        Urgency: <strong>{selected.urgency}</strong>
+                        {selected.location?.buildingName ??
+                          selected.location?.building ??
+                          "No location"}{" "}
+                        · Urgency: <strong>{selected.urgency}</strong>
                       </div>
                     </div>
 
@@ -201,7 +275,9 @@ function AssignmentsPage() {
                       >
                         <option value="">Select department…</option>
                         {departments.map((d) => (
-                          <option key={d.id} value={d.id}>{d.name}</option>
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -219,7 +295,8 @@ function AssignmentsPage() {
                           .filter((u) => !deptId || u.departmentId === deptId)
                           .map((u) => (
                             <option key={u.id} value={u.id}>
-                              {u.fullName} {u.departmentName ? `(${u.departmentName})` : ""}
+                              {u.fullName}{" "}
+                              {u.departmentName ? `(${u.departmentName})` : ""}
                             </option>
                           ))}
                       </select>
@@ -247,7 +324,12 @@ function AssignmentsPage() {
                       </button>
                       <button
                         className="btn btn-secondary"
-                        onClick={() => { setSelected(null); setTechId(""); setDeptId(""); setNotes(""); }}
+                        onClick={() => {
+                          setSelected(null);
+                          setTechId("");
+                          setDeptId("");
+                          setNotes("");
+                        }}
                       >
                         Cancel
                       </button>
@@ -277,9 +359,21 @@ function AssignmentsPage() {
                       {assignments.map((a) => (
                         <tr key={a.id}>
                           <td>{a.technicianName}</td>
-                          <td><span className={`badge badge-${a.status}`}>{a.status}</span></td>
-                          <td className="text-muted text-sm">{new Date(a.assignedAt).toLocaleDateString()}</td>
-                          <td>{a.isCurrent ? <span className="badge badge-success">Yes</span> : "—"}</td>
+                          <td>
+                            <span className={`badge badge-${a.status}`}>
+                              {a.status}
+                            </span>
+                          </td>
+                          <td className="text-muted text-sm">
+                            {new Date(a.assignedAt).toLocaleDateString()}
+                          </td>
+                          <td>
+                            {a.isCurrent ? (
+                              <span className="badge badge-success">Yes</span>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -302,8 +396,20 @@ function AssignmentsPage() {
 
 export default function AssignmentsPageWrapper() {
   return (
-    <Suspense fallback={<div style={{ textAlign: "center", padding: "48px", color: "var(--muted)" }}>Loading…</div>}>
+    <CompatSuspense
+      fallback={
+        <div
+          style={{
+            textAlign: "center",
+            padding: "48px",
+            color: "var(--muted)",
+          }}
+        >
+          Loading…
+        </div>
+      }
+    >
       <AssignmentsPage />
-    </Suspense>
+    </CompatSuspense>
   );
 }

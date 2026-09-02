@@ -26,7 +26,6 @@
   --font: "DM Sans", system-ui, sans-serif;
 }
 
-
 *,
 *::before,
 *::after {
@@ -407,6 +406,11 @@ a:hover {
   border-left-color: var(--amber);
 }
 .stat-card.red {
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
   border-left-color: var(--red);
 }
 .stat-card.blue {
@@ -1448,5 +1452,8 @@ input[type="radio"] {
   }
   .priority-grid {
     grid-template-columns: 1fr 1fr;
+  }
+  .analytics-grid {
+    grid-template-columns: 1fr;
   }
 }
