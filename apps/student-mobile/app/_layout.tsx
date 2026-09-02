@@ -1,9 +1,10 @@
-import { Stack } from "expo-router";
-
-const NavigationStack = Stack as unknown as (props: {
-  screenOptions: { headerShown: boolean };
-}) => JSX.Element;
+import { Slot } from "expo-router";
+import { AuthProvider } from "../context/auth";
 
 export default function RootLayout() {
-  return <NavigationStack screenOptions={{ headerShown: false }} />;
+  return (
+    <AuthProvider>
+      <Slot />
+    </AuthProvider>
+  );
 }
