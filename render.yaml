@@ -3,7 +3,7 @@ services:
     name: cut-smartfix-api
     runtime: node
     rootDir: .
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @cut-smartfix/api build
+    buildCommand: npx --yes pnpm@10.0.0 install --frozen-lockfile && npx --yes pnpm@10.0.0 --filter @cut-smartfix/api build
     startCommand: node services/api/dist/server.js
     healthCheckPath: /health
     envVars:

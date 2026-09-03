@@ -10,7 +10,8 @@ The API should be deployed to a public HTTPS host before testing on physical pho
 4. Add these secret environment values in the Render service:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
-   - `CORS_ORIGINS` with the deployed staff/admin origins, comma-separated
+   - `CORS_ALLOW_ALL=true` for development or `false` in production
+   - `CORS_ORIGINS` with deployed staff/admin origins, comma-separated, when allow-all is false
 5. Deploy and open the generated URL, for example `https://cut-smartfix-api.onrender.com/health`.
 6. Confirm the response has `status: ok` and `supabaseConfigured: true`.
 
@@ -36,6 +37,8 @@ EXPO_PUBLIC_API_URL=https://cut-smartfix-api.onrender.com
 NEXT_PUBLIC_API_URL=https://cut-smartfix-api.onrender.com
 ```
 
+The web portal templates are `apps/staff-portal/.env.example` and `apps/admin-portal/.env.example`. Set the Supabase public URL and anon key in those portals for browser login; never put the API service-role key in either one.
+
 The Expo value is compiled into the app. Restart Expo after changing it and rebuild the app for a release build. For Expo Go, clear the Metro cache if it still uses the old value.
 
 ## Local verification
@@ -48,6 +51,6 @@ pnpm --filter @cut-smartfix/api typecheck
 ## Production notes
 
 - Use a paid or always-on service for reliable institutional availability; free Render services may sleep.
-- Restrict `CORS_ORIGINS` to real deployed web origins. Do not leave it broad in production.
+- Native Expo requests are not blocked by browser CORS. Use `CORS_ALLOW_ALL=true` for development across changing LAN IPs; use `false` plus exact deployed web origins in production.
 - Keep `SUPABASE_SERVICE_ROLE_KEY` only in Render server environment variables.
 - Configure a custom API domain and HTTPS before distributing the mobile app widely.

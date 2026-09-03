@@ -2,6 +2,9 @@
   "name": "cut-smartfix",
   "private": true,
   "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=20 <21"
+  },
   "scripts": {
     "dev": "pnpm --parallel --filter './apps/*' --filter './services/*' dev",
     "build": "pnpm --recursive build",

@@ -43,6 +43,8 @@ const allowedOrigins = (process.env.CORS_ORIGINS ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+const allowAllOrigins =
+  process.env.CORS_ALLOW_ALL === "true" || allowedOrigins.includes("*");
 
 // ─────────────────────────────────────────
 // Zod input schemas
@@ -521,8 +523,9 @@ async function notify(
 app.use(helmet());
 app.use(
   cors({
-    origin: allowedOrigins.length ? allowedOrigins : true,
-    credentials: true,
+    origin:
+      allowAllOrigins || allowedOrigins.length === 0 ? true : allowedOrigins,
+    credentials: false,
   }),
 );
 app.use(express.json({ limit: "4mb" }));
@@ -2549,6 +2552,8 @@ if (process.env.NODE_ENV !== "test") {
   app.listen(port, "0.0.0.0", () => {
     console.log(`CUT SmartFix API listening on http://0.0.0.0:${port}`);
     console.log(`  → Local:   http://localhost:${port}`);
-    console.log(`  → Network: set EXPO_PUBLIC_API_URL to http://<your-LAN-IP>:${port}`);
+    console.log(
+      `  → Network: set EXPO_PUBLIC_API_URL to http://<your-LAN-IP>:${port}`,
+    );
   });
 }
