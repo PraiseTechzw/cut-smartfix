@@ -26,6 +26,13 @@ interface NetInfoState {
   type: string;
 }
 
+function isOnline(state: NetInfoState): boolean {
+  // Android can briefly report `isConnected: false` while it is still
+  // determining Wi-Fi or cellular reachability.  Only call the device offline
+  // when it explicitly reports that there is no active network interface.
+  return !(state.isConnected === false && state.type?.toLowerCase() === "none");
+}
+
 export function useNetworkStatus(): NetworkStatus {
   const [status, setStatus] = useState<NetworkStatus>({
     isOnline: true,   // optimistic default so screens don't flash "offline" on load
@@ -43,7 +50,7 @@ export function useNetworkStatus(): NetworkStatus {
         const NetInfo = require("@react-native-community/netinfo").default;
 
         function update(state: NetInfoState) {
-          const online = state.isConnected === true;
+          const online = isOnline(state);
           const raw = (state.type ?? "unknown").toLowerCase();
           const type: NetworkType =
             raw === "wifi" ||
@@ -85,7 +92,7 @@ export async function checkIsOnline(): Promise<boolean> {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const NetInfo = require("@react-native-community/netinfo").default;
     const state: NetInfoState = await NetInfo.fetch();
-    return state.isConnected === true;
+    return isOnline(state);
   } catch {
     return true; // assume online if we can't check
   }
