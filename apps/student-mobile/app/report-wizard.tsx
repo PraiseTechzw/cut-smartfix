@@ -141,6 +141,40 @@ async function captureFromCamera(): Promise<PickedPhoto | null> {
 // ---------------------------------------------------------------------------
 // Upload a single photo to the API
 // ---------------------------------------------------------------------------
+
+/** Shared timeout for wizard API calls (ms). */
+const WIZARD_TIMEOUT_MS = 20_000;
+
+/** Tiny fetch wrapper with AbortController timeout for use in the wizard. */
+async function wizardFetch(
+  url: string,
+  init: RequestInit,
+  timeoutMs = WIZARD_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...init, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (err) {
+    clearTimeout(timer);
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out. Please check your connection.");
+    }
+    const msg = err instanceof Error ? err.message.toLowerCase() : "";
+    if (
+      msg.includes("network request failed") ||
+      msg.includes("failed to fetch") ||
+      msg.includes("network error") ||
+      msg.includes("econnrefused")
+    ) {
+      throw new Error("NETWORK_OFFLINE");
+    }
+    throw err;
+  }
+}
+
 async function uploadPhoto(
   reportId: string,
   photo: PickedPhoto,
@@ -156,14 +190,17 @@ async function uploadPhoto(
     `photo_${Date.now()}.${contentType.split("/")[1] ?? "jpg"}`;
 
   // Step 1: Request a signed upload URL from the API
-  const signRes = await fetch(`${API_URL}/v1/reports/${reportId}/attachments/sign`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
+  const signRes = await wizardFetch(
+    `${API_URL}/v1/reports/${reportId}/attachments/sign`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ fileName, contentType }),
     },
-    body: JSON.stringify({ fileName, contentType }),
-  });
+  );
 
   if (!signRes.ok) {
     throw new Error(`Sign failed: HTTP ${signRes.status}`);
@@ -172,28 +209,36 @@ async function uploadPhoto(
   const { data: signData } = await signRes.json();
 
   // Step 2: Upload the file directly to the signed URL (Supabase storage)
-  const fileRes = await fetch(photo.uri);
+  // Use a longer timeout for the actual binary upload
+  const fileRes = await wizardFetch(photo.uri, {}, 30_000);
   const blob = await fileRes.blob();
 
-  const uploadRes = await fetch(signData.path, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: blob,
-  });
+  const uploadRes = await wizardFetch(
+    signData.path,
+    {
+      method: "PUT",
+      headers: { "Content-Type": contentType },
+      body: blob,
+    },
+    60_000, // allow up to 60s for the binary upload
+  );
 
   if (!uploadRes.ok) {
     throw new Error(`Upload failed: HTTP ${uploadRes.status}`);
   }
 
   // Step 3: Confirm the upload with the API so it records the attachment
-  await fetch(`${API_URL}/v1/reports/${reportId}/attachments/confirm`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`,
+  await wizardFetch(
+    `${API_URL}/v1/reports/${reportId}/attachments/confirm`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ id: signData.id }),
     },
-    body: JSON.stringify({ id: signData.id }),
-  });
+  );
 }
 
 // ---------------------------------------------------------------------------

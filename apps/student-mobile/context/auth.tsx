@@ -163,15 +163,52 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 // ---------------------------------------------------------------------------
 // Supabase minimal REST helpers
 // ---------------------------------------------------------------------------
+
+/** Shared timeout for all auth network calls (ms). */
+const AUTH_TIMEOUT_MS = 15_000;
+
+/** Fetch wrapper that aborts after AUTH_TIMEOUT_MS. */
+async function fetchWithAuthTimeout(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { ...init, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (err) {
+    clearTimeout(timer);
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out. Check your internet connection.");
+    }
+    const msg = err instanceof Error ? err.message.toLowerCase() : "";
+    if (
+      msg.includes("network request failed") ||
+      msg.includes("failed to fetch") ||
+      msg.includes("network error")
+    ) {
+      throw new Error(
+        "Cannot reach the server. Make sure you are connected to the internet.",
+      );
+    }
+    throw err;
+  }
+}
+
 async function supabaseSignIn(
   email: string,
   password: string,
 ): Promise<string> {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
-    body: JSON.stringify({ email, password }),
-  });
+  const res = await fetchWithAuthTimeout(
+    `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email, password }),
+    },
+  );
   const json = await res.json();
   if (!res.ok) {
     if (isEmailNotConfirmedError(json)) {
@@ -195,7 +232,7 @@ async function supabaseSignUp(
   fullName: string,
   studentId: string,
 ): Promise<{ access_token: string | null; needsConfirmation: boolean }> {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+  const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
     body: JSON.stringify({
@@ -232,7 +269,7 @@ async function supabaseVerifyOtp(
   email: string,
   token: string,
 ): Promise<string> {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+  const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
     body: JSON.stringify({ type: "signup", email, token }),
@@ -249,7 +286,7 @@ async function supabaseVerifyOtp(
 }
 
 async function supabaseResendOtp(email: string): Promise<void> {
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/resend`, {
+  const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/resend`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
     body: JSON.stringify({ type: "signup", email }),
@@ -272,20 +309,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading]           = useState(true);
 
   const fetchProfile = useCallback(async (accessToken: string) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12_000);
     try {
       const res = await fetch(`${API_URL}/v1/me`, {
         headers: { Authorization: `Bearer ${accessToken}` },
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       if (res.ok) {
         const json = await res.json();
         setUser(json.data as UserProfile);
-      } else {
+      } else if (res.status === 401 || res.status === 403) {
+        // Token is genuinely invalid / revoked — force logout
         setUser(null);
         setToken(null);
         await clearToken();
       }
+      // Any other HTTP error (5xx, etc.) — keep the stored token and try again later
     } catch {
-      // Network error — keep token, retry later
+      clearTimeout(timer);
+      // Network error or timeout — keep the stored token so the user stays logged in
+      // and we can retry when connectivity returns.
     }
   }, []);
 

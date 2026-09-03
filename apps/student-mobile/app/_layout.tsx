@@ -1,7 +1,35 @@
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
+import { Animated, StyleSheet, Text, View } from "react-native";
 import { AuthProvider, useAuth } from "../context/auth";
+import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { useOfflineSync } from "../hooks/useOfflineSync";
+
+// ---------------------------------------------------------------------------
+// Offline banner — slides in from top when connectivity is lost
+// ---------------------------------------------------------------------------
+function OfflineBanner() {
+  const { isOffline } = useNetworkStatus();
+  const translateY = new Animated.Value(isOffline ? 0 : -44);
+
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: isOffline ? 0 : -44,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOffline]);
+
+  return (
+    <Animated.View
+      style={[styles.banner, { transform: [{ translateY }] }]}
+      pointerEvents="none"
+    >
+      <Text style={styles.bannerText}>⚠ No internet connection</Text>
+    </Animated.View>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Auth guard — watches auth state and redirects accordingly.
@@ -24,12 +52,10 @@ function AuthGuard() {
   useEffect(() => {
     if (loading) return; // wait for storage restore
 
-    const inAuthGroup   = segments[0] === "auth";
+    const inAuthGroup    = segments[0] === "auth";
     const onVerifyScreen = segments[0] === "auth" && segments[1] === "verify";
 
     // ── Case 1: Awaiting email confirmation ──────────────────
-    // User signed up, email is pending verification.
-    // Keep them on the verify screen regardless of token state.
     if (pendingEmail) {
       if (!onVerifyScreen) {
         router.replace("/auth/verify");
@@ -58,7 +84,28 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AuthGuard />
+      <OfflineBanner />
       <Slot />
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  banner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    backgroundColor: "#1f2937",
+    paddingTop: 48, // account for status bar
+    paddingBottom: 10,
+    alignItems: "center",
+  },
+  bannerText: {
+    color: "#f9fafb",
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+});

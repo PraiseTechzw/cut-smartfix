@@ -2544,7 +2544,11 @@ app.use(
 // ─────────────────────────────────────────
 if (process.env.NODE_ENV !== "test") {
   const port = Number(process.env.PORT ?? 4000);
-  app.listen(port, () =>
-    console.log(`CUT SmartFix API listening on http://localhost:${port}`),
-  );
+  // Bind to 0.0.0.0 so the server is reachable from mobile devices on the LAN,
+  // not just from localhost.
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`CUT SmartFix API listening on http://0.0.0.0:${port}`);
+    console.log(`  → Local:   http://localhost:${port}`);
+    console.log(`  → Network: set EXPO_PUBLIC_API_URL to http://<your-LAN-IP>:${port}`);
+  });
 }
