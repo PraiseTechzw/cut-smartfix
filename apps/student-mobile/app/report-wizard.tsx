@@ -435,7 +435,7 @@ export default function ReportWizardScreen() {
   // Fetch campuses on mount
   useEffect(() => {
     setLoadingCampuses(true);
-    fetch(`${API_URL}/v1/campuses`, { headers: authHeader() })
+    wizardFetch(`${API_URL}/v1/campuses`, { headers: authHeader() })
       .then((r) => r.json())
       .then((j) => setCampuses(j.data ?? []))
       .catch(() => {})
@@ -446,7 +446,7 @@ export default function ReportWizardScreen() {
   useEffect(() => {
     if (step !== 2 || categories.length > 0) return;
     setLoadingCategories(true);
-    fetch(`${API_URL}/v1/categories`, { headers: authHeader() })
+    wizardFetch(`${API_URL}/v1/categories`, { headers: authHeader() })
       .then((r) => r.json())
       .then((j) => setCategories(j.data ?? []))
       .catch(() => {})
@@ -465,7 +465,7 @@ export default function ReportWizardScreen() {
     setFloors([]);
     setRooms([]);
     setLoadingAreas(true);
-    fetch(`${API_URL}/v1/campuses/${selectedCampus.id}/areas`, {
+    wizardFetch(`${API_URL}/v1/campuses/${selectedCampus.id}/areas`, {
       headers: authHeader(),
     })
       .then((r) => r.json())
@@ -484,7 +484,7 @@ export default function ReportWizardScreen() {
     setFloors([]);
     setRooms([]);
     setLoadingBuildings(true);
-    fetch(`${API_URL}/v1/areas/${selectedArea.id}/buildings`, {
+    wizardFetch(`${API_URL}/v1/areas/${selectedArea.id}/buildings`, {
       headers: authHeader(),
     })
       .then((r) => r.json())
@@ -501,7 +501,7 @@ export default function ReportWizardScreen() {
     setFloors([]);
     setRooms([]);
     setLoadingFloors(true);
-    fetch(`${API_URL}/v1/buildings/${selectedBuilding.id}/floors`, {
+    wizardFetch(`${API_URL}/v1/buildings/${selectedBuilding.id}/floors`, {
       headers: authHeader(),
     })
       .then((r) => r.json())
@@ -516,7 +516,7 @@ export default function ReportWizardScreen() {
     setSelectedRoom(null);
     setRooms([]);
     setLoadingRooms(true);
-    fetch(`${API_URL}/v1/floors/${selectedFloor.id}/rooms`, {
+    wizardFetch(`${API_URL}/v1/floors/${selectedFloor.id}/rooms`, {
       headers: authHeader(),
     })
       .then((r) => r.json())
@@ -596,6 +596,11 @@ export default function ReportWizardScreen() {
   // Submit
   // ---------------------------------------------------------------------------
   async function handleSubmit() {
+    if (!token) {
+      Alert.alert("Not signed in", "Please log in again to submit a report.");
+      return;
+    }
+
     setSubmitting(true);
     setSubmitStatus("Submitting report…");
 
@@ -617,22 +622,36 @@ export default function ReportWizardScreen() {
     };
 
     try {
-      const res = await fetch(`${API_URL}/v1/reports`, {
+      const res = await wizardFetch(`${API_URL}/v1/reports`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        // HTTP error from the server — show it to the user, don't go offline
+        let serverMsg = `Server error (HTTP ${res.status})`;
+        try {
+          const body = await res.json();
+          serverMsg = body?.error?.message ?? body?.message ?? serverMsg;
+        } catch {
+          // ignore parse error
+        }
+        Alert.alert("Submission failed", serverMsg);
+        setSubmitting(false);
+        setSubmitStatus("");
+        return;
+      }
+
       const json = await res.json();
       const reportId: string = json.data?.id;
       const ticket: string = json.data?.ticketNumber;
 
-      // Upload photos if any
-      if (photos.length > 0 && token && reportId) {
+      // Upload photos — non-fatal, failures are silently skipped
+      if (photos.length > 0 && reportId) {
         for (let i = 0; i < photos.length; i++) {
           setSubmitStatus(`Uploading photo ${i + 1} of ${photos.length}…`);
           try {
@@ -646,11 +665,27 @@ export default function ReportWizardScreen() {
       setTicketNumber(ticket);
       setOffline(false);
       setSubmitted(true);
-    } catch {
-      // Save offline (photos stored as URIs for later manual handling)
-      await saveOffline({ ...payload, savedAt: new Date().toISOString() });
-      setOffline(true);
-      setSubmitted(true);
+    } catch (err) {
+      const isNetworkError =
+        err instanceof Error &&
+        (err.message === "NETWORK_OFFLINE" ||
+          err.message.toLowerCase().includes("timed out") ||
+          err.message.toLowerCase().includes("network"));
+
+      if (isNetworkError) {
+        // Genuinely offline — queue for later
+        await saveOffline({ ...payload, savedAt: new Date().toISOString() });
+        setOffline(true);
+        setSubmitted(true);
+      } else {
+        // Some other unexpected error
+        Alert.alert(
+          "Submission failed",
+          err instanceof Error
+            ? err.message
+            : "An unexpected error occurred. Please try again.",
+        );
+      }
     } finally {
       setSubmitting(false);
       setSubmitStatus("");
