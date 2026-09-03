@@ -40,7 +40,7 @@ docs/
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - pnpm 10+
 - A Supabase project
 - Expo CLI or Expo Go for mobile development
