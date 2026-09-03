@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "786316150904",
+    "project_id": "tapiwa-b912e",
+    "storage_bucket": "tapiwa-b912e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:786316150904:android:bc6dc802a59d8f2999458d",
+        "android_client_info": {
+          "package_name": "com.praisetechzw.cutsmartfix"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDliDPrhlTvhvB5hVqqTHHryiy6OvMM6WU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

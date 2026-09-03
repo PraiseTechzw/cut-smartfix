@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "5520da34-437d-4fd8-b387-5890bb0d8c63"
+      }
+    },
+    "android": {
+      "package": "com.praisetechzw.cutsmartfix"
+    }
+  }
+}
