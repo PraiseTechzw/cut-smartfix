@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useApi } from "../../hooks/useApi";
 import { useAuth } from "../../context/auth";
-import type { Notification } from "@cut-smartfix/contracts";
+import type { Notification } from "../../src/types/contracts";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 

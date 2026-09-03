@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import type { UserProfile } from "@cut-smartfix/contracts";
+import type { UserProfile } from "../src/types/contracts";
 
 // ---------------------------------------------------------------------------
 // Storage abstraction — AsyncStorage when available, in-memory fallback

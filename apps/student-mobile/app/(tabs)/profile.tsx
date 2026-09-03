@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
-import type { MaintenanceReport, PaginatedList } from "@cut-smartfix/contracts";
+import type { MaintenanceReport, PaginatedList } from "../../src/types/contracts";
 import { useApi } from "../../hooks/useApi";
 import { useAuth } from "../../context/auth";
 

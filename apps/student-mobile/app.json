@@ -6,7 +6,9 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "newArchEnabled": true,
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "plugins": [
       "expo-router",
       [
@@ -21,7 +23,8 @@
         {
           "color": "#0b6b57"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "android": {
       "package": "com.praisetechzw.cutsmartfix",
@@ -31,7 +34,8 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.USE_EXACT_ALARM"
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.RECORD_AUDIO"
       ],
       "googleServicesFile": "./google-services.json"
     },
@@ -40,6 +44,12 @@
         "NSCameraUsageDescription": "CUT SmartFix needs your camera so you can photograph maintenance issues.",
         "NSPhotoLibraryUsageDescription": "CUT SmartFix needs access to your photos so you can attach evidence to maintenance reports.",
         "NSPhotoLibraryAddUsageDescription": "CUT SmartFix saves captured photos to your library."
+      }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5520da34-437d-4fd8-b387-5890bb0d8c63"
       }
     }
   }

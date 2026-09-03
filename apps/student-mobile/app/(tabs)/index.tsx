@@ -17,7 +17,7 @@ import type {
   MaintenanceReport,
   PaginatedList,
   ReportStatus,
-} from "@cut-smartfix/contracts";
+} from "../../src/types/contracts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design tokens

@@ -1,37 +1,35 @@
 {
-  "name": "@cut-smartfix/student-mobile",
+  "name": "cut-smartfix-student-mobile",
   "private": true,
   "version": "0.1.0",
   "main": "expo-router/entry",
   "scripts": {
     "dev": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@babel/runtime": "^7.26.9",
-    "@cut-smartfix/api-client": "workspace:*",
-    "@cut-smartfix/contracts": "workspace:*",
-    "@react-native-async-storage/async-storage": "~1.23.1",
+    "@react-native-async-storage/async-storage": "~2.2.0",
     "@react-native-community/netinfo": "^11.4.1",
-    "expo": "^52.0.0",
-    "expo-asset": "~11.0.5",
-    "expo-image-picker": "~16.0.6",
-    "expo-linear-gradient": "~14.0.2",
-    "expo-notifications": "~0.29.14",
-    "expo-router": "^4.0.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-native": "^0.76.6",
-    "react-native-safe-area-context": "4.12.0",
-    "react-native-screens": "~4.4.0",
-    "react-native-web": "~0.19.13"
+    "expo": "^54.0.37",
+    "expo-asset": "~12.0.13",
+    "expo-image-picker": "~17.0.11",
+    "expo-linear-gradient": "~15.0.8",
+    "expo-notifications": "~0.32.17",
+    "expo-router": "^6.0.24",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "^0.81.5",
+    "react-native-safe-area-context": "5.6.2",
+    "react-native-screens": "~4.16.0",
+    "react-native-web": "~0.21.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
-    "@types/react": "^18.3.18",
+    "@types/react": "^19.1.17",
     "typescript": "^5.7.0"
   }
 }
