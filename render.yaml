@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: cut-smartfix-api
+    runtime: node
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @cut-smartfix/api build
+    startCommand: node services/api/dist/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 10000
+      - key: STORAGE_BUCKET
+        value: maintenance-evidence
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

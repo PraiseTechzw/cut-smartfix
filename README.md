@@ -123,6 +123,7 @@ Representative captures are stored in [docs/screenshots](docs/screenshots).
 
 - [Architecture](docs/architecture.md)
 - [Backend and API](docs/backend.md)
+- [Deployment](docs/deployment.md)
 - [Supabase email confirmation](docs/email-setup.md)
 - [Contribution guide](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
