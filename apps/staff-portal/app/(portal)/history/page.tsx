@@ -5,6 +5,24 @@ import Link from 'next/link';
 import { api, formatDate, buildQuery } from '../../../lib/api';
 import type { MaintenanceReport, PaginatedList } from '@cut-smartfix/contracts';
 
+type StatusFilter = 'terminal' | 'closed' | 'rejected' | 'cancelled' | 'duplicate';
+
+const TABS: { label: string; value: StatusFilter }[] = [
+  { label: 'All Closed', value: 'terminal' },
+  { label: 'Closed', value: 'closed' },
+  { label: 'Rejected', value: 'rejected' },
+  { label: 'Cancelled', value: 'cancelled' },
+  { label: 'Duplicate', value: 'duplicate' },
+];
+
+const STATUS_MAP: Record<StatusFilter, string | string[]> = {
+  terminal: ['closed', 'rejected', 'cancelled', 'duplicate'],
+  closed: 'closed',
+  rejected: 'rejected',
+  cancelled: 'cancelled',
+  duplicate: 'duplicate',
+};
+
 function resolutionTime(created: string, closed?: string | null): string {
   if (!closed) return '–';
   const ms = new Date(closed).getTime() - new Date(created).getTime();
@@ -14,7 +32,15 @@ function resolutionTime(created: string, closed?: string | null): string {
   return `${days}d ${hours % 24}h`;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  closed: 'Closed',
+  rejected: 'Rejected',
+  cancelled: 'Cancelled',
+  duplicate: 'Duplicate',
+};
+
 export default function HistoryPage() {
+  const [tab, setTab] = useState<StatusFilter>('terminal');
   const [tasks, setTasks] = useState<MaintenanceReport[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -31,11 +57,21 @@ export default function HistoryPage() {
     setLoading(true);
     setError(null);
     try {
+      const statusValue = STATUS_MAP[tab];
       const params: Record<string, unknown> = {
-        status: 'closed',
         page,
         pageSize: PAGE_SIZE,
       };
+
+      // Multi-status: pass comma-separated (API must support it) or multiple params
+      if (Array.isArray(statusValue)) {
+        // Use the first status + a custom 'terminal' shortcut if API supports it,
+        // otherwise pass them comma-separated
+        params.status = statusValue.join(',');
+      } else {
+        params.status = statusValue;
+      }
+
       if (search.trim()) params.search = search.trim();
       if (from) params.from = from;
       if (to) params.to = to;
@@ -58,11 +94,11 @@ export default function HistoryPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, from, to, page]);
+  }, [tab, search, from, to, page]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, from, to]);
+  }, [tab, search, from, to]);
 
   useEffect(() => {
     load();
@@ -73,8 +109,21 @@ export default function HistoryPage() {
       <div className="page-header">
         <div className="page-header-left">
           <h2>History</h2>
-          <p>Completed and closed tickets</p>
+          <p>Closed, rejected, cancelled, and duplicate tickets</p>
         </div>
+      </div>
+
+      {/* Status tabs */}
+      <div className="filter-tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            className={`filter-tab${tab === t.value ? ' active' : ''}`}
+            onClick={() => setTab(t.value)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {/* Filters */}
@@ -121,11 +170,11 @@ export default function HistoryPage() {
         <div className="empty-state">
           <div className="empty-state-icon">📂</div>
           <h3>No history found</h3>
-          <p>No closed tickets match your search.</p>
+          <p>No tickets match your search.</p>
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
             {tasks.map((task) => (
               <div key={task.id} className="card" style={{ padding: '16px 18px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
@@ -139,7 +188,9 @@ export default function HistoryPage() {
                       </span>
                     )}
                   </div>
-                  <span className={`badge badge-${task.status}`}>{task.status.replace(/_/g, ' ')}</span>
+                  <span className={`badge badge-${task.status}`}>
+                    {STATUS_LABELS[task.status] ?? task.status.replace(/_/g, ' ')}
+                  </span>
                 </div>
 
                 <p style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 6, lineHeight: 1.4 }}>
@@ -148,13 +199,19 @@ export default function HistoryPage() {
 
                 <div style={{ display: 'flex', gap: 16, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 12, flexWrap: 'wrap' }}>
                   <span>📍 {task.location.buildingName ?? task.location.building ?? '–'}</span>
-                  <span>📅 Closed: {formatDate(task.closedAt ?? task.updatedAt)}</span>
-                  <span>⏱ Resolution: {resolutionTime(task.createdAt, task.closedAt)}</span>
+                  <span>📅 {formatDate(task.closedAt ?? task.updatedAt)}</span>
+                  <span>⏱ {resolutionTime(task.createdAt, task.closedAt ?? task.updatedAt)}</span>
                 </div>
 
                 {task.assignedToName && (
                   <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 12 }}>
                     👤 {task.assignedToName}
+                  </p>
+                )}
+
+                {task.rejectionReason && (
+                  <p style={{ fontSize: '0.78rem', color: 'var(--red)', marginBottom: 12, fontStyle: 'italic' }}>
+                    Reason: {task.rejectionReason}
                   </p>
                 )}
 

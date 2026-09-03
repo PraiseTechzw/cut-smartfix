@@ -1,5 +1,5 @@
 import { Slot, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { AuthProvider, useAuth } from "../context/auth";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
@@ -8,18 +8,28 @@ import { useOfflineSync } from "../hooks/useOfflineSync";
 // ---------------------------------------------------------------------------
 // Offline banner — slides in from top when connectivity is lost
 // ---------------------------------------------------------------------------
+// The banner includes the Android status-bar inset (48px), text, and padding.
+// Its hidden translation must therefore exceed the full banner height.
+const OFFLINE_BANNER_HIDDEN_Y = -100;
+
 function OfflineBanner() {
-  const { isOffline } = useNetworkStatus();
-  const translateY = new Animated.Value(isOffline ? 0 : -44);
+  const { isOffline, networkType } = useNetworkStatus();
+  const translateY = useRef(
+    new Animated.Value(isOffline ? 0 : OFFLINE_BANNER_HIDDEN_Y),
+  ).current;
 
   useEffect(() => {
+    if (__DEV__) {
+      console.log("[OfflineBanner] visibility changed", { isOffline, networkType });
+    }
+
     Animated.timing(translateY, {
-      toValue: isOffline ? 0 : -44,
+      toValue: isOffline ? 0 : OFFLINE_BANNER_HIDDEN_Y,
       duration: 280,
       useNativeDriver: true,
     }).start();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOffline]);
+  }, [isOffline, networkType, translateY]);
 
   return (
     <Animated.View

@@ -23,6 +23,7 @@ interface NetworkStatus {
 // Minimal shape we need from NetInfo
 interface NetInfoState {
   isConnected: boolean | null;
+  isInternetReachable?: boolean | null;
   type: string;
 }
 
@@ -60,6 +61,19 @@ export function useNetworkStatus(): NetworkStatus {
               ? (raw as NetworkType)
               : "unknown";
 
+          if (__DEV__) {
+            console.log("[NetworkStatus] NetInfo update", {
+              isConnected: state.isConnected,
+              isInternetReachable: state.isInternetReachable,
+              type: state.type,
+              computedOnline: online,
+              reason:
+                state.isConnected === false && raw === "none"
+                  ? "explicitly disconnected"
+                  : "connected or network state is still unknown",
+            });
+          }
+
           setStatus({ isOnline: online, isOffline: !online, networkType: type });
         }
 
@@ -71,6 +85,9 @@ export function useNetworkStatus(): NetworkStatus {
         unsubscribe = NetInfo.addEventListener(update);
       } catch {
         // Native module unavailable (web / unsupported platform) — assume online
+        if (__DEV__) {
+          console.warn("[NetworkStatus] NetInfo unavailable; assuming online");
+        }
         setStatus({ isOnline: true, isOffline: false, networkType: "unknown" });
       }
     })();

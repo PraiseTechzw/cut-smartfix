@@ -13,7 +13,11 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { useApi } from "../../hooks/useApi";
-import type { MaintenanceReport, ReportStatus } from "@cut-smartfix/contracts";
+import type {
+  MaintenanceReport,
+  PaginatedList,
+  ReportStatus,
+} from "@cut-smartfix/contracts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design tokens
@@ -574,7 +578,7 @@ export default function HomeScreen() {
     loading,
     error,
     refetch,
-  } = useApi<MaintenanceReport[]>("/v1/reports", { skip: !token });
+  } = useApi<PaginatedList<MaintenanceReport>>("/v1/reports", { skip: !token });
 
   // Pull-to-refresh state
   const [refreshing, setRefreshing] = useState(false);
@@ -588,7 +592,7 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  const reports: MaintenanceReport[] = reportsRaw ?? [];
+  const reports = reportsRaw?.items ?? [];
 
   // Computed stats
   const openCount = reports.filter((r) => getStatusGroup(r.status) === "open").length;

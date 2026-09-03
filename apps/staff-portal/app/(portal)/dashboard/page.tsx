@@ -24,9 +24,12 @@ function locationLabel(r: MaintenanceReport) {
 
 interface Stats {
   assigned: number;
+  accepted: number;
   inProgress: number;
+  waitingMaterials: number;
   completedToday: number;
   overdue: number;
+  total: number;
 }
 
 export default function DashboardPage() {
@@ -34,19 +37,24 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<MaintenanceReport[]>([]);
   const [stats, setStats] = useState<Stats>({
     assigned: 0,
+    accepted: 0,
     inProgress: 0,
+    waitingMaterials: 0,
     completedToday: 0,
     overdue: 0,
+    total: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isSupervisor = user?.role === 'supervisor' || user?.role === 'administrator';
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
         const res = await api.get<PaginatedList<MaintenanceReport> | MaintenanceReport[]>(
-          '/v1/tasks?pageSize=50'
+          '/v1/tasks?pageSize=100'
         );
         if (res.error) throw new Error(res.error.message);
 
@@ -54,41 +62,42 @@ export default function DashboardPage() {
           ? res.data
           : (res.data as PaginatedList<MaintenanceReport>).items ?? [];
 
-        // Compute stats
         const today = new Date().toDateString();
         const assigned = items.filter((t) => t.status === 'assigned').length;
+        const accepted = items.filter((t) => t.status === 'accepted').length;
         const inProgress = items.filter((t) => t.status === 'in_progress').length;
+        const waitingMaterials = items.filter((t) => t.status === 'waiting_for_materials').length;
         const completedToday = items.filter(
           (t) =>
-            t.status === 'repair_completed' &&
+            (t.status === 'repair_completed' || t.status === 'closed') &&
             t.updatedAt &&
             new Date(t.updatedAt).toDateString() === today
         ).length;
         const overdue = items.filter((t) => t.isOverdue).length;
 
-        setStats({ assigned, inProgress, completedToday, overdue });
+        setStats({ assigned, accepted, inProgress, waitingMaterials, completedToday, overdue, total: items.length });
 
-        // Sort by priority then date, take top 5
         const priorityOrder: Record<string, number> = {
-          critical: 0,
-          high: 1,
-          medium: 2,
-          low: 3,
+          critical: 0, high: 1, medium: 2, low: 3,
         };
         const active = items
           .filter(
             (t) =>
               t.status !== 'closed' &&
               t.status !== 'repair_completed' &&
-              t.status !== 'cancelled'
+              t.status !== 'cancelled' &&
+              t.status !== 'rejected' &&
+              t.status !== 'duplicate'
           )
           .sort((a, b) => {
+            // Overdue first
+            if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
             const pa = priorityOrder[a.priority ?? 'low'] ?? 4;
             const pb = priorityOrder[b.priority ?? 'low'] ?? 4;
             if (pa !== pb) return pa - pb;
             return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
           })
-          .slice(0, 5);
+          .slice(0, 6);
 
         setTasks(active);
       } catch (e) {
@@ -108,66 +117,113 @@ export default function DashboardPage() {
       ? 'Administrator'
       : 'Technician';
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
   return (
     <>
       {/* Welcome card */}
-      <div className="card" style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-              Good{' '}
-              {new Date().getHours() < 12
-                ? 'morning'
-                : new Date().getHours() < 17
-                ? 'afternoon'
-                : 'evening'}
-              , {displayName}! 👋
-            </h2>
-            <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
-              {new Date().toLocaleDateString('en-GB', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className={`badge badge-${user?.role ?? 'technician'}`}>
-              {roleLabel}
-            </span>
+      <div className="card dashboard-welcome">
+        <div className="dashboard-welcome-left">
+          <h2 className="dashboard-welcome-title">
+            Good {greeting}, {displayName}! 👋
+          </h2>
+          <p className="dashboard-welcome-date">
+            {new Date().toLocaleDateString('en-GB', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+            })}
+          </p>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+            <span className={`badge badge-${user?.role ?? 'technician'}`}>{roleLabel}</span>
             {user?.departmentName && (
               <span className="badge badge-medium">{user.departmentName}</span>
             )}
           </div>
         </div>
+        {stats.overdue > 0 && (
+          <div className="overdue-alert">
+            <span className="overdue-alert-icon">⚠️</span>
+            <div>
+              <div className="overdue-alert-title">{stats.overdue} overdue</div>
+              <div className="overdue-alert-sub">Require immediate attention</div>
+            </div>
+            <Link href="/tasks" className="btn btn-danger btn-sm">
+              View →
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Stat cards */}
-      <div className="grid-4" style={{ marginBottom: 28 }}>
-        <div className="stat-card accent-blue">
-          <div className="stat-card-label">My Assigned</div>
+      <div className="grid-4" style={{ marginBottom: 24 }}>
+        <Link href="/tasks?status=assigned" className="stat-card stat-card-link accent-blue">
+          <div className="stat-card-label">Assigned</div>
           <div className="stat-card-value">{loading ? '–' : stats.assigned}</div>
           <div className="stat-card-sub">Awaiting acceptance</div>
-        </div>
-        <div className="stat-card accent-amber">
+        </Link>
+        <Link href="/tasks?status=in_progress" className="stat-card stat-card-link accent-amber">
           <div className="stat-card-label">In Progress</div>
-          <div className="stat-card-value">{loading ? '–' : stats.inProgress}</div>
-          <div className="stat-card-sub">Active work orders</div>
-        </div>
+          <div className="stat-card-value">{loading ? '–' : stats.inProgress + stats.accepted}</div>
+          <div className="stat-card-sub">{stats.accepted > 0 ? `${stats.accepted} accepted, ${stats.inProgress} active` : 'Active work orders'}</div>
+        </Link>
+        <Link href="/tasks?status=waiting_for_materials" className="stat-card stat-card-link accent-orange">
+          <div className="stat-card-label">Waiting Materials</div>
+          <div className="stat-card-value">{loading ? '–' : stats.waitingMaterials}</div>
+          <div className="stat-card-sub">Pending materials</div>
+        </Link>
         <div className="stat-card accent-green">
           <div className="stat-card-label">Completed Today</div>
           <div className="stat-card-value">{loading ? '–' : stats.completedToday}</div>
-          <div className="stat-card-sub">Marked complete</div>
-        </div>
-        <div className="stat-card accent-red">
-          <div className="stat-card-label">Overdue</div>
-          <div className="stat-card-value">{loading ? '–' : stats.overdue}</div>
-          <div className="stat-card-sub">Past due date</div>
+          <div className="stat-card-sub">Marked complete today</div>
         </div>
       </div>
 
-      {/* Tasks preview */}
+      {/* Quick Actions */}
+      <div className="card" style={{ marginBottom: 24, padding: '16px 20px' }}>
+        <h3 style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 14, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Quick Actions
+        </h3>
+        <div className="quick-actions">
+          <Link href="/tasks" className="quick-action">
+            <span className="quick-action-icon">📋</span>
+            <span className="quick-action-label">My Tasks</span>
+          </Link>
+          <Link href="/active-work" className="quick-action">
+            <span className="quick-action-icon">🔧</span>
+            <span className="quick-action-label">Active Work</span>
+          </Link>
+          <Link href="/materials" className="quick-action">
+            <span className="quick-action-icon">📦</span>
+            <span className="quick-action-label">Materials</span>
+          </Link>
+          <Link href="/history" className="quick-action">
+            <span className="quick-action-icon">📂</span>
+            <span className="quick-action-label">History</span>
+          </Link>
+          {isSupervisor && (
+            <Link href="/requests" className="quick-action">
+              <span className="quick-action-icon">📥</span>
+              <span className="quick-action-label">Requests</span>
+            </Link>
+          )}
+          {isSupervisor && (
+            <Link href="/assignments" className="quick-action">
+              <span className="quick-action-icon">👥</span>
+              <span className="quick-action-label">Assignments</span>
+            </Link>
+          )}
+          <Link href="/notifications" className="quick-action">
+            <span className="quick-action-icon">🔔</span>
+            <span className="quick-action-label">Notifications</span>
+          </Link>
+          <Link href="/profile" className="quick-action">
+            <span className="quick-action-icon">👤</span>
+            <span className="quick-action-label">Profile</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Most urgent tasks */}
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Most Urgent Tasks</h3>
@@ -181,7 +237,7 @@ export default function DashboardPage() {
         )}
 
         {loading ? (
-          <div className="loading-overlay">
+          <div className="loading-overlay" style={{ minHeight: 120 }}>
             <div className="spinner" />
           </div>
         ) : tasks.length === 0 ? (
@@ -195,29 +251,23 @@ export default function DashboardPage() {
             {tasks.map((task) => (
               <div
                 key={task.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '12px 14px',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  background: task.isOverdue ? '#fef2f2' : 'var(--bg)',
-                  flexWrap: 'wrap',
-                }}
+                className={`task-row${task.isOverdue ? ' task-row-overdue' : ''}`}
               >
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--muted)', background: 'var(--border)', padding: '1px 6px', borderRadius: 4 }}>
-                      {task.ticketNumber}
-                    </span>
+                  <div className="task-row-meta">
+                    <span className="ticket-mono">{task.ticketNumber}</span>
                     {priorityBadge(task.priority)}
-                    <span className={`badge badge-${task.status}`}>{task.status.replace(/_/g, ' ')}</span>
+                    <span className={`badge badge-${task.status}`}>
+                      {task.status.replace(/_/g, ' ')}
+                    </span>
+                    {task.isOverdue && (
+                      <span className="badge badge-critical" style={{ fontSize: '0.65rem' }}>
+                        OVERDUE
+                      </span>
+                    )}
                   </div>
-                  <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)', marginBottom: 2 }}>
-                    {task.title}
-                  </p>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
+                  <p className="task-row-title">{task.title}</p>
+                  <p className="task-row-sub">
                     📍 {locationLabel(task)} · {timeAgo(task.createdAt)}
                   </p>
                 </div>

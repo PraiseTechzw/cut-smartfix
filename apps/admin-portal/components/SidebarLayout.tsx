@@ -84,8 +84,17 @@ const NAV: NavSection[] = [
 ];
 
 // ─── Avatar helper ───────────────────────────────────────────────────────────
-function UserAvatar({ name, size = 28 }: { name: string; size?: number }) {
-  const initials = name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+function getInitials(name?: string): string {
+  return (name?.trim() || "Admin")
+    .split(/\s+/)
+    .map((word) => word[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function UserAvatar({ name, size = 28 }: { name?: string; size?: number }) {
+  const initials = getInitials(name);
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
@@ -270,7 +279,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
               color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 11, fontWeight: 700, flexShrink: 0,
             }}>
-              {user?.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+              {getInitials(user?.fullName)}
             </div>
             <div>
               <div className="topbar-user-name">{user?.fullName ?? "Admin"}</div>

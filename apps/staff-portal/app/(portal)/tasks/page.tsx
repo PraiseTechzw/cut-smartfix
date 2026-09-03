@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { api, formatDate, buildQuery } from '../../../lib/api';
 import type { MaintenanceReport, ReportStatus, PaginatedList } from '@cut-smartfix/contracts';
 
-type TabFilter = 'all' | 'assigned' | 'in_progress' | 'waiting_for_materials' | 'repair_completed';
+type TabFilter = 'all' | 'assigned' | 'accepted' | 'in_progress' | 'waiting_for_materials' | 'repair_completed';
 
 const TABS: { label: string; value: TabFilter }[] = [
   { label: 'All', value: 'all' },
   { label: 'Assigned', value: 'assigned' },
+  { label: 'Accepted', value: 'accepted' },
   { label: 'In Progress', value: 'in_progress' },
   { label: 'Waiting Materials', value: 'waiting_for_materials' },
   { label: 'Completed', value: 'repair_completed' },

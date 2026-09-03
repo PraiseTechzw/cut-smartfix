@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
-import type { MaintenanceReport } from "@cut-smartfix/contracts";
+import type { MaintenanceReport, PaginatedList } from "@cut-smartfix/contracts";
 import { useApi } from "../../hooks/useApi";
 import { useAuth } from "../../context/auth";
 
@@ -366,7 +366,11 @@ export default function ProfileScreen() {
   const { user, token, logout } = useAuth();
 
   // ── Reports stats ──────────────────────────────────────────
-  const { data: reports } = useApi<MaintenanceReport[]>("/v1/reports");
+  const { data: reportsPage } = useApi<PaginatedList<MaintenanceReport>>(
+    "/v1/reports",
+    { skip: !token },
+  );
+  const reports = reportsPage?.items ?? [];
   const totalReports = reports?.length ?? 0;
   const activeReports = reports?.filter((r) => ACTIVE_STATUSES.has(r.status)).length ?? 0;
   const resolvedReports = reports?.filter((r) => RESOLVED_STATUSES.has(r.status)).length ?? 0;

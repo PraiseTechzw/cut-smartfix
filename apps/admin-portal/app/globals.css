@@ -1813,3 +1813,165 @@ input[type="radio"] {
   .priority-grid { grid-template-columns: repeat(2,1fr); }
   .stat-cards    { grid-template-columns: repeat(2,1fr); }
 }
+
+/* ─── Analytics wide grid (trend + priority side-by-side) ─── */
+.analytics-grid-wide {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 16px;
+}
+
+/* ─── Split view (assignments two-column) ─── */
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ─── Filter grid (reports page) ─── */
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+/* ─── Settings layout ─── */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 2px;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  width: 100%;
+}
+
+.settings-nav-item:hover { background: var(--bg); color: var(--text); }
+.settings-nav-item.active { background: var(--green-light); color: var(--green); font-weight: 600; }
+
+.settings-nav-icon { font-size: 16px; }
+
+.settings-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--green-light);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.settings-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+.settings-pref-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.settings-pref-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-pref-item:last-child { border-bottom: none; }
+
+.settings-pref-label { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.settings-pref-sub   { font-size: 12px; color: var(--muted); }
+
+/* ─── Toggle switch ─── */
+.toggle { position: relative; display: inline-flex; cursor: pointer; flex-shrink: 0; }
+.toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--border);
+  border-radius: 999px;
+  transition: background 0.2s;
+  position: relative;
+}
+.toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.toggle input:checked ~ .toggle-track { background: var(--green); }
+.toggle input:checked ~ .toggle-track::after { transform: translateX(18px); }
+
+/* ─── Form hint ─── */
+.form-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ─── Stat card teal/cyan ─── */
+.stat-card.teal .stat-card-value { color: #0f766e; }
+.stat-card.cyan .stat-card-value { color: #0891b2; }
+.stat-card.gray .stat-card-value { color: var(--text); }
+
+/* ─── Card footer with pagination ─── */
+.card-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: #fafafa;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.pagination-pages { display: flex; align-items: center; gap: 3px; }
+.page-btn {
+  min-width: 30px; height: 30px; padding: 0 6px;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: var(--surface); color: var(--text); font-size: 12px;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.page-btn:hover:not(:disabled) { background: var(--bg); border-color: #b5c9bf; }
+.page-btn.active { background: var(--green); color: #fff; border-color: var(--green); font-weight: 700; }
+.page-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+/* ─── Truncate helper ─── */
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ─── Responsive additions ─── */
+@media (max-width: 960px) {
+  .analytics-grid-wide { grid-template-columns: 1fr; }
+  .split-view          { grid-template-columns: 1fr; }
+  .settings-layout     { grid-template-columns: 1fr; }
+  .settings-nav        { flex-direction: row; flex-wrap: wrap; }
+}

@@ -13,7 +13,11 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { useApi } from "../../hooks/useApi";
-import type { MaintenanceReport, ReportStatus } from "@cut-smartfix/contracts";
+import type {
+  MaintenanceReport,
+  PaginatedList,
+  ReportStatus,
+} from "@cut-smartfix/contracts";
 
 // ─────────────────────────────────────────
 // Design tokens
@@ -483,7 +487,7 @@ export default function ReportsScreen() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data, loading, error, refetch } = useApi<MaintenanceReport[]>(
+  const { data, loading, error, refetch } = useApi<PaginatedList<MaintenanceReport>>(
     "/v1/reports",
     { skip: !token },
   );
@@ -503,7 +507,7 @@ export default function ReportsScreen() {
     setTimeout(() => setRefreshing(false), 1200);
   }, []);
 
-  const reports = data ?? [];
+  const reports = data?.items ?? [];
   const filtered = filterReports(reports, filter);
 
   // ── not authenticated ──────────────────

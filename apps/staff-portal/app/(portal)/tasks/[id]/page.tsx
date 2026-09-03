@@ -31,6 +31,9 @@ const SUPERVISOR_STATUS_OPTIONS: { value: ReportStatus; label: string }[] = [
   { value: "under_verification", label: "Under Verification" },
   { value: "closed", label: "Closed" },
   { value: "rejected", label: "Rejected" },
+  { value: "duplicate", label: "Duplicate" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "reopened", label: "Reopened" },
 ];
 
 export default function TaskDetailPage() {
@@ -318,14 +321,7 @@ export default function TaskDetailPage() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 340px",
-          gap: 20,
-          alignItems: "start",
-        }}
-      >
+      <div className="task-detail-grid">
         {/* Left column */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Details */}

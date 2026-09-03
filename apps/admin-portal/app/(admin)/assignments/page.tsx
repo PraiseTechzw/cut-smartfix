@@ -43,7 +43,7 @@ function AssignmentsPage() {
     async function load() {
       const [ticketsRes, depts, techs] = await Promise.all([
         fetchApi<PaginatedList<MaintenanceReport>>(
-          "/v1/reports?status=submitted&pageSize=50",
+          "/v1/reports?status=submitted,under_review&pageSize=100",
         ).catch(() => ({
           items: [] as MaintenanceReport[],
           total: 0,
@@ -119,7 +119,7 @@ function AssignmentsPage() {
         <div>
           <div className="page-title">Assignments</div>
           <div className="page-subtitle">
-            Assign unreviewed tickets to technicians
+            Assign submitted and under-review tickets to technicians
           </div>
         </div>
       </div>

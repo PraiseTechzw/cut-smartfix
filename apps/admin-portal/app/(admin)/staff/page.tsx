@@ -10,6 +10,21 @@ import type {
 
 const ROLE_OPTIONS = ["technician", "supervisor", "administrator"];
 
+function displayName(user: Pick<UserProfile, "fullName" | "email">): string {
+  const name = typeof user.fullName === "string" ? user.fullName.trim() : "";
+  return name || user.email || "Unnamed staff member";
+}
+
+function initials(user: Pick<UserProfile, "fullName" | "email">): string {
+  return displayName(user)
+    .split(/\s+/)
+    .map((word) => word[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 export default function StaffPage() {
   const [staff, setStaff] = useState<UserProfile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -97,7 +112,7 @@ export default function StaffPage() {
   };
 
   const deactivate = async (user: UserProfile) => {
-    if (!confirm(`Deactivate ${user.fullName}?`)) return;
+    if (!confirm(`Deactivate ${displayName(user)}?`)) return;
     try {
       const updated = await fetchApi<UserProfile>(
         `/v1/admin/users/${user.id}`,
@@ -155,7 +170,7 @@ export default function StaffPage() {
     if (deptFilter && u.departmentId !== deptFilter) return false;
     if (
       searchFilter &&
-      !u.fullName.toLowerCase().includes(searchFilter.toLowerCase()) &&
+      !displayName(u).toLowerCase().includes(searchFilter.toLowerCase()) &&
       !u.email.toLowerCase().includes(searchFilter.toLowerCase())
     )
       return false;
@@ -270,13 +285,9 @@ export default function StaffPage() {
                             flexShrink: 0,
                           }}
                         >
-                          {u.fullName
-                            .split(" ")
-                            .map((w) => w[0])
-                            .slice(0, 2)
-                            .join("")}
+                          {initials(u)}
                         </div>
-                        <span style={{ fontWeight: 500 }}>{u.fullName}</span>
+                        <span style={{ fontWeight: 500 }}>{displayName(u)}</span>
                       </div>
                     </td>
                     <td className="text-muted text-sm">{u.email}</td>
@@ -331,7 +342,7 @@ export default function StaffPage() {
         <div className="modal-backdrop" onClick={() => setEditUser(null)}>
           <div className="modal modal-md" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-title">Edit: {editUser.fullName}</div>
+              <div className="modal-title">Edit: {displayName(editUser)}</div>
               <button className="modal-close" onClick={() => setEditUser(null)}>
                 ×
               </button>
