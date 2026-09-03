@@ -134,6 +134,7 @@ export interface Room {
   name: string;
   roomNumber?: string;
   roomType?: string;
+  capacity?: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

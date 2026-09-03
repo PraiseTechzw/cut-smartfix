@@ -8,7 +8,7 @@
  * • Success animation before navigating to tabs
  * • Persists across app restarts via pendingEmail in auth context
  */
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "../../components/LinearGradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
