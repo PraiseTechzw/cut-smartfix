@@ -194,7 +194,7 @@ const subcategorySchema = z.object({
 
 const departmentSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  description: z.string().trim().max(500).optional(),
+  description: z.string().trim().max(500).nullable().optional(),
   isActive: z.boolean().optional(),
 });
 

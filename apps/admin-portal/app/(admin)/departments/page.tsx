@@ -52,14 +52,14 @@ export default function DepartmentsPage() {
       if (modal === "add") {
         const created = await fetchApi<Department>("/v1/admin/departments", {
           method: "POST",
-          body: JSON.stringify({ name, description: description || undefined, isActive }),
+          body: JSON.stringify({ name, description: description.trim() || null, isActive }),
         });
         setDepartments((prev) => [...prev, created]);
         showToast("Department created.");
       } else if (editDept) {
         const updated = await fetchApi<Department>(`/v1/admin/departments/${editDept.id}`, {
           method: "PATCH",
-          body: JSON.stringify({ name, description: description || undefined, isActive }),
+          body: JSON.stringify({ name, description: description.trim() || null, isActive }),
         });
         setDepartments((prev) => prev.map((d) => d.id === updated.id ? updated : d));
         showToast("Department updated.");
