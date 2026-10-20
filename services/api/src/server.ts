@@ -162,18 +162,18 @@ const materialRequestUpdateSchema = z.object({
 
 const locationSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  code: z.string().trim().max(20).optional(),
-  address: z.string().trim().max(500).optional(),
+  code: z.string().trim().max(20).nullable().optional(),
+  address: z.string().trim().max(500).nullable().optional(),
   description: z.string().trim().max(500).optional(),
   isActive: z.boolean().optional(),
   campusId: z.string().uuid().optional(),
   areaId: z.string().uuid().optional(),
   buildingId: z.string().uuid().optional(),
   floorId: z.string().uuid().optional(),
-  levelNumber: z.number().int().optional(),
-  roomNumber: z.string().trim().max(40).optional(),
-  roomType: z.string().trim().max(80).optional(),
-  capacity: z.number().int().min(0).optional(),
+  levelNumber: z.number().int().nullable().optional(),
+  roomNumber: z.string().trim().max(40).nullable().optional(),
+  roomType: z.string().trim().max(80).nullable().optional(),
+  capacity: z.number().int().min(0).nullable().optional(),
 });
 
 const categorySchema = z.object({
@@ -2061,6 +2061,10 @@ app.patch(
     const parsed = locationSchema.partial().safeParse(req.body);
     if (!parsed.success) {
       sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    if (parsed.data.code === null) {
+      sendError(res, 400, "VALIDATION_ERROR", "Campus code cannot be empty.");
       return;
     }
     const updates: Row = {};

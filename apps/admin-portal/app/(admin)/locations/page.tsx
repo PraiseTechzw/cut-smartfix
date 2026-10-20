@@ -39,7 +39,7 @@ export default function LocationsPage() {
         </div>
       </div>
 
-      {error && <div className="toast error">{error}</div>}
+      {error && <div className="toast-container"><div className="toast error">{error}</div></div>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px,1fr))", gap: 16 }}>
         {cards.map((c) => (

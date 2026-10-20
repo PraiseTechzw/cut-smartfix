@@ -50,7 +50,7 @@ export default function RoomsPage() {
     if (!name.trim() || !floorId) { showToast("Name and floor are required.", "error"); return; }
     setSaving(true);
     try {
-      const body = { name, roomNumber: roomNumber || undefined, roomType: roomType || undefined, floorId, capacity: capacity !== "" ? Number(capacity) : undefined, isActive };
+      const body = { name, roomNumber: roomNumber || null, roomType: roomType || null, floorId, capacity: capacity !== "" ? Number(capacity) : null, isActive };
       if (modal === "add") {
         const created = await fetchApi<Room>("/v1/admin/rooms", { method: "POST", body: JSON.stringify(body) });
         setItems((p) => [...p, created]); showToast("Room created.");

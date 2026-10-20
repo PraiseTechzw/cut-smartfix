@@ -48,14 +48,14 @@ export default function CampusesPage() {
       if (modal === "add") {
         const created = await fetchApi<Campus>("/v1/admin/campuses", {
           method: "POST",
-          body: JSON.stringify({ name, code, address: address || undefined, isActive }),
+          body: JSON.stringify({ name, code, address: address || null, isActive }),
         });
         setCampuses((prev) => [...prev, created]);
         showToast("Campus created.");
       } else if (editItem) {
         const updated = await fetchApi<Campus>(`/v1/admin/campuses/${editItem.id}`, {
           method: "PATCH",
-          body: JSON.stringify({ name, code, address: address || undefined, isActive }),
+          body: JSON.stringify({ name, code, address: address || null, isActive }),
         });
         setCampuses((prev) => prev.map((c) => c.id === updated.id ? updated : c));
         showToast("Campus updated.");

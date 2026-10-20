@@ -50,7 +50,7 @@ export default function BuildingsPage() {
     if (!name.trim()) { showToast("Name is required.", "error"); return; }
     setSaving(true);
     try {
-      const body = { name, code: code || undefined, areaId: areaId || undefined, isActive };
+      const body = { name, code: code || null, areaId, isActive };
       if (modal === "add") {
         const created = await fetchApi<Building>("/v1/admin/buildings", { method: "POST", body: JSON.stringify(body) });
         setItems((p) => [...p, created]); showToast("Building created.");

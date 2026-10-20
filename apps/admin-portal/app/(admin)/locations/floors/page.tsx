@@ -43,7 +43,7 @@ export default function FloorsPage() {
     if (!floorName) { showToast("Enter a floor name or level number.", "error"); return; }
     setSaving(true);
     try {
-      const body = { name: floorName, levelNumber: levelNumber !== "" ? Number(levelNumber) : undefined, buildingId, isActive };
+      const body = { name: floorName, levelNumber: levelNumber !== "" ? Number(levelNumber) : null, buildingId, isActive };
       if (modal === "add") {
         const created = await fetchApi<Floor>("/v1/admin/floors", { method: "POST", body: JSON.stringify(body) });
         setItems((p) => [...p, created]); showToast("Floor created.");
