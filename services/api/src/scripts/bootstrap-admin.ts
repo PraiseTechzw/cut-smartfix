@@ -49,13 +49,21 @@ const { data, error } = await supabase.auth.admin.createUser({
 });
 
 if (error || !data.user) {
-  fail(error?.message ?? "Supabase did not return the created user.");
+  fail(`${error?.message ?? "Supabase did not return the created user."} Ensure migration 0008_allow_dashboard_auth_user_creation.sql has been applied.`);
+}
+
+const { error: metadataError } = await supabase.auth.admin.updateUserById(data.user.id, {
+  app_metadata: { ...data.user.app_metadata, role: "administrator", provisioned_by: "bootstrap" },
+});
+if (metadataError) {
+  fail(`The Auth account was created, but administrator metadata could not be set: ${metadataError.message}`);
 }
 
 const { data: profile, error: profileError } = await supabase
   .from("profiles")
-  .select("id, email, role")
+  .update({ role: "administrator" })
   .eq("id", data.user.id)
+  .select("id, email, role")
   .maybeSingle();
 
 if (profileError || profile?.role !== "administrator") {

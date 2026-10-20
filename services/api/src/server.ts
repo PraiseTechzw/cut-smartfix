@@ -1505,13 +1505,45 @@ app.patch("/v1/notifications/read-all", requireAuth, async (req, res) => {
 // Catalog (locations, categories) – public read for authenticated users
 // ─────────────────────────────────────────
 // Campuses
-app.get("/v1/campuses", requireAuth, async (_req, res) => {
+app.get(
+  ["/v1/campuses", "/v1/locations/campuses"],
+  requireAuth,
+  async (_req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const { data, error } = await client
+      .from("campuses")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
+    if (error) {
+      sendError(res, 500, "QUERY_FAILED", error.message);
+      return;
+    }
+    ok(
+      res,
+      (data ?? []).map(
+        (r) =>
+          ({
+            id: r.id,
+            name: r.name,
+            code: r.code,
+            address: r.address,
+            isActive: r.is_active,
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          }) as Campus,
+      ),
+    );
+  },
+);
+
+app.get("/v1/locations/areas", requireAuth, async (_req, res) => {
   const client = getClient(res);
   if (!client) return;
   const { data, error } = await client
-    .from("campuses")
-    .select("*")
-    .eq("is_active", true)
+    .from("areas")
+    .select("*, campuses(name)")
     .order("name");
   if (error) {
     sendError(res, 500, "QUERY_FAILED", error.message);
@@ -1523,13 +1555,13 @@ app.get("/v1/campuses", requireAuth, async (_req, res) => {
       (r) =>
         ({
           id: r.id,
+          campusId: r.campus_id,
+          campusName: r.campuses?.name,
           name: r.name,
-          code: r.code,
-          address: r.address,
           isActive: r.is_active,
           createdAt: r.created_at,
           updatedAt: r.updated_at,
-        }) as Campus,
+        }) as Area,
     ),
   );
 });
@@ -1938,14 +1970,30 @@ app.post(
     }
     const { data, error } = await client
       .from("areas")
-      .insert({ campus_id: parsed.data.campusId, name: parsed.data.name })
-      .select("*")
+      .insert({
+        campus_id: parsed.data.campusId,
+        name: parsed.data.name,
+        is_active: parsed.data.isActive ?? true,
+      })
+      .select("*, campuses(name)")
       .single();
     if (error) {
       sendError(res, 500, "CREATE_FAILED", error.message);
       return;
     }
-    ok(res, data, 201);
+    ok(
+      res,
+      {
+        id: data.id,
+        campusId: data.campus_id,
+        campusName: data.campuses?.name,
+        name: data.name,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Area,
+      201,
+    );
   },
 );
 
@@ -1963,19 +2011,32 @@ app.patch(
     }
     const updates: Row = {};
     if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.campusId !== undefined)
+      updates.campus_id = parsed.data.campusId;
     if (parsed.data.isActive !== undefined)
       updates.is_active = parsed.data.isActive;
     const { data, error } = await client
       .from("areas")
       .update(updates)
       .eq("id", req.params.id)
-      .select("*")
+      .select("*, campuses(name)")
       .single();
     if (error) {
       sendError(res, 500, "UPDATE_FAILED", error.message);
       return;
     }
-    ok(res, data);
+    ok(
+      res,
+      {
+        id: data.id,
+        campusId: data.campus_id,
+        campusName: data.campuses?.name,
+        name: data.name,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Area,
+    );
   },
 );
 

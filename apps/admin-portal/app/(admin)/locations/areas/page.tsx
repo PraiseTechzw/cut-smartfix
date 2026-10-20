@@ -27,7 +27,9 @@ export default function AreasPage() {
     Promise.all([
       fetchApi<Area[]>("/v1/locations/areas"),
       fetchApi<Campus[]>("/v1/locations/campuses"),
-    ]).then(([a, c]) => { setItems(a); setCampuses(c); }).catch(() => {}).finally(() => setLoading(false));
+    ]).then(([a, c]) => { setItems(a); setCampuses(c); }).catch((e) => {
+      showToast(e instanceof Error ? e.message : "Could not load areas and campuses.", "error");
+    }).finally(() => setLoading(false));
   }, []);
 
   const openAdd = () => { setEditItem(null); setName(""); setCampusId(""); setIsActive(true); setModal("add"); };
