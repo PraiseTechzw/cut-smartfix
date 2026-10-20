@@ -4,7 +4,110 @@ import { useEffect, useState } from "react";
 import { fetchApi } from "../../../lib/api";
 import type { Category, Subcategory } from "@cut-smartfix/contracts";
 
-const ICON_OPTIONS = ["🔧","💡","🚰","🏗️","🧹","❄️","🔥","🪟","🚪","🛗","⚡","📡","🔒","🖥️","🪑","🌿","🚽","🛁"];
+const ICON_OPTIONS = [
+  "zap",
+  "droplets",
+  "building-2",
+  "armchair",
+  "monitor",
+  "sparkles",
+  "tree-pine",
+  "shield-alert",
+  "wrench",
+];
+
+function CategoryIcon({ name, size = 24 }: { name?: string; size?: number }) {
+  const icon = name?.toLowerCase();
+
+  let shape;
+  switch (icon) {
+    case "zap":
+      shape = <path d="M13 2 4 14h7l-1 8 10-13h-7l1-7Z" />;
+      break;
+    case "droplets":
+      shape = (
+        <>
+          <path d="M12 3c-2.5 3.4-5 6.1-5 9a5 5 0 0 0 10 0c0-2.9-2.5-5.6-5-9Z" />
+          <path d="M5 16c-1.2 1.4-2 2.4-2 3.5a2 2 0 0 0 4 0" />
+          <path d="M19 15c1.2 1.4 2 2.4 2 3.5a2 2 0 0 1-4 0" />
+        </>
+      );
+      break;
+    case "building-2":
+      shape = (
+        <>
+          <path d="M6 22V3h12v19M3 22h18" />
+          <path d="M9 7h2m2 0h2M9 11h2m2 0h2M9 15h2m2 0h2M11 22v-3h2v3" />
+        </>
+      );
+      break;
+    case "armchair":
+      shape = (
+        <>
+          <path d="M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4" />
+          <path d="M4 11a2 2 0 0 0-2 2v3h20v-3a2 2 0 0 0-2-2H4ZM4 16v4m16-4v4" />
+        </>
+      );
+      break;
+    case "monitor":
+      shape = (
+        <>
+          <rect x="3" y="4" width="18" height="13" rx="2" />
+          <path d="M8 21h8m-4-4v4" />
+        </>
+      );
+      break;
+    case "sparkles":
+      shape = (
+        <>
+          <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />
+          <path d="m19 14 1.1 2.9L23 18l-2.9 1.1L19 22l-1.1-2.9L15 18l2.9-1.1L19 14ZM5 2l.8 2.2L8 5l-2.2.8L5 8l-.8-2.2L2 5l2.2-.8L5 2Z" />
+        </>
+      );
+      break;
+    case "tree-pine":
+      shape = (
+        <>
+          <path d="m12 2 6 7h-3l5 6h-5l4 5H5l4-5H4l5-6H6l6-7Z" />
+          <path d="M12 20v2" />
+        </>
+      );
+      break;
+    case "shield-alert":
+      shape = (
+        <>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+          <path d="M12 8v4m0 4h.01" />
+        </>
+      );
+      break;
+    case "wrench":
+      shape = <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8Z" />;
+      break;
+    default:
+      return name && /[^\u0000-\u007f]/.test(name) ? (
+        <span aria-hidden="true">{name}</span>
+      ) : (
+        <CategoryIcon name="wrench" size={size} />
+      );
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {shape}
+    </svg>
+  );
+}
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -17,7 +120,7 @@ export default function CategoriesPage() {
   const [catModal, setCatModal] = useState<"add" | "edit" | null>(null);
   const [editCat, setEditCat] = useState<Category | null>(null);
   const [catName, setCatName] = useState("");
-  const [catIcon, setCatIcon] = useState("🔧");
+  const [catIcon, setCatIcon] = useState("wrench");
   const [catDesc, setCatDesc] = useState("");
   const [catActive, setCatActive] = useState(true);
   const [catSaving, setCatSaving] = useState(false);
@@ -46,11 +149,11 @@ export default function CategoriesPage() {
 
   // ─── Category CRUD ───────────────────────────────────────────────────────
   const openAddCat = () => {
-    setEditCat(null); setCatName(""); setCatIcon("🔧"); setCatDesc(""); setCatActive(true);
+    setEditCat(null); setCatName(""); setCatIcon("wrench"); setCatDesc(""); setCatActive(true);
     setCatModal("add");
   };
   const openEditCat = (c: Category) => {
-    setEditCat(c); setCatName(c.name); setCatIcon(c.icon ?? "🔧"); setCatDesc(c.description ?? ""); setCatActive(c.isActive);
+    setEditCat(c); setCatName(c.name); setCatIcon(c.icon ?? "wrench"); setCatDesc(c.description ?? ""); setCatActive(c.isActive);
     setCatModal("edit");
   };
 
@@ -166,7 +269,9 @@ export default function CategoriesPage() {
                 style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px", cursor: "pointer" }}
                 onClick={() => setExpanded(expanded === cat.id ? null : cat.id)}
               >
-                <span style={{ fontSize: "1.6rem", flexShrink: 0 }}>{cat.icon ?? "•"}</span>
+                <span style={{ display: "flex", alignItems: "center", color: "var(--green)", flexShrink: 0 }}>
+                  <CategoryIcon name={cat.icon} size={26} />
+                </span>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                     <span style={{ fontWeight: 700, fontSize: "15px" }}>{cat.name}</span>
@@ -249,12 +354,12 @@ export default function CategoriesPage() {
                       type="button"
                       onClick={() => setCatIcon(ico)}
                       style={{
-                        width: "36px", height: "36px", fontSize: "18px",
+                        width: "36px", height: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center",
                         border: `2px solid ${catIcon === ico ? "var(--green)" : "var(--border)"}`,
                         borderRadius: "6px", background: catIcon === ico ? "var(--green-light)" : "var(--surface)",
                         cursor: "pointer",
                       }}
-                    >{ico}</button>
+                    ><CategoryIcon name={ico} size={20} /></button>
                   ))}
                 </div>
               </div>
