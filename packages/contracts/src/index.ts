@@ -107,6 +107,7 @@ export interface Building {
   id: string;
   areaId: string;
   areaName?: string;
+  campusId?: string;
   campusName?: string;
   name: string;
   code?: string;
@@ -130,6 +131,7 @@ export interface Room {
   id: string;
   floorId: string;
   floorName?: string;
+  buildingId?: string;
   buildingName?: string;
   name: string;
   roomNumber?: string;

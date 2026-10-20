@@ -29,7 +29,9 @@ export default function FloorsPage() {
     Promise.all([
       fetchApi<Floor[]>("/v1/locations/floors"),
       fetchApi<Building[]>("/v1/locations/buildings"),
-    ]).then(([f, b]) => { setItems(f); setBuildings(b); }).catch(() => {}).finally(() => setLoading(false));
+    ]).then(([f, b]) => { setItems(f); setBuildings(b); }).catch((e) => {
+      showToast(e instanceof Error ? e.message : "Could not load floors and buildings.", "error");
+    }).finally(() => setLoading(false));
   }, []);
 
   const openAdd = () => { setEditItem(null); setName(""); setLevelNumber(""); setBuildingId(""); setIsActive(true); setModal("add"); };
@@ -37,9 +39,11 @@ export default function FloorsPage() {
 
   const save = async () => {
     if (!buildingId) { showToast("Building is required.", "error"); return; }
+    const floorName = name.trim() || (levelNumber !== "" ? `Level ${levelNumber}` : "");
+    if (!floorName) { showToast("Enter a floor name or level number.", "error"); return; }
     setSaving(true);
     try {
-      const body = { name: name || undefined, levelNumber: levelNumber !== "" ? Number(levelNumber) : undefined, buildingId, isActive };
+      const body = { name: floorName, levelNumber: levelNumber !== "" ? Number(levelNumber) : undefined, buildingId, isActive };
       if (modal === "add") {
         const created = await fetchApi<Floor>("/v1/admin/floors", { method: "POST", body: JSON.stringify(body) });
         setItems((p) => [...p, created]); showToast("Floor created.");

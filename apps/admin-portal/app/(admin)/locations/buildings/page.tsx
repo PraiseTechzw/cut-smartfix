@@ -32,7 +32,9 @@ export default function BuildingsPage() {
       fetchApi<Building[]>("/v1/locations/buildings"),
       fetchApi<Campus[]>("/v1/locations/campuses"),
       fetchApi<Area[]>("/v1/locations/areas"),
-    ]).then(([b, c, a]) => { setItems(b); setCampuses(c); setAreas(a); }).catch(() => {}).finally(() => setLoading(false));
+    ]).then(([b, c, a]) => { setItems(b); setCampuses(c); setAreas(a); }).catch((e) => {
+      showToast(e instanceof Error ? e.message : "Could not load buildings and locations.", "error");
+    }).finally(() => setLoading(false));
   }, []);
 
   const filteredAreas = campusId ? areas.filter((a) => a.campusId === campusId) : areas;
@@ -40,7 +42,8 @@ export default function BuildingsPage() {
   const openAdd = () => { setEditItem(null); setName(""); setCode(""); setCampusId(""); setAreaId(""); setIsActive(true); setModal("add"); };
   const openEdit = (b: Building) => {
     setEditItem(b); setName(b.name); setCode(b.code ?? "");
-    setCampusId(""); setAreaId(b.areaId); setIsActive(b.isActive); setModal("edit");
+    setCampusId(areas.find((a) => a.id === b.areaId)?.campusId ?? "");
+    setAreaId(b.areaId); setIsActive(b.isActive); setModal("edit");
   };
 
   const save = async () => {
@@ -61,7 +64,7 @@ export default function BuildingsPage() {
   };
 
   const filtered = items.filter((b) => {
-    if (campusFilter && b.campusName && !b.campusName.includes(campuses.find((c) => c.id === campusFilter)?.name ?? "")) return false;
+    if (campusFilter && b.campusId !== campusFilter) return false;
     if (search && !b.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -128,7 +131,7 @@ export default function BuildingsPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Area</label>
+                <label className="form-label">Area *</label>
                 <select className="select" value={areaId} onChange={(e) => setAreaId(e.target.value)}>
                   <option value="">Select area…</option>
                   {filteredAreas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -138,7 +141,7 @@ export default function BuildingsPage() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn btn-primary" disabled={saving || !name.trim()} onClick={save}>{saving ? "Saving…" : modal === "add" ? "Create" : "Save"}</button>
+              <button className="btn btn-primary" disabled={saving || !name.trim() || !areaId} onClick={save}>{saving ? "Saving…" : modal === "add" ? "Create" : "Save"}</button>
             </div>
           </div>
         </div>

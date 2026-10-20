@@ -9,15 +9,17 @@ interface Counts { campuses: number; areas: number; buildings: number; floors: n
 
 export default function LocationsPage() {
   const [counts, setCounts] = useState<Counts>({ campuses: 0, areas: 0, buildings: 0, floors: 0, rooms: 0 });
+  const [error, setError] = useState("");
 
   useEffect(() => {
     Promise.all([
-      fetchApi<Campus[]>("/v1/locations/campuses").catch(() => [] as Campus[]),
-      fetchApi<Area[]>("/v1/locations/areas").catch(() => [] as Area[]),
-      fetchApi<Building[]>("/v1/locations/buildings").catch(() => [] as Building[]),
-      fetchApi<Floor[]>("/v1/locations/floors").catch(() => [] as Floor[]),
-      fetchApi<Room[]>("/v1/locations/rooms").catch(() => [] as Room[]),
-    ]).then(([c, a, b, f, r]) => setCounts({ campuses: c.length, areas: a.length, buildings: b.length, floors: f.length, rooms: r.length }));
+      fetchApi<Campus[]>("/v1/locations/campuses"),
+      fetchApi<Area[]>("/v1/locations/areas"),
+      fetchApi<Building[]>("/v1/locations/buildings"),
+      fetchApi<Floor[]>("/v1/locations/floors"),
+      fetchApi<Room[]>("/v1/locations/rooms"),
+    ]).then(([c, a, b, f, r]) => setCounts({ campuses: c.length, areas: a.length, buildings: b.length, floors: f.length, rooms: r.length }))
+      .catch((e) => setError(e instanceof Error ? e.message : "Could not load location counts."));
   }, []);
 
   const cards = [
@@ -36,6 +38,8 @@ export default function LocationsPage() {
           <div className="page-subtitle">Manage the full campus location hierarchy</div>
         </div>
       </div>
+
+      {error && <div className="toast error">{error}</div>}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px,1fr))", gap: 16 }}>
         {cards.map((c) => (

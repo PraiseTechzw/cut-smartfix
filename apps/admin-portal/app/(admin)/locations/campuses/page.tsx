@@ -27,7 +27,10 @@ export default function CampusesPage() {
   useEffect(() => {
     fetchApi<Campus[]>("/v1/locations/campuses")
       .then((d) => { setCampuses(d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((e) => {
+        showToast(e instanceof Error ? e.message : "Could not load campuses.", "error");
+        setLoading(false);
+      });
   }, []);
 
   const openAdd = () => {

@@ -173,6 +173,7 @@ const locationSchema = z.object({
   levelNumber: z.number().int().optional(),
   roomNumber: z.string().trim().max(40).optional(),
   roomType: z.string().trim().max(80).optional(),
+  capacity: z.number().int().min(0).optional(),
 });
 
 const categorySchema = z.object({
@@ -1505,38 +1506,59 @@ app.patch("/v1/notifications/read-all", requireAuth, async (req, res) => {
 // Catalog (locations, categories) – public read for authenticated users
 // ─────────────────────────────────────────
 // Campuses
-app.get(
-  ["/v1/campuses", "/v1/locations/campuses"],
-  requireAuth,
-  async (_req, res) => {
-    const client = getClient(res);
-    if (!client) return;
-    const { data, error } = await client
-      .from("campuses")
-      .select("*")
-      .eq("is_active", true)
-      .order("name");
-    if (error) {
-      sendError(res, 500, "QUERY_FAILED", error.message);
-      return;
-    }
-    ok(
-      res,
-      (data ?? []).map(
-        (r) =>
-          ({
-            id: r.id,
-            name: r.name,
-            code: r.code,
-            address: r.address,
-            isActive: r.is_active,
-            createdAt: r.created_at,
-            updatedAt: r.updated_at,
-          }) as Campus,
-      ),
-    );
-  },
-);
+app.get("/v1/campuses", requireAuth, async (_req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const { data, error } = await client
+    .from("campuses")
+    .select("*")
+    .eq("is_active", true)
+    .order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          name: r.name,
+          code: r.code,
+          address: r.address,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Campus,
+    ),
+  );
+});
+
+app.get("/v1/locations/campuses", requireAuth, async (_req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const { data, error } = await client.from("campuses").select("*").order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          name: r.name,
+          code: r.code,
+          address: r.address,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Campus,
+    ),
+  );
+});
 
 app.get("/v1/locations/areas", requireAuth, async (_req, res) => {
   const client = getClient(res);
@@ -1562,6 +1584,99 @@ app.get("/v1/locations/areas", requireAuth, async (_req, res) => {
           createdAt: r.created_at,
           updatedAt: r.updated_at,
         }) as Area,
+    ),
+  );
+});
+
+app.get("/v1/locations/buildings", requireAuth, async (_req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const { data, error } = await client
+    .from("buildings")
+    .select("*, areas(name, campus_id, campuses(name))")
+    .order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          areaId: r.area_id,
+          areaName: r.areas?.name,
+          campusId: r.areas?.campus_id,
+          campusName: r.areas?.campuses?.name,
+          name: r.name,
+          code: r.code,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Building,
+    ),
+  );
+});
+
+app.get("/v1/locations/floors", requireAuth, async (_req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const { data, error } = await client
+    .from("floors")
+    .select("*, buildings(name)")
+    .order("level_number", { ascending: true });
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          buildingId: r.building_id,
+          buildingName: r.buildings?.name,
+          name: r.name,
+          levelNumber: r.level_number,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Floor,
+    ),
+  );
+});
+
+app.get("/v1/locations/rooms", requireAuth, async (_req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const { data, error } = await client
+    .from("rooms")
+    .select("*, floors(name, building_id, buildings(name))")
+    .order("name");
+  if (error) {
+    sendError(res, 500, "QUERY_FAILED", error.message);
+    return;
+  }
+  ok(
+    res,
+    (data ?? []).map(
+      (r) =>
+        ({
+          id: r.id,
+          floorId: r.floor_id,
+          floorName: r.floors?.name,
+          buildingId: r.floors?.building_id,
+          buildingName: r.floors?.buildings?.name,
+          name: r.name,
+          roomNumber: r.room_number,
+          roomType: r.room_type,
+          capacity: r.capacity,
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }) as Room,
     ),
   );
 });
@@ -1678,6 +1793,7 @@ app.get("/v1/floors/:id/rooms", requireAuth, async (req, res) => {
           name: r.name,
           roomNumber: r.room_number,
           roomType: r.room_type,
+          capacity: r.capacity,
           isActive: r.is_active,
           createdAt: r.created_at,
           updatedAt: r.updated_at,
@@ -1903,6 +2019,7 @@ app.post(
         name: parsed.data.name,
         code: parsed.data.code ?? parsed.data.name.toUpperCase().slice(0, 6),
         address: parsed.data.address ?? null,
+        is_active: parsed.data.isActive ?? true,
       })
       .select("*")
       .single();
@@ -1918,7 +2035,19 @@ app.post(
       data.id as string,
       { name: data.name },
     );
-    ok(res, data, 201);
+    ok(
+      res,
+      {
+        id: data.id,
+        name: data.name,
+        code: data.code,
+        address: data.address,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Campus,
+      201,
+    );
   },
 );
 
@@ -1951,7 +2080,18 @@ app.patch(
       sendError(res, 500, "UPDATE_FAILED", error.message);
       return;
     }
-    ok(res, data);
+    ok(
+      res,
+      {
+        id: data.id,
+        name: data.name,
+        code: data.code,
+        address: data.address,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Campus,
+    );
   },
 );
 
@@ -2059,14 +2199,30 @@ app.post(
         area_id: parsed.data.areaId,
         name: parsed.data.name,
         code: parsed.data.code ?? null,
+        is_active: parsed.data.isActive ?? true,
       })
-      .select("*")
+      .select("*, areas(name, campus_id, campuses(name))")
       .single();
     if (error) {
       sendError(res, 500, "CREATE_FAILED", error.message);
       return;
     }
-    ok(res, data, 201);
+    ok(
+      res,
+      {
+        id: data.id,
+        areaId: data.area_id,
+        areaName: data.areas?.name,
+        campusId: data.areas?.campus_id,
+        campusName: data.areas?.campuses?.name,
+        name: data.name,
+        code: data.code,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Building,
+      201,
+    );
   },
 );
 
@@ -2085,19 +2241,35 @@ app.patch(
     const updates: Row = {};
     if (parsed.data.name !== undefined) updates.name = parsed.data.name;
     if (parsed.data.code !== undefined) updates.code = parsed.data.code;
+    if (parsed.data.areaId !== undefined)
+      updates.area_id = parsed.data.areaId;
     if (parsed.data.isActive !== undefined)
       updates.is_active = parsed.data.isActive;
     const { data, error } = await client
       .from("buildings")
       .update(updates)
       .eq("id", req.params.id)
-      .select("*")
+      .select("*, areas(name, campus_id, campuses(name))")
       .single();
     if (error) {
       sendError(res, 500, "UPDATE_FAILED", error.message);
       return;
     }
-    ok(res, data);
+    ok(
+      res,
+      {
+        id: data.id,
+        areaId: data.area_id,
+        areaName: data.areas?.name,
+        campusId: data.areas?.campus_id,
+        campusName: data.areas?.campuses?.name,
+        name: data.name,
+        code: data.code,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Building,
+    );
   },
 );
 
@@ -2120,14 +2292,74 @@ app.post(
         building_id: parsed.data.buildingId,
         name: parsed.data.name,
         level_number: parsed.data.levelNumber ?? null,
+        is_active: parsed.data.isActive ?? true,
       })
-      .select("*")
+      .select("*, buildings(name)")
       .single();
     if (error) {
       sendError(res, 500, "CREATE_FAILED", error.message);
       return;
     }
-    ok(res, data, 201);
+    ok(
+      res,
+      {
+        id: data.id,
+        buildingId: data.building_id,
+        buildingName: data.buildings?.name,
+        name: data.name,
+        levelNumber: data.level_number,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Floor,
+      201,
+    );
+  },
+);
+
+app.patch(
+  "/v1/admin/floors/:id",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const updates: Row = {};
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.buildingId !== undefined)
+      updates.building_id = parsed.data.buildingId;
+    if (parsed.data.levelNumber !== undefined)
+      updates.level_number = parsed.data.levelNumber;
+    if (parsed.data.isActive !== undefined)
+      updates.is_active = parsed.data.isActive;
+    const { data, error } = await client
+      .from("floors")
+      .update(updates)
+      .eq("id", req.params.id)
+      .select("*, buildings(name)")
+      .single();
+    if (error) {
+      sendError(res, 500, "UPDATE_FAILED", error.message);
+      return;
+    }
+    ok(
+      res,
+      {
+        id: data.id,
+        buildingId: data.building_id,
+        buildingName: data.buildings?.name,
+        name: data.name,
+        levelNumber: data.level_number,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Floor,
+    );
   },
 );
 
@@ -2151,17 +2383,89 @@ app.post(
         name: parsed.data.name,
         room_number: parsed.data.roomNumber ?? null,
         room_type: parsed.data.roomType ?? null,
+        capacity: parsed.data.capacity ?? null,
+        is_active: parsed.data.isActive ?? true,
       })
-      .select("*")
+      .select("*, floors(name, building_id, buildings(name))")
       .single();
     if (error) {
       sendError(res, 500, "CREATE_FAILED", error.message);
       return;
     }
-    ok(res, data, 201);
+    ok(
+      res,
+      {
+        id: data.id,
+        floorId: data.floor_id,
+        floorName: data.floors?.name,
+        buildingId: data.floors?.building_id,
+        buildingName: data.floors?.buildings?.name,
+        name: data.name,
+        roomNumber: data.room_number,
+        roomType: data.room_type,
+        capacity: data.capacity,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Room,
+      201,
+    );
   },
 );
 
+app.patch(
+  "/v1/admin/rooms/:id",
+  requireAuth,
+  requireRole("administrator"),
+  async (req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const parsed = locationSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      sendError(res, 400, "VALIDATION_ERROR", "Invalid input.");
+      return;
+    }
+    const updates: Row = {};
+    if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+    if (parsed.data.floorId !== undefined)
+      updates.floor_id = parsed.data.floorId;
+    if (parsed.data.roomNumber !== undefined)
+      updates.room_number = parsed.data.roomNumber;
+    if (parsed.data.roomType !== undefined)
+      updates.room_type = parsed.data.roomType;
+    if (parsed.data.capacity !== undefined)
+      updates.capacity = parsed.data.capacity;
+    if (parsed.data.isActive !== undefined)
+      updates.is_active = parsed.data.isActive;
+    const { data, error } = await client
+      .from("rooms")
+      .update(updates)
+      .eq("id", req.params.id)
+      .select("*, floors(name, building_id, buildings(name))")
+      .single();
+    if (error) {
+      sendError(res, 500, "UPDATE_FAILED", error.message);
+      return;
+    }
+    ok(
+      res,
+      {
+        id: data.id,
+        floorId: data.floor_id,
+        floorName: data.floors?.name,
+        buildingId: data.floors?.building_id,
+        buildingName: data.floors?.buildings?.name,
+        name: data.name,
+        roomNumber: data.room_number,
+        roomType: data.room_type,
+        capacity: data.capacity,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Room,
+    );
+  },
+);
 // --- Categories CRUD ---
 app.post(
   "/v1/admin/categories",

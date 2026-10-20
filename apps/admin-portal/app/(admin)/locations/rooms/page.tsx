@@ -36,13 +36,15 @@ export default function RoomsPage() {
       fetchApi<Room[]>("/v1/locations/rooms"),
       fetchApi<Building[]>("/v1/locations/buildings"),
       fetchApi<Floor[]>("/v1/locations/floors"),
-    ]).then(([r, b, f]) => { setItems(r); setBuildings(b); setFloors(f); }).catch(() => {}).finally(() => setLoading(false));
+    ]).then(([r, b, f]) => { setItems(r); setBuildings(b); setFloors(f); }).catch((e) => {
+      showToast(e instanceof Error ? e.message : "Could not load rooms and locations.", "error");
+    }).finally(() => setLoading(false));
   }, []);
 
   const filteredFloors = buildingId ? floors.filter((f) => f.buildingId === buildingId) : floors;
 
   const openAdd = () => { setEditItem(null); setName(""); setRoomNumber(""); setRoomType(""); setFloorId(""); setBuildingId(""); setCapacity(""); setIsActive(true); setModal("add"); };
-  const openEdit = (r: Room) => { setEditItem(r); setName(r.name); setRoomNumber(r.roomNumber ?? ""); setRoomType(r.roomType ?? ""); setFloorId(r.floorId); setBuildingId(""); setCapacity(r.capacity ?? ""); setIsActive(r.isActive); setModal("edit"); };
+  const openEdit = (r: Room) => { setEditItem(r); setName(r.name); setRoomNumber(r.roomNumber ?? ""); setRoomType(r.roomType ?? ""); setFloorId(r.floorId); setBuildingId(floors.find((f) => f.id === r.floorId)?.buildingId ?? ""); setCapacity(r.capacity ?? ""); setIsActive(r.isActive); setModal("edit"); };
 
   const save = async () => {
     if (!name.trim() || !floorId) { showToast("Name and floor are required.", "error"); return; }
@@ -62,7 +64,7 @@ export default function RoomsPage() {
   };
 
   const filtered = items.filter((r) => {
-    if (buildingFilter && r.buildingName && !r.buildingName.includes(buildings.find((b) => b.id === buildingFilter)?.name ?? "")) return false;
+    if (buildingFilter && r.buildingId !== buildingFilter) return false;
     if (search && !r.name.toLowerCase().includes(search.toLowerCase()) && !(r.roomNumber ?? "").includes(search)) return false;
     return true;
   });
@@ -140,7 +142,7 @@ export default function RoomsPage() {
                   {filteredFloors.map((f) => <option key={f.id} value={f.id}>{f.name ?? `Level ${f.levelNumber}`}</option>)}
                 </select>
               </div>
-              <div className="form-group"><label className="form-label">Capacity</label><input type="number" className="input" value={capacity} onChange={(e) => setCapacity(e.target.value ? Number(e.target.value) : "")} placeholder="e.g. 40" /></div>
+              <div className="form-group"><label className="form-label">Capacity</label><input type="number" min="0" className="input" value={capacity} onChange={(e) => setCapacity(e.target.value ? Number(e.target.value) : "")} placeholder="e.g. 40" /></div>
               <label className="checkbox-label"><input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} /> Active</label>
             </div>
             <div className="modal-footer">
