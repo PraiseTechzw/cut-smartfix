@@ -53,15 +53,16 @@ cd cut-smartfix
 pnpm install
 ```
 
-Create local environment files from the templates:
+Create one local environment file per app or service from its template:
 
 ```bash
-cp .env.example .env
 cp services/api/.env.example services/api/.env
 cp apps/student-mobile/.env.example apps/student-mobile/.env
+cp apps/staff-portal/.env.example apps/staff-portal/.env.local
+cp apps/admin-portal/.env.example apps/admin-portal/.env.local
 ```
 
-Set Supabase values in the API environment. Only the API may contain `SUPABASE_SERVICE_ROLE_KEY`; never expose that key to Expo or a browser bundle.
+Set the Supabase project URL and anon key in each client environment, and the URL plus service role key in the API environment. Only the API may contain `SUPABASE_SERVICE_ROLE_KEY`; never expose that key to Expo or a browser bundle. For Expo on a physical device, set `EXPO_PUBLIC_API_URL` to your computer's LAN IP, for example `http://192.168.1.20:4000`.
 
 Apply the database migrations:
 
@@ -123,6 +124,7 @@ Representative captures are stored in [docs/screenshots](docs/screenshots).
 
 - [Architecture](docs/architecture.md)
 - [Backend and API](docs/backend.md)
+- [First administrator setup](docs/admin-bootstrap.md)
 - [Deployment](docs/deployment.md)
 - [Supabase email confirmation](docs/email-setup.md)
 - [Contribution guide](CONTRIBUTING.md)
