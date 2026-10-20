@@ -100,7 +100,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetchApi<Department[]>("/v1/admin/departments").catch(() => []),
+      fetchApi<Department[]>("/v1/departments").catch(() => []),
       fetchApi<Category[]>("/v1/categories").catch(() => []),
     ]).then(([d, c]) => {
       setDepartments(d);

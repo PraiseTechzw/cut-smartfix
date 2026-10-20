@@ -70,7 +70,7 @@ export default function StaffPage() {
           pageSize: 20,
           totalPages: 0,
         })),
-        fetchApi<Department[]>("/v1/admin/departments").catch(() => []),
+        fetchApi<Department[]>("/v1/departments").catch(() => []),
       ]);
       setStaff(users.items ?? []);
       setDepartments(depts);

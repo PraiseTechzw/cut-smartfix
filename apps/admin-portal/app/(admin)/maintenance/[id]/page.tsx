@@ -75,7 +75,7 @@ export default function TicketDetailPage() {
     }
     load();
 
-    fetchApi<Department[]>("/v1/admin/departments").then(setDepartments).catch(() => {});
+    fetchApi<Department[]>("/v1/departments").then(setDepartments).catch(() => {});
     fetchApi<UserProfile[]>("/v1/admin/users?role=technician").then(setTechnicians).catch(() => {});
   }, [id]);
 

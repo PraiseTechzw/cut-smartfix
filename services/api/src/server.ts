@@ -1869,6 +1869,38 @@ app.get("/v1/departments", requireAuth, async (_req, res) => {
   );
 });
 
+app.get(
+  "/v1/admin/departments",
+  requireAuth,
+  requireRole("administrator"),
+  async (_req, res) => {
+    const client = getClient(res);
+    if (!client) return;
+    const { data, error } = await client
+      .from("departments")
+      .select("*")
+      .order("name");
+    if (error) {
+      sendError(res, 500, "QUERY_FAILED", error.message);
+      return;
+    }
+    ok(
+      res,
+      (data ?? []).map(
+        (r) =>
+          ({
+            id: r.id,
+            name: r.name,
+            description: r.description,
+            isActive: r.is_active,
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+          }) as Department,
+      ),
+    );
+  },
+);
+
 // Staff list (for assignments)
 app.get(
   "/v1/staff",
@@ -2600,6 +2632,7 @@ app.post(
       .insert({
         name: parsed.data.name,
         description: parsed.data.description ?? null,
+        is_active: parsed.data.isActive ?? true,
       })
       .select("*")
       .single();
@@ -2607,7 +2640,18 @@ app.post(
       sendError(res, 500, "CREATE_FAILED", error.message);
       return;
     }
-    ok(res, data, 201);
+    ok(
+      res,
+      {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Department,
+      201,
+    );
   },
 );
 
@@ -2639,7 +2683,17 @@ app.patch(
       sendError(res, 500, "UPDATE_FAILED", error.message);
       return;
     }
-    ok(res, data);
+    ok(
+      res,
+      {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      } as Department,
+    );
   },
 );
 

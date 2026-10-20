@@ -29,7 +29,10 @@ export default function DepartmentsPage() {
   useEffect(() => {
     fetchApi<Department[]>("/v1/admin/departments")
       .then((d) => { setDepartments(d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((e) => {
+        showToast(e instanceof Error ? e.message : "Could not load departments.", "error");
+        setLoading(false);
+      });
   }, []);
 
   const openAdd = () => {

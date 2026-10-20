@@ -51,7 +51,7 @@ function AssignmentsPage() {
           pageSize: 50,
           totalPages: 1,
         })),
-        fetchApi<Department[]>("/v1/admin/departments").catch(() => []),
+        fetchApi<Department[]>("/v1/departments").catch(() => []),
         fetchApi<UserProfile[]>("/v1/admin/users?role=technician").catch(
           () => [],
         ),

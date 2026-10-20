@@ -62,7 +62,7 @@ function MaintenancePage() {
     async function loadFilters() {
       const [cats, depts] = await Promise.all([
         fetchApi<Category[]>("/v1/categories").catch(() => []),
-        fetchApi<Department[]>("/v1/admin/departments").catch(() => []),
+        fetchApi<Department[]>("/v1/departments").catch(() => []),
       ]);
       setCategories(cats);
       setDepartments(depts);
