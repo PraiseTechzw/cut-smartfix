@@ -46,7 +46,7 @@ interface FieldProps {
   returnKeyType?: "next" | "done";
   onSubmitEditing?: () => void;
   blurOnSubmit?: boolean;
-  inputRef?: React.RefObject<TextInput>;
+  inputRef?: React.RefObject<TextInput | null>;
   rightElement?: React.ReactNode;
   onFocusChange?: (focused: boolean) => void;
 }
