@@ -82,9 +82,16 @@ export default function TaskDetailPage() {
   const isSupervisor =
     user?.role === "supervisor" || user?.role === "administrator";
 
+  const technicianTransitions: Partial<Record<ReportStatus, ReportStatus[]>> = {
+    assigned: ["accepted"],
+    accepted: ["in_progress"],
+    in_progress: ["waiting_for_materials", "repair_completed"],
+    waiting_for_materials: ["in_progress", "repair_completed"],
+  };
+  const availableTechnicianStatuses = technicianTransitions[report?.status ?? "submitted"] ?? [];
   const statusOptions = isSupervisor
     ? [...STATUS_OPTIONS, ...SUPERVISOR_STATUS_OPTIONS]
-    : STATUS_OPTIONS;
+    : STATUS_OPTIONS.filter((option) => availableTechnicianStatuses.includes(option.value));
 
   async function loadAll() {
     setLoading(true);
@@ -399,38 +406,50 @@ export default function TaskDetailPage() {
                 {statusMsg}
               </div>
             )}
-            <div className="form-group">
-              <label className="label">New Status</label>
-              <select
-                className="select"
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value as ReportStatus)}
-              >
-                <option value="">— Select status —</option>
-                {statusOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="label">Note (optional)</label>
-              <textarea
-                className="textarea"
-                placeholder="Describe the work done or reason for status change…"
-                value={statusNote}
-                onChange={(e) => setStatusNote(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <button
-              className="btn btn-primary"
-              onClick={handleStatusUpdate}
-              disabled={!newStatus || statusLoading}
-            >
-              {statusLoading ? "Updating…" : "Update Status"}
-            </button>
+            {statusOptions.length === 0 ? (
+              <div className="empty-state" style={{ padding: "16px" }}>
+                <p>
+                  {report.status === "repair_completed"
+                    ? "This repair is complete and waiting for supervisor verification."
+                    : "There are no status changes available for this task right now."}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="form-group">
+                  <label className="label">New Status</label>
+                  <select
+                    className="select"
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value as ReportStatus)}
+                  >
+                    <option value="">— Select status —</option>
+                    {statusOptions.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="label">Note (optional)</label>
+                  <textarea
+                    className="textarea"
+                    placeholder="Describe the work done or reason for status change…"
+                    value={statusNote}
+                    onChange={(e) => setStatusNote(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleStatusUpdate}
+                  disabled={!newStatus || statusLoading}
+                >
+                  {statusLoading ? "Updating…" : "Update Status"}
+                </button>
+              </>
+            )}
           </div>
 
           {/* Notes */}
