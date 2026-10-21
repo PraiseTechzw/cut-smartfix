@@ -140,7 +140,7 @@ export default function TaskDetailPage() {
     setStatusLoading(true);
     setStatusMsg(null);
     try {
-      const res = await api.patch(`/v1/reports/${id}`, {
+      const res = await api.patch(`/v1/tasks/${id}`, {
         status: newStatus,
         ...(statusNote ? { note: statusNote, noteType: "work_note" } : {}),
       });
