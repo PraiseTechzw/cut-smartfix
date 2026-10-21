@@ -10,6 +10,7 @@ import type {
   Assignment,
   Category,
   Campus,
+  CompletionEvidence,
   Area,
   Building,
   Floor,
@@ -20,6 +21,7 @@ import type {
   MaintenanceReport,
   MaterialRequest,
   Notification,
+  ReportAttachment,
   ReportTimelineEvent,
   Subcategory,
   UserProfile,
@@ -239,6 +241,21 @@ function getClient(res: express.Response): SupabaseClient | null {
     );
   }
   return supabase;
+}
+
+async function canAccessReport(
+  client: SupabaseClient,
+  user: Pick<UserProfile, "id" | "role">,
+  reportId: string,
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("maintenance_reports")
+    .select("id, reporter_id, assigned_to")
+    .eq("id", reportId)
+    .maybeSingle();
+  if (error || !data) return false;
+  if (user.role === "administrator" || user.role === "supervisor") return true;
+  return data.reporter_id === user.id || data.assigned_to === user.id;
 }
 
 // ─────────────────────────────────────────
@@ -785,6 +802,11 @@ app.get("/v1/reports/:id/attachments", requireAuth, async (req, res) => {
     sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID.");
     return;
   }
+  const user = (req as AuthenticatedRequest).user;
+  if (!(await canAccessReport(client, user, idParsed.data))) {
+    sendError(res, 404, "REPORT_NOT_FOUND", "Maintenance report not found.");
+    return;
+  }
   const { data, error } = await client
     .from("report_attachments")
     .select("*")
@@ -800,10 +822,64 @@ app.get("/v1/reports/:id/attachments", requireAuth, async (req, res) => {
       const { data: signed } = await client.storage
         .from(process.env.STORAGE_BUCKET ?? "maintenance-evidence")
         .createSignedUrl(a.storage_path as string, 3600);
-      return { ...a, signedUrl: signed?.signedUrl };
+      const attachment: ReportAttachment = {
+        id: String(a.id),
+        reportId: String(a.report_id),
+        uploadedBy: String(a.uploaded_by),
+        storagePath: String(a.storage_path),
+        fileName: String(a.file_name),
+        contentType: String(a.content_type),
+        signedUrl: signed?.signedUrl,
+        createdAt: String(a.created_at),
+      };
+      return attachment;
     }),
   );
   ok(res, withUrls);
+});
+
+app.get("/v1/reports/:id/evidence", requireAuth, async (req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const idParsed = uuidSchema.safeParse(req.params.id);
+  if (!idParsed.success) {
+    sendError(res, 400, "VALIDATION_ERROR", "Invalid report ID.");
+    return;
+  }
+  const user = (req as AuthenticatedRequest).user;
+  if (!(await canAccessReport(client, user, idParsed.data))) {
+    sendError(res, 404, "REPORT_NOT_FOUND", "Maintenance report not found.");
+    return;
+  }
+  const { data, error } = await client
+    .from("completion_evidence")
+    .select("*")
+    .eq("report_id", idParsed.data)
+    .order("created_at", { ascending: true });
+  if (error) {
+    sendError(res, 500, "EVIDENCE_QUERY_FAILED", error.message);
+    return;
+  }
+  const bucket = process.env.STORAGE_BUCKET ?? "maintenance-evidence";
+  const evidence: CompletionEvidence[] = await Promise.all(
+    (data ?? []).map(async (item) => {
+      const { data: signed } = await client.storage
+        .from(bucket)
+        .createSignedUrl(item.storage_path as string, 3600);
+      return {
+        id: String(item.id),
+        reportId: String(item.report_id),
+        uploadedBy: String(item.uploaded_by),
+        storagePath: String(item.storage_path),
+        fileName: String(item.file_name),
+        contentType: String(item.content_type),
+        caption: item.caption ? String(item.caption) : undefined,
+        signedUrl: signed?.signedUrl,
+        createdAt: String(item.created_at),
+      };
+    }),
+  );
+  ok(res, evidence);
 });
 
 app.post("/v1/reports/:id/attachments/sign", requireAuth, async (req, res) => {
@@ -816,6 +892,14 @@ app.post("/v1/reports/:id/attachments/sign", requireAuth, async (req, res) => {
     return;
   }
   const user = (req as AuthenticatedRequest).user;
+  if (!(await canAccessReport(client, user, idParsed.data))) {
+    sendError(res, 404, "REPORT_NOT_FOUND", "Maintenance report not found.");
+    return;
+  }
+  if (input.data.isEvidence && user.role === "student") {
+    sendError(res, 403, "FORBIDDEN", "Students cannot upload completion evidence.");
+    return;
+  }
   const bucket = process.env.STORAGE_BUCKET ?? "maintenance-evidence";
   const folder = input.data.isEvidence ? "evidence" : "attachments";
   const storagePath = `${user.id}/${idParsed.data}/${folder}/${crypto.randomUUID()}-${input.data.fileName}`;
@@ -851,7 +935,19 @@ app.post("/v1/reports/:id/attachments/sign", requireAuth, async (req, res) => {
     sendError(res, 500, "ATTACHMENT_CREATE_FAILED", recErr.message);
     return;
   }
-  ok(res, { ...record, token: data.token, path: storagePath }, 201);
+  ok(
+    res,
+    {
+      id: record.id,
+      storagePath,
+      path: storagePath,
+      token: data.token,
+      uploadUrl: data.signedUrl,
+      fileName: record.file_name,
+      contentType: record.content_type,
+    },
+    201,
+  );
 });
 
 // ─────────────────────────────────────────

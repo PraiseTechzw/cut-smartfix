@@ -11,6 +11,7 @@ import type {
   MaintenanceNote,
   MaintenanceReport,
   MaterialRequest,
+  ReportAttachment,
   ReportTimelineEvent,
   UserProfile,
 } from "@cut-smartfix/contracts";
@@ -40,6 +41,7 @@ export default function TicketDetailPage() {
   const [timeline, setTimeline] = useState<ReportTimelineEvent[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [materials, setMaterials] = useState<MaterialRequest[]>([]);
+  const [attachments, setAttachments] = useState<ReportAttachment[]>([]);
   const [notes, setNotes] = useState<MaintenanceNote[]>([]);
   const [audit, setAudit] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,12 +75,13 @@ export default function TicketDetailPage() {
       setLoading(true);
       setLoadError("");
       try {
-        const [r, t, a, m, n] = await Promise.all([
+        const [r, t, a, m, n, photos] = await Promise.all([
           fetchApi<MaintenanceReport>(`/v1/reports/${id}`),
           fetchApi<unknown>(`/v1/reports/${id}/timeline`).catch(() => []),
           fetchApi<unknown>(`/v1/reports/${id}/assignments`).catch(() => []),
           fetchApi<unknown>(`/v1/reports/${id}/materials`).catch(() => []),
           fetchApi<unknown>(`/v1/reports/${id}/notes`).catch(() => []),
+          fetchApi<unknown>(`/v1/reports/${id}/attachments`).catch(() => []),
         ]);
         if (cancelled) return;
         setReport(r);
@@ -86,6 +89,7 @@ export default function TicketDetailPage() {
         setAssignments(asArray<Assignment>(a));
         setMaterials(asArray<MaterialRequest>(m));
         setNotes(asArray<MaintenanceNote>(n));
+        setAttachments(asArray<ReportAttachment>(photos));
       } catch (err) {
         if (cancelled) return;
         setLoadError(err instanceof Error ? err.message : "Could not load this ticket.");
@@ -291,6 +295,40 @@ export default function TicketDetailPage() {
                       {report.description}
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <div className="card" style={{ marginBottom: "16px" }}>
+                <div className="card-header">
+                  <div className="card-title">Photos ({attachments.length})</div>
+                </div>
+                <div className="card-body">
+                  {attachments.length === 0 ? (
+                    <p className="text-muted text-sm">No photos attached to this ticket.</p>
+                  ) : (
+                    <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                      {attachments.map((photo) => (
+                        photo.signedUrl ? (
+                          <a
+                            key={photo.id}
+                            href={photo.signedUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Open ${photo.fileName}`}
+                          >
+                            <img
+                              src={photo.signedUrl}
+                              alt={photo.fileName}
+                              loading="lazy"
+                              style={{ width: 160, height: 120, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border)" }}
+                            />
+                          </a>
+                        ) : (
+                          <div key={photo.id} className="text-muted text-sm">Image unavailable: {photo.fileName}</div>
+                        )
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

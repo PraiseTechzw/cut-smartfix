@@ -65,7 +65,7 @@ function AuthGuard() {
 
     const inAuthGroup    = segments[0] === "auth";
     const onVerifyScreen =
-      segments[0] === "auth" && segments.includes("verify");
+      segments[0] === "auth" && segments[1] === "verify";
 
     // ── Case 1: Awaiting email confirmation ──────────────────
     if (pendingEmail) {

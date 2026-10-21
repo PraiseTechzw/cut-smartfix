@@ -353,6 +353,7 @@ export interface AttachmentSignResult {
   contentType: string;
   token: string;
   path: string;
+  uploadUrl: string;
 }
 
 // ─────────────────────────────────────────

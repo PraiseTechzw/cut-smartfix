@@ -79,6 +79,7 @@ async function saveOffline(report: unknown) {
 // ---------------------------------------------------------------------------
 interface PickedPhoto {
   uri: string;
+  base64?: string;
   /** mime type – defaults to image/jpeg if unknown */
   mimeType?: string;
   fileName?: string;
@@ -103,11 +104,15 @@ async function pickFromGallery(): Promise<PickedPhoto[]> {
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
     allowsMultipleSelection: true,
     quality: 0.8,
+    base64: true,
+    preferredAssetRepresentationMode:
+      ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
     selectionLimit: MAX_PHOTOS,
   });
   if (result.canceled) return [];
-  return result.assets.map((a: { uri: string; mimeType?: string; fileName?: string }) => ({
+  return result.assets.map((a: { uri: string; base64?: string | null; mimeType?: string; fileName?: string }) => ({
     uri: a.uri,
+    base64: a.base64 ?? undefined,
     mimeType: a.mimeType ?? "image/jpeg",
     fileName: a.fileName,
   }));
@@ -126,6 +131,7 @@ async function captureFromCamera(): Promise<PickedPhoto | null> {
   }
   const result = await ImagePicker.launchCameraAsync({
     quality: 0.8,
+    base64: true,
     allowsEditing: true,
     aspect: [4, 3],
   });
@@ -133,6 +139,7 @@ async function captureFromCamera(): Promise<PickedPhoto | null> {
   const a = result.assets[0];
   return {
     uri: a.uri,
+    base64: a.base64 ?? undefined,
     mimeType: a.mimeType ?? "image/jpeg",
     fileName: a.fileName,
   };
@@ -141,6 +148,26 @@ async function captureFromCamera(): Promise<PickedPhoto | null> {
 // ---------------------------------------------------------------------------
 // Upload a single photo to the API
 // ---------------------------------------------------------------------------
+
+function decodeBase64(value: string): ArrayBuffer {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const bytes = new Uint8Array(Math.floor((value.length * 3) / 4) - (value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0));
+  let buffer = 0;
+  let bits = 0;
+  let offset = 0;
+  for (const char of value) {
+    if (char === "=") break;
+    const digit = alphabet.indexOf(char);
+    if (digit < 0) continue;
+    buffer = (buffer << 6) | digit;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes[offset++] = (buffer >> bits) & 0xff;
+    }
+  }
+  return bytes.buffer;
+}
 
 /** Shared timeout for wizard API calls (ms). */
 const WIZARD_TIMEOUT_MS = 20_000;
@@ -180,14 +207,15 @@ async function uploadPhoto(
   photo: PickedPhoto,
   authToken: string,
 ): Promise<void> {
-  const contentType = (photo.mimeType ?? "image/jpeg") as
-    | "image/jpeg"
-    | "image/png"
-    | "image/webp";
+  const supportedTypes = ["image/jpeg", "image/png", "image/webp"] as const;
+  const contentType = supportedTypes.find((type) => type === photo.mimeType);
+  if (!contentType) {
+    throw new Error("This photo format is not supported. Choose a JPEG, PNG, or WebP image.");
+  }
 
-  const fileName =
-    photo.fileName ??
-    `photo_${Date.now()}.${contentType.split("/")[1] ?? "jpg"}`;
+  const fileName = (
+    photo.fileName ?? `photo_${Date.now()}.${contentType.split("/")[1] ?? "jpg"}`
+  ).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 160);
 
   // Step 1: Request a signed upload URL from the API
   const signRes = await wizardFetch(
@@ -207,18 +235,23 @@ async function uploadPhoto(
   }
 
   const { data: signData } = await signRes.json();
+  if (!signData?.uploadUrl || !signData?.path || !signData?.token) {
+    throw new Error("The server did not return a valid photo upload URL.");
+  }
+  if (!photo.base64) {
+    throw new Error("Could not read the selected photo. Please choose it again.");
+  }
 
-  // Step 2: Upload the file directly to the signed URL (Supabase storage)
-  // Use a longer timeout for the actual binary upload
-  const fileRes = await wizardFetch(photo.uri, {}, 30_000);
-  const blob = await fileRes.blob();
-
+  // Step 2: Upload raw image bytes to the signed Supabase Storage URL.
   const uploadRes = await wizardFetch(
-    signData.path,
+    signData.uploadUrl,
     {
       method: "PUT",
-      headers: { "Content-Type": contentType },
-      body: blob,
+      headers: {
+        "Content-Type": contentType,
+        "x-upsert": "false",
+      },
+      body: decodeBase64(photo.base64),
     },
     60_000, // allow up to 60s for the binary upload
   );
@@ -227,18 +260,6 @@ async function uploadPhoto(
     throw new Error(`Upload failed: HTTP ${uploadRes.status}`);
   }
 
-  // Step 3: Confirm the upload with the API so it records the attachment
-  await wizardFetch(
-    `${API_URL}/v1/reports/${reportId}/attachments/confirm`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ id: signData.id }),
-    },
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -330,9 +351,11 @@ function SelectionList<T extends { id: string; name: string }>({
 function SuccessScreen({
   ticketNumber,
   offline,
+  photoUploadWarning,
 }: {
   ticketNumber?: string;
   offline?: boolean;
+  photoUploadWarning?: string;
 }) {
   return (
     <SafeAreaView style={styles.page}>
@@ -359,6 +382,9 @@ function SuccessScreen({
             )}
           </>
         )}
+        {photoUploadWarning ? (
+          <Text style={styles.uploadWarning}>{photoUploadWarning}</Text>
+        ) : null}
         <Pressable
           style={styles.successBtn}
           onPress={() => router.replace("/(tabs)")}
@@ -388,6 +414,7 @@ export default function ReportWizardScreen() {
   const [offline, setOffline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState("");
+  const [photoUploadWarning, setPhotoUploadWarning] = useState("");
   const [ticketNumber, setTicketNumber] = useState<string | undefined>();
 
   // Step 1: Location
@@ -650,15 +677,21 @@ export default function ReportWizardScreen() {
       const reportId: string = json.data?.id;
       const ticket: string = json.data?.ticketNumber;
 
-      // Upload photos — non-fatal, failures are silently skipped
+      // Keep the report submission, but surface any failed photo uploads.
       if (photos.length > 0 && reportId) {
+        let failedUploads = 0;
         for (let i = 0; i < photos.length; i++) {
           setSubmitStatus(`Uploading photo ${i + 1} of ${photos.length}…`);
           try {
             await uploadPhoto(reportId, photos[i], token);
           } catch {
-            // Non-fatal: photo upload failure doesn't block the report
+            failedUploads += 1;
           }
+        }
+        if (failedUploads > 0) {
+          setPhotoUploadWarning(
+            `${failedUploads} of ${photos.length} photo${photos.length === 1 ? "" : "s"} could not be uploaded. The report was submitted; contact maintenance with the ticket number to provide the missing photos.`,
+          );
         }
       }
 
@@ -696,7 +729,13 @@ export default function ReportWizardScreen() {
   // Render
   // ---------------------------------------------------------------------------
   if (submitted) {
-    return <SuccessScreen ticketNumber={ticketNumber} offline={offline} />;
+    return (
+      <SuccessScreen
+        ticketNumber={ticketNumber}
+        offline={offline}
+        photoUploadWarning={photoUploadWarning}
+      />
+    );
   }
 
   return (
@@ -1417,6 +1456,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
     lineHeight: 22,
+  },
+  uploadWarning: {
+    color: "#9a3412",
+    backgroundColor: "#fff7ed",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: "center",
   },
   ticketBox: {
     backgroundColor: "#fff",
