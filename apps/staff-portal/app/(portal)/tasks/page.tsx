@@ -69,6 +69,13 @@ export default function TasksPage() {
   }, [tab, search]);
 
   useEffect(() => {
+    const requestedStatus = new URLSearchParams(window.location.search).get('status');
+    if (requestedStatus && TABS.some((item) => item.value === requestedStatus)) {
+      setTab(requestedStatus as TabFilter);
+    }
+  }, []);
+
+  useEffect(() => {
     load();
   }, [load]);
 

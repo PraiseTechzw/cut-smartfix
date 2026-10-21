@@ -1990,6 +1990,47 @@ ol {
 }
 
 /* ─── Dashboard Specific ───────────────────────────────────── */
+.dashboard-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.dashboard-heading h1 {
+  font-family: var(--font-heading, inherit);
+  font-size: 1.65rem;
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+
+.dashboard-heading p:last-child,
+.dashboard-section-caption {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.dashboard-eyebrow {
+  color: var(--green);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin: 0 0 7px;
+}
+
+.dashboard-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.dashboard-stat-grid .stat-card {
+  min-width: 0;
+}
+
 .dashboard-welcome {
   margin-bottom: 24px;
   display: flex;
@@ -1997,6 +2038,11 @@ ol {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.dashboard-welcome.card {
+  border-color: #d4e4dc;
+  background: linear-gradient(120deg, #fff 0%, #f2faf6 100%);
 }
 
 .dashboard-welcome-title {
@@ -2105,11 +2151,13 @@ ol {
   border-radius: 8px;
   background: var(--surface);
   flex-wrap: wrap;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
 .task-row:hover {
   background: #f8faf8;
+  border-color: #b9d4c8;
+  transform: translateY(-1px);
 }
 
 .task-row-overdue {
@@ -2150,6 +2198,41 @@ ol {
   border-radius: 4px;
 }
 
+.dashboard-section-caption {
+  margin-top: 4px;
+}
+
+.dashboard-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dashboard-load-error {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  background: #fff7f7;
+  color: var(--text);
+}
+
+.dashboard-load-error p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
 /* ─── Task Detail Layout ────────────────────────────────────── */
 .task-detail-grid {
   display: grid;
@@ -2171,11 +2254,32 @@ ol {
 }
 
 @media (max-width: 768px) {
+  .dashboard-heading {
+    align-items: flex-start;
+  }
+
+  .dashboard-heading h1 {
+    font-size: 1.4rem;
+  }
+
   .dashboard-welcome {
     flex-direction: column;
   }
 
   .overdue-alert {
     width: 100%;
+  }
+
+  .dashboard-task-actions {
+    width: 100%;
+  }
+
+  .dashboard-task-actions .btn {
+    flex: 1;
+  }
+
+  .dashboard-load-error {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

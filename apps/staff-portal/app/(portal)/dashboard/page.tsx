@@ -64,6 +64,9 @@ export default function DashboardPage() {
       const items: MaintenanceReport[] = Array.isArray(res.data)
         ? res.data
         : (res.data as PaginatedList<MaintenanceReport>).items ?? [];
+      const totalOpenTasks = Array.isArray(res.data)
+        ? items.length
+        : (res.data as PaginatedList<MaintenanceReport>).total ?? items.length;
       const today = new Date().toDateString();
       const assigned = items.filter((task) => task.status === 'assigned').length;
       const accepted = items.filter((task) => task.status === 'accepted').length;
@@ -86,7 +89,7 @@ export default function DashboardPage() {
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
 
-      setStats({ assigned, accepted, inProgress, waitingMaterials, completedToday, overdue, total: active.length });
+      setStats({ assigned, accepted, inProgress, waitingMaterials, completedToday, overdue, total: totalOpenTasks });
       setTasks(active.slice(0, 6));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load tasks');
