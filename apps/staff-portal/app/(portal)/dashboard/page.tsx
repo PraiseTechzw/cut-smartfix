@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../lib/auth';
 import { api, timeAgo } from '../../../lib/api';
@@ -46,68 +46,76 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState(false);
 
   const isSupervisor = user?.role === 'supervisor' || user?.role === 'administrator';
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const res = await api.get<PaginatedList<MaintenanceReport> | MaintenanceReport[]>(
-          '/v1/tasks?pageSize=100'
-        );
-        if (res.error) throw new Error(res.error.message);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get<PaginatedList<MaintenanceReport> | MaintenanceReport[]>(
+        '/v1/tasks?pageSize=100'
+      );
+      if (res.error) throw new Error(res.error.message);
 
-        const items: MaintenanceReport[] = Array.isArray(res.data)
-          ? res.data
-          : (res.data as PaginatedList<MaintenanceReport>).items ?? [];
+      const items: MaintenanceReport[] = Array.isArray(res.data)
+        ? res.data
+        : (res.data as PaginatedList<MaintenanceReport>).items ?? [];
+      const today = new Date().toDateString();
+      const assigned = items.filter((task) => task.status === 'assigned').length;
+      const accepted = items.filter((task) => task.status === 'accepted').length;
+      const inProgress = items.filter((task) => task.status === 'in_progress').length;
+      const waitingMaterials = items.filter((task) => task.status === 'waiting_for_materials').length;
+      const completedToday = items.filter(
+        (task) =>
+          (task.status === 'repair_completed' || task.status === 'closed') &&
+          task.updatedAt &&
+          new Date(task.updatedAt).toDateString() === today
+      ).length;
+      const overdue = items.filter((task) => task.isOverdue).length;
+      const active = items
+        .filter((task) => !['closed', 'repair_completed', 'cancelled', 'rejected', 'duplicate'].includes(task.status))
+        .sort((a, b) => {
+          if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
+          const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+          const priorityDifference = (priorityOrder[a.priority ?? 'low'] ?? 4) - (priorityOrder[b.priority ?? 'low'] ?? 4);
+          if (priorityDifference !== 0) return priorityDifference;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
 
-        const today = new Date().toDateString();
-        const assigned = items.filter((t) => t.status === 'assigned').length;
-        const accepted = items.filter((t) => t.status === 'accepted').length;
-        const inProgress = items.filter((t) => t.status === 'in_progress').length;
-        const waitingMaterials = items.filter((t) => t.status === 'waiting_for_materials').length;
-        const completedToday = items.filter(
-          (t) =>
-            (t.status === 'repair_completed' || t.status === 'closed') &&
-            t.updatedAt &&
-            new Date(t.updatedAt).toDateString() === today
-        ).length;
-        const overdue = items.filter((t) => t.isOverdue).length;
-
-        setStats({ assigned, accepted, inProgress, waitingMaterials, completedToday, overdue, total: items.length });
-
-        const priorityOrder: Record<string, number> = {
-          critical: 0, high: 1, medium: 2, low: 3,
-        };
-        const active = items
-          .filter(
-            (t) =>
-              t.status !== 'closed' &&
-              t.status !== 'repair_completed' &&
-              t.status !== 'cancelled' &&
-              t.status !== 'rejected' &&
-              t.status !== 'duplicate'
-          )
-          .sort((a, b) => {
-            // Overdue first
-            if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
-            const pa = priorityOrder[a.priority ?? 'low'] ?? 4;
-            const pb = priorityOrder[b.priority ?? 'low'] ?? 4;
-            if (pa !== pb) return pa - pb;
-            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          })
-          .slice(0, 6);
-
-        setTasks(active);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load tasks');
-      } finally {
-        setLoading(false);
-      }
+      setStats({ assigned, accepted, inProgress, waitingMaterials, completedToday, overdue, total: active.length });
+      setTasks(active.slice(0, 6));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load tasks');
+      setTasks([]);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const updateTask = async (taskId: string, status: 'accepted' | 'in_progress') => {
+    setActionLoading(taskId);
+    setActionMessage(null);
+    setActionError(false);
+    try {
+      const res = await api.patch(`/v1/tasks/${taskId}`, { status });
+      if (res.error) throw new Error(res.error.message);
+      setActionMessage(status === 'accepted' ? 'Assignment accepted.' : 'Work started.');
+      await load();
+    } catch (e) {
+      setActionError(true);
+      setActionMessage(e instanceof Error ? e.message : 'Could not update this task.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const displayName = user?.fullName?.split(' ')[0] ?? 'Staff';
   const roleLabel =
@@ -122,6 +130,17 @@ export default function DashboardPage() {
 
   return (
     <>
+      <div className="dashboard-heading">
+        <div>
+          <p className="dashboard-eyebrow">STAFF WORKSPACE</p>
+          <h1>Dashboard</h1>
+          <p>Track your work orders and keep maintenance moving.</p>
+        </div>
+        <button className="btn btn-secondary" onClick={() => void load()} disabled={loading}>
+          {loading ? 'Refreshing…' : 'Refresh tasks'}
+        </button>
+      </div>
+
       {/* Welcome card */}
       <div className="card dashboard-welcome">
         <div className="dashboard-welcome-left">
@@ -155,7 +174,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid-4" style={{ marginBottom: 24 }}>
+      <div className="dashboard-stat-grid">
+        <Link href="/tasks" className="stat-card stat-card-link accent-green">
+          <div className="stat-card-label">Open Work</div>
+          <div className="stat-card-value">{loading ? '–' : stats.total}</div>
+          <div className="stat-card-sub">Active work orders</div>
+        </Link>
         <Link href="/tasks?status=assigned" className="stat-card stat-card-link accent-blue">
           <div className="stat-card-label">Assigned</div>
           <div className="stat-card-value">{loading ? '–' : stats.assigned}</div>
@@ -176,6 +200,11 @@ export default function DashboardPage() {
           <div className="stat-card-value">{loading ? '–' : stats.completedToday}</div>
           <div className="stat-card-sub">Marked complete today</div>
         </div>
+        <Link href="/tasks" className="stat-card stat-card-link accent-red">
+          <div className="stat-card-label">Overdue</div>
+          <div className="stat-card-value">{loading ? '–' : stats.overdue}</div>
+          <div className="stat-card-sub">Need attention</div>
+        </Link>
       </div>
 
       {/* Quick Actions */}
@@ -224,21 +253,28 @@ export default function DashboardPage() {
       </div>
 
       {/* Most urgent tasks */}
-      <div className="card">
+      <div className="card dashboard-tasks-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Most Urgent Tasks</h3>
+          <div>
+            <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Priority work</h3>
+            <p className="dashboard-section-caption">Your most urgent active assignments</p>
+          </div>
           <Link href="/tasks" className="btn btn-secondary btn-sm">
             View all →
           </Link>
         </div>
 
-        {error && (
-          <div className="alert alert-error">{error}</div>
-        )}
-
         {loading ? (
           <div className="loading-overlay" style={{ minHeight: 120 }}>
             <div className="spinner" />
+          </div>
+        ) : error ? (
+          <div className="dashboard-load-error">
+            <div>
+              <strong>We couldn’t load your tasks.</strong>
+              <p>{error}</p>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={() => void load()}>Try again</button>
           </div>
         ) : tasks.length === 0 ? (
           <div className="empty-state">
@@ -247,7 +283,7 @@ export default function DashboardPage() {
             <p>No active tasks assigned to you right now.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="dashboard-task-list">
             {tasks.map((task) => (
               <div
                 key={task.id}
@@ -267,15 +303,28 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <p className="task-row-title">{task.title}</p>
-                  <p className="task-row-sub">
-                    📍 {locationLabel(task)} · {timeAgo(task.createdAt)}
-                  </p>
+                  <p className="task-row-sub">{locationLabel(task)} · Reported {timeAgo(task.createdAt)}</p>
                 </div>
-                <Link href={`/tasks/${task.id}`} className="btn btn-secondary btn-sm" style={{ flexShrink: 0 }}>
-                  View
-                </Link>
+                <div className="dashboard-task-actions">
+                  {task.status === 'assigned' && (
+                    <button className="btn btn-primary btn-sm" disabled={actionLoading === task.id} onClick={() => void updateTask(task.id, 'accepted')}>
+                      {actionLoading === task.id ? 'Saving…' : 'Accept'}
+                    </button>
+                  )}
+                  {task.status === 'accepted' && (
+                    <button className="btn btn-primary btn-sm" disabled={actionLoading === task.id} onClick={() => void updateTask(task.id, 'in_progress')}>
+                      {actionLoading === task.id ? 'Saving…' : 'Start work'}
+                    </button>
+                  )}
+                  <Link href={`/tasks/${task.id}`} className="btn btn-secondary btn-sm">Details</Link>
+                </div>
               </div>
             ))}
+          </div>
+        )}
+        {actionMessage && (
+          <div className={`alert ${actionError ? 'alert-error' : 'alert-success'}`} style={{ marginTop: 14 }}>
+            {actionMessage}
           </div>
         )}
       </div>
