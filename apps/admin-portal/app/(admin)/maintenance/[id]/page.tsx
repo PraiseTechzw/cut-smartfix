@@ -102,8 +102,10 @@ export default function TicketDetailPage() {
     fetchApi<unknown>("/v1/departments")
       .then((value) => { if (!cancelled) setDepartments(asArray<Department>(value)); })
       .catch(() => {});
-    fetchApi<unknown>("/v1/admin/users?role=technician")
-      .then((value) => { if (!cancelled) setTechnicians(asArray<UserProfile>(value)); })
+    fetchApi<UserProfile[]>("/v1/staff")
+      .then((value) => {
+        if (!cancelled) setTechnicians(value.filter((user) => user.role === "technician"));
+      })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [id]);
@@ -158,7 +160,7 @@ export default function TicketDetailPage() {
     if (!reassignTech) return;
     setSaving(true);
     try {
-      const a = await fetchApi<Assignment>(`/v1/reports/${id}/assignments`, {
+      await fetchApi<Assignment>(`/v1/reports/${id}/assignments`, {
         method: "POST",
         body: JSON.stringify({
           technicianId: reassignTech,
@@ -166,7 +168,12 @@ export default function TicketDetailPage() {
           notes: reassignNotes || undefined,
         }),
       });
-      setAssignments((prev) => [a, ...prev]);
+      const [latestReport, latestAssignments] = await Promise.all([
+        fetchApi<MaintenanceReport>(`/v1/reports/${id}`),
+        fetchApi<unknown>(`/v1/reports/${id}/assignments`),
+      ]);
+      setReport(latestReport);
+      setAssignments(asArray<Assignment>(latestAssignments));
       setReassignTech(""); setReassignDept(""); setReassignNotes("");
       showToast("Technician assigned.");
     } catch (err) {
@@ -259,6 +266,10 @@ export default function TicketDetailPage() {
                     <div className="field-item">
                       <div className="field-label">Department</div>
                       <div className="field-value">{report.assignedDepartmentName ?? "—"}</div>
+                    </div>
+                    <div className="field-item">
+                      <div className="field-label">Assigned Technician</div>
+                      <div className="field-value">{report.assignedToName ?? "Unassigned"}</div>
                     </div>
                     <div className="field-item">
                       <div className="field-label">Urgency</div>

@@ -52,13 +52,13 @@ function AssignmentsPage() {
           totalPages: 1,
         })),
         fetchApi<Department[]>("/v1/departments").catch(() => []),
-        fetchApi<UserProfile[]>("/v1/admin/users?role=technician").catch(
+        fetchApi<UserProfile[]>("/v1/staff").catch(
           () => [],
         ),
       ]);
       setTickets(ticketsRes.items ?? []);
       setDepartments(depts);
-      setTechnicians(techs);
+      setTechnicians(techs.filter((user) => user.role === "technician"));
       setLoading(false);
 
       // Pre-select ticket if query param present
@@ -300,6 +300,16 @@ function AssignmentsPage() {
                             </option>
                           ))}
                       </select>
+                      {technicians.length === 0 && (
+                        <div className="text-muted text-sm" style={{ marginTop: "6px" }}>
+                          No active technicians are available. Add or activate a technician in Staff Management.
+                        </div>
+                      )}
+                      {deptId && technicians.length > 0 && !technicians.some((user) => user.departmentId === deptId) && (
+                        <div className="text-muted text-sm" style={{ marginTop: "6px" }}>
+                          No active technicians are assigned to this department.
+                        </div>
+                      )}
                     </div>
 
                     <div className="form-group">

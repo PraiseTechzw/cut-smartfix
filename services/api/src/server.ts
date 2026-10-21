@@ -338,6 +338,19 @@ function mapAssignment(r: Row): Assignment {
   };
 }
 
+function mapProfile(r: Row): UserProfile {
+  return {
+    id: String(r.id),
+    email: String(r.email),
+    fullName: String(r.full_name),
+    role: r.role as UserProfile["role"],
+    departmentId: r.department_id ? String(r.department_id) : undefined,
+    isActive: Boolean(r.is_active),
+    avatarUrl: r.avatar_url ? String(r.avatar_url) : undefined,
+    createdAt: r.created_at ? String(r.created_at) : new Date(0).toISOString(),
+  };
+}
+
 function mapNote(r: Row): MaintenanceNote {
   return {
     id: String(r.id),
@@ -2017,7 +2030,7 @@ app.get(
       sendError(res, 500, "QUERY_FAILED", error.message);
       return;
     }
-    ok(res, data ?? []);
+    ok(res, (data ?? []).map((profile) => mapProfile(profile as Row)));
   },
 );
 
@@ -2888,7 +2901,7 @@ app.get(
       return;
     }
     ok(res, {
-      items: data ?? [],
+      items: (data ?? []).map((profile) => mapProfile(profile as Row)),
       total: count ?? 0,
       page,
       pageSize,
@@ -2944,7 +2957,7 @@ app.patch(
       String(req.params.id),
       updates,
     );
-    ok(res, data);
+    ok(res, mapProfile(data as Row));
   },
 );
 
