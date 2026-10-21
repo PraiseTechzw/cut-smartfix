@@ -17,6 +17,15 @@ import type {
 
 type Tab = "overview" | "timeline" | "assignments" | "materials" | "audit";
 
+function asArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === "object" && "items" in value) {
+    const items = (value as { items?: unknown }).items;
+    return Array.isArray(items) ? (items as T[]) : [];
+  }
+  return [];
+}
+
 const STATUS_OPTIONS = [
   "submitted", "under_review", "assigned", "accepted", "in_progress",
   "waiting_for_materials", "repair_completed", "under_verification",
@@ -66,17 +75,17 @@ export default function TicketDetailPage() {
       try {
         const [r, t, a, m, n] = await Promise.all([
           fetchApi<MaintenanceReport>(`/v1/reports/${id}`),
-          fetchApi<ReportTimelineEvent[]>(`/v1/reports/${id}/timeline`).catch(() => []),
-          fetchApi<Assignment[]>(`/v1/reports/${id}/assignments`).catch(() => []),
-          fetchApi<MaterialRequest[]>(`/v1/reports/${id}/materials`).catch(() => []),
-          fetchApi<MaintenanceNote[]>(`/v1/reports/${id}/notes`).catch(() => []),
+          fetchApi<unknown>(`/v1/reports/${id}/timeline`).catch(() => []),
+          fetchApi<unknown>(`/v1/reports/${id}/assignments`).catch(() => []),
+          fetchApi<unknown>(`/v1/reports/${id}/materials`).catch(() => []),
+          fetchApi<unknown>(`/v1/reports/${id}/notes`).catch(() => []),
         ]);
         if (cancelled) return;
         setReport(r);
-        setTimeline(t);
-        setAssignments(a);
-        setMaterials(m);
-        setNotes(n);
+        setTimeline(asArray<ReportTimelineEvent>(t));
+        setAssignments(asArray<Assignment>(a));
+        setMaterials(asArray<MaterialRequest>(m));
+        setNotes(asArray<MaintenanceNote>(n));
       } catch (err) {
         if (cancelled) return;
         setLoadError(err instanceof Error ? err.message : "Could not load this ticket.");
@@ -86,15 +95,19 @@ export default function TicketDetailPage() {
     }
     load();
 
-    fetchApi<Department[]>("/v1/departments").then(setDepartments).catch(() => {});
-    fetchApi<UserProfile[]>("/v1/admin/users?role=technician").then(setTechnicians).catch(() => {});
+    fetchApi<unknown>("/v1/departments")
+      .then((value) => { if (!cancelled) setDepartments(asArray<Department>(value)); })
+      .catch(() => {});
+    fetchApi<unknown>("/v1/admin/users?role=technician")
+      .then((value) => { if (!cancelled) setTechnicians(asArray<UserProfile>(value)); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, [id]);
 
   useEffect(() => {
     if (tab === "audit" && id) {
-      fetchApi<{ items: AuditLog[] }>(`/v1/audit?entityId=${id}`)
-        .then((r) => setAudit(r.items ?? []))
+      fetchApi<unknown>(`/v1/audit?entityId=${id}`)
+        .then((value) => setAudit(asArray<AuditLog>(value)))
         .catch(() => {});
     }
   }, [tab, id]);
