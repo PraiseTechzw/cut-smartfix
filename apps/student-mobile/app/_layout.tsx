@@ -1,6 +1,7 @@
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../context/auth";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { useOfflineSync } from "../hooks/useOfflineSync";
@@ -93,11 +94,13 @@ function AuthGuard() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <AuthGuard />
-      <OfflineBanner />
-      <Slot />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <AuthGuard />
+        <OfflineBanner />
+        <Slot />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 

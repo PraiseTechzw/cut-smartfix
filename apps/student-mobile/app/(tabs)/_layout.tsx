@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Design tokens
 const GREEN = "#0b6b57";
@@ -231,13 +232,21 @@ const TabsNav = Tabs as unknown as TabsType;
 // ---------------------------------------------------------------------------
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <TabsNav
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: GREEN,
         tabBarInactiveTintColor: MUTED,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: 62 + insets.bottom,
+            paddingBottom: Math.max(insets.bottom, 8),
+          },
+        ],
         tabBarLabelStyle: styles.label,
       }}
     >
@@ -298,8 +307,8 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
     borderTopColor: BORDER,
     borderTopWidth: 1,
-    height: 68,
-    paddingBottom: 10,
+    height: 62,
+    paddingBottom: 8,
     paddingTop: 6,
     // Subtle shadow for iOS
     ...Platform.select({

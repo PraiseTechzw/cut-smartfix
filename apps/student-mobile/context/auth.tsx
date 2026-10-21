@@ -160,6 +160,24 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 const SUPABASE_URL     = process.env.EXPO_PUBLIC_SUPABASE_URL     ?? "";
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
+function assertSupabaseConfigured() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Sign-in is not configured in this app build. Configure the Supabase URL and anon key, then rebuild the app.",
+    );
+  }
+}
+
+async function readAuthResponse(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    throw new Error(
+      `The authentication service returned an invalid response (HTTP ${res.status}). Check the Supabase URL configured for this app.`,
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Supabase minimal REST helpers
 // ---------------------------------------------------------------------------
@@ -201,6 +219,7 @@ async function supabaseSignIn(
   email: string,
   password: string,
 ): Promise<string> {
+  assertSupabaseConfigured();
   const res = await fetchWithAuthTimeout(
     `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
     {
@@ -209,7 +228,7 @@ async function supabaseSignIn(
       body: JSON.stringify({ email, password }),
     },
   );
-  const json = await res.json();
+  const json = await readAuthResponse(res);
   if (!res.ok) {
     if (isEmailNotConfirmedError(json)) {
       // Surface a typed error so callers can route to verify screen
@@ -232,6 +251,7 @@ async function supabaseSignUp(
   fullName: string,
   studentId: string,
 ): Promise<{ access_token: string | null; needsConfirmation: boolean }> {
+  assertSupabaseConfigured();
   const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
@@ -241,7 +261,7 @@ async function supabaseSignUp(
       data: { full_name: fullName, student_id: studentId },
     }),
   });
-  const json = await res.json();
+  const json = await readAuthResponse(res);
   if (!res.ok) {
     throw new Error(
       (json?.error_description as string) ??
@@ -269,12 +289,13 @@ async function supabaseVerifyOtp(
   email: string,
   token: string,
 ): Promise<string> {
+  assertSupabaseConfigured();
   const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
     body: JSON.stringify({ type: "signup", email, token }),
   });
-  const json = await res.json();
+  const json = await readAuthResponse(res);
   if (!res.ok) {
     throw new Error(
       (json?.error_description as string) ??
@@ -286,6 +307,7 @@ async function supabaseVerifyOtp(
 }
 
 async function supabaseResendOtp(email: string): Promise<void> {
+  assertSupabaseConfigured();
   const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/resend`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
