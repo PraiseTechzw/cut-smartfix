@@ -1,3 +1,4 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "../../components/LinearGradient";
 import { Link, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -7,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,

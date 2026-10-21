@@ -1,3 +1,4 @@
+import { API_URL } from "../src/constants/api";
 import React, {
   createContext,
   useCallback,
@@ -88,7 +89,7 @@ async function registerPushToken(apiToken: string): Promise<void> {
     const pushToken: string = tokenData.data;
 
     await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000"}/v1/me/push-token`,
+      `${API_URL}/v1/me/push-token`,
       {
         method: "POST",
         headers: {
@@ -156,7 +157,6 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const API_URL          = process.env.EXPO_PUBLIC_API_URL          ?? "http://localhost:4000";
 const SUPABASE_URL     = process.env.EXPO_PUBLIC_SUPABASE_URL     ?? "";
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 

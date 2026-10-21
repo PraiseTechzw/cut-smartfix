@@ -1,3 +1,5 @@
+import { API_URL } from "../../src/constants/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -5,7 +7,6 @@ import {
   Alert,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,7 +24,6 @@ import type {
   ReportTimelineEvent,
 } from "../../src/types/contracts";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
 // ---------------------------------------------------------------------------
 // Helpers

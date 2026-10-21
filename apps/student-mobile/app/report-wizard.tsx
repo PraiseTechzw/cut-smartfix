@@ -1,3 +1,5 @@
+import { API_URL } from "../src/constants/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 /**
  * Multi-step Report Wizard
  * Steps:
@@ -14,7 +16,6 @@ import {
   Alert,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,7 +34,6 @@ import type {
   Urgency,
 } from "../src/types/contracts";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 const TOTAL_STEPS = 5;
 const MAX_PHOTOS = 5;
 

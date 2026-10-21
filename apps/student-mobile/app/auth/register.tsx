@@ -1,3 +1,5 @@
+import { API_URL } from "../../src/constants/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 /**
  * Registration Wizard — 3 steps, each on its own full-screen page.
  *
@@ -20,7 +22,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -30,7 +31,6 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
 // ─── Constants ────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get("window");

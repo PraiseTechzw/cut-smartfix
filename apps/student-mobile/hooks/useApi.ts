@@ -1,7 +1,7 @@
+import { API_URL } from "../src/constants/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/auth";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /** Default timeout per request in milliseconds. */
 const DEFAULT_TIMEOUT_MS = 15_000;

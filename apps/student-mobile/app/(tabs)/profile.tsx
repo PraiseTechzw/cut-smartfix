@@ -1,10 +1,11 @@
+import { API_URL } from "../../src/constants/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "../../components/LinearGradient";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Switch,
@@ -18,7 +19,6 @@ import { useAuth } from "../../context/auth";
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 const APP_VERSION = "0.1.0";
 
 const C = {

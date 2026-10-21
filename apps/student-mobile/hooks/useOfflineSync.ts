@@ -1,3 +1,4 @@
+import { API_URL } from "../src/constants/api";
 /**
  * useOfflineSync
  *
@@ -11,7 +12,6 @@ import { useCallback, useEffect } from "react";
 import { useAuth } from "../context/auth";
 
 const PENDING_KEY = "cut_pending_reports";
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
 // ---------------------------------------------------------------------------
 // Storage abstraction (same pattern used elsewhere in the codebase)

@@ -1,3 +1,4 @@
+import { SafeAreaView } from "react-native-safe-area-context";
 /**
  * Email Verification Screen — 6-digit OTP
  *
@@ -18,7 +19,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,

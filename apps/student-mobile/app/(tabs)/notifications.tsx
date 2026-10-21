@@ -1,3 +1,5 @@
+import { API_URL } from "../../src/constants/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -5,7 +7,6 @@ import {
   Pressable,
   RefreshControl,
   SectionList,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -14,7 +15,6 @@ import { useApi } from "../../hooks/useApi";
 import { useAuth } from "../../context/auth";
 import type { Notification } from "../../src/types/contracts";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
 // ---------------------------------------------------------------------------
 // Design tokens
