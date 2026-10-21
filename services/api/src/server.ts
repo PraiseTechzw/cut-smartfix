@@ -1092,12 +1092,45 @@ app.post(
       return;
     }
     const user = (req as AuthenticatedRequest).user;
+    const [
+      { data: technician, error: technicianError },
+      { data: reportExists, error: reportLookupError },
+    ] = await Promise.all([
+      client
+        .from("profiles")
+        .select("id, role, is_active")
+        .eq("id", parsed.data.technicianId)
+        .maybeSingle(),
+      client
+        .from("maintenance_reports")
+        .select("id")
+        .eq("id", idParsed.data)
+        .maybeSingle(),
+    ]);
+    if (
+      technicianError ||
+      !technician ||
+      technician.role !== "technician" ||
+      !technician.is_active
+    ) {
+      sendError(res, 400, "TECHNICIAN_UNAVAILABLE", "Select an active technician account.");
+      return;
+    }
+    if (reportLookupError || !reportExists) {
+      sendError(res, 404, "REPORT_NOT_FOUND", "Maintenance report not found.");
+      return;
+    }
     // Mark previous current assignment as not current
-    await client
+    const { data: previousAssignments, error: previousError } = await client
       .from("assignments")
       .update({ is_current: false })
       .eq("report_id", idParsed.data)
-      .eq("is_current", true);
+      .eq("is_current", true)
+      .select("id");
+    if (previousError) {
+      sendError(res, 500, "ASSIGNMENT_UPDATE_FAILED", previousError.message);
+      return;
+    }
     const { data, error } = await client
       .from("assignments")
       .insert({
@@ -1112,11 +1145,17 @@ app.post(
       .select("*")
       .single();
     if (error) {
+      if (previousAssignments?.length) {
+        await client
+          .from("assignments")
+          .update({ is_current: true })
+          .in("id", previousAssignments.map((assignment) => assignment.id));
+      }
       sendError(res, 500, "ASSIGNMENT_CREATE_FAILED", error.message);
       return;
     }
     // Update report status and assigned_to
-    await client
+    const { error: reportUpdateError } = await client
       .from("maintenance_reports")
       .update({
         status: "assigned",
@@ -1124,6 +1163,17 @@ app.post(
         assigned_department_id: parsed.data.departmentId ?? null,
       })
       .eq("id", idParsed.data);
+    if (reportUpdateError) {
+      await client.from("assignments").delete().eq("id", data.id as string);
+      if (previousAssignments?.length) {
+        await client
+          .from("assignments")
+          .update({ is_current: true })
+          .in("id", previousAssignments.map((assignment) => assignment.id));
+      }
+      sendError(res, 500, "REPORT_ASSIGNMENT_UPDATE_FAILED", reportUpdateError.message);
+      return;
+    }
     // Notify the technician
     const { data: report } = await client
       .from("maintenance_reports")
