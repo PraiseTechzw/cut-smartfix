@@ -26,7 +26,7 @@ function StatCard({
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [critical, setCritical] = useState<MaintenanceReport[]>([]);
+  const [recentReports, setRecentReports] = useState<MaintenanceReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,7 +35,7 @@ export default function DashboardPage() {
       try {
         const [analytics, tickets] = await Promise.all([
           fetchApi<AnalyticsReport>("/v1/analytics/dashboard"),
-          fetchApi<PaginatedList<MaintenanceReport>>("/v1/reports?priority=critical&pageSize=10"),
+          fetchApi<PaginatedList<MaintenanceReport>>("/v1/reports?pageSize=10"),
         ]);
         setData({
           stats: analytics.stats,
@@ -43,7 +43,7 @@ export default function DashboardPage() {
           byPriority: analytics.byPriority ?? [],
           trend: analytics.trend ?? [],
         });
-        setCritical(tickets.items ?? []);
+        setRecentReports(tickets.items ?? []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load dashboard");
       } finally {
@@ -194,17 +194,17 @@ export default function DashboardPage() {
       {/* Recent Critical Issues */}
       <div className="card">
         <div className="card-header">
-          <div className="card-title">Recent Critical Issues</div>
-          <Link href="/maintenance?priority=critical" className="btn btn-ghost btn-sm">
+          <div className="card-title">Recent Reports</div>
+          <Link href="/reports" className="btn btn-ghost btn-sm">
             View all →
           </Link>
         </div>
         <div className="table-wrapper">
-          {critical.length === 0 ? (
+          {recentReports.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">✅</div>
-              <div className="empty-state-title">No critical issues</div>
-              <div className="empty-state-text">All critical tickets are resolved.</div>
+              <div className="empty-state-icon">📋</div>
+              <div className="empty-state-title">No reports yet</div>
+              <div className="empty-state-text">New maintenance reports will appear here.</div>
             </div>
           ) : (
             <table className="table table-striped">
@@ -220,7 +220,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {critical.map((r) => (
+                {recentReports.map((r) => (
                   <tr key={r.id}>
                     <td>
                       <span className="text-bold" style={{ fontFamily: "monospace" }}>
