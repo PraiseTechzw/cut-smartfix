@@ -597,7 +597,14 @@ app.get("/v1/reports", requireAuth, async (req, res) => {
     .range(from, from + pageSize - 1);
 
   if (user.role === "student") query = query.eq("reporter_id", user.id);
-  if (req.query.status) query = query.eq("status", String(req.query.status));
+  if (req.query.status) {
+    const statuses = String(req.query.status)
+      .split(",")
+      .map((status) => status.trim())
+      .filter(Boolean);
+    if (statuses.length === 1) query = query.eq("status", statuses[0]);
+    else if (statuses.length > 1) query = query.in("status", statuses);
+  }
   if (req.query.priority)
     query = query.eq("priority", String(req.query.priority));
   if (req.query.search) {

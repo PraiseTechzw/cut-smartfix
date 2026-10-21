@@ -24,6 +24,9 @@ function AssignmentsPage() {
   const [technicians, setTechnicians] = useState<UserProfile[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [technicianLoadError, setTechnicianLoadError] = useState("");
+  const [assignmentLoadError, setAssignmentLoadError] = useState("");
 
   // Form state
   const [deptId, setDeptId] = useState("");
@@ -40,45 +43,68 @@ function AssignmentsPage() {
   }
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
-      const [ticketsRes, depts, techs] = await Promise.all([
+      setLoadError("");
+      setTechnicianLoadError("");
+      const [ticketsResult, departmentsResult, techniciansResult] = await Promise.allSettled([
         fetchApi<PaginatedList<MaintenanceReport>>(
           "/v1/reports?status=submitted,under_review&pageSize=100",
-        ).catch(() => ({
-          items: [] as MaintenanceReport[],
-          total: 0,
-          page: 1,
-          pageSize: 50,
-          totalPages: 1,
-        })),
-        fetchApi<Department[]>("/v1/departments").catch(() => []),
-        fetchApi<UserProfile[]>("/v1/staff").catch(
-          () => [],
         ),
+        fetchApi<Department[]>("/v1/departments"),
+        fetchApi<UserProfile[]>("/v1/staff"),
       ]);
-      setTickets(ticketsRes.items ?? []);
-      setDepartments(depts);
-      setTechnicians(techs.filter((user) => user.role === "technician"));
+      if (cancelled) return;
+
+      const ticketItems = ticketsResult.status === "fulfilled" ? ticketsResult.value.items ?? [] : [];
+      setTickets(ticketItems);
+      setDepartments(departmentsResult.status === "fulfilled" ? departmentsResult.value : []);
+      if (techniciansResult.status === "fulfilled") {
+        setTechnicians(techniciansResult.value.filter((user) => user.role === "technician"));
+      } else {
+        setTechnicians([]);
+        setTechnicianLoadError(
+          techniciansResult.reason instanceof Error
+            ? techniciansResult.reason.message
+            : "Could not load technicians.",
+        );
+      }
+      if (ticketsResult.status === "rejected") {
+        setLoadError(
+          ticketsResult.reason instanceof Error
+            ? ticketsResult.reason.message
+            : "Could not load tickets.",
+        );
+      }
       setLoading(false);
 
-      // Pre-select ticket if query param present
       if (preselectedId) {
-        const pre = ticketsRes.items.find((t) => t.id === preselectedId);
+        const pre = ticketItems.find((ticket) => ticket.id === preselectedId);
         if (pre) setSelected(pre);
+        else {
+          const selectedTicket = await fetchApi<MaintenanceReport>(`/v1/reports/${preselectedId}`).catch(() => null);
+          if (!cancelled && selectedTicket) setSelected(selectedTicket);
+        }
       }
     }
     load();
+    return () => { cancelled = true; };
   }, [preselectedId]);
 
   // Load current assignments for selected ticket
   useEffect(() => {
     if (!selected) {
       setAssignments([]);
+      setAssignmentLoadError("");
       return;
     }
+    setAssignmentLoadError("");
     fetchApi<Assignment[]>(`/v1/reports/${selected.id}/assignments`)
       .then(setAssignments)
-      .catch(() => setAssignments([]));
+      .catch((err: unknown) => {
+        setAssignments([]);
+        setAssignmentLoadError(err instanceof Error ? err.message : "Could not load assignment history.");
+      });
   }, [selected]);
 
   const assign = async () => {
@@ -124,6 +150,8 @@ function AssignmentsPage() {
         </div>
       </div>
 
+      {loadError && <div className="alert alert-danger">Could not load tickets: {loadError}</div>}
+
       {loading ? (
         <div
           style={{
@@ -145,7 +173,12 @@ function AssignmentsPage() {
                 </div>
               </div>
               <div style={{ maxHeight: "600px", overflowY: "auto" }}>
-                {tickets.length === 0 ? (
+                {loadError ? (
+                  <div className="empty-state">
+                    <div className="empty-state-title">Tickets could not be loaded</div>
+                    <div className="empty-state-text">Check the API connection and your account access, then reload this page.</div>
+                  </div>
+                ) : tickets.length === 0 ? (
                   <div className="empty-state">
                     <div className="empty-state-icon">✅</div>
                     <div className="empty-state-title">
@@ -300,7 +333,11 @@ function AssignmentsPage() {
                             </option>
                           ))}
                       </select>
-                      {technicians.length === 0 && (
+                      {technicianLoadError ? (
+                        <div className="text-danger text-sm" style={{ marginTop: "6px" }}>
+                          Could not load technicians: {technicianLoadError}
+                        </div>
+                      ) : technicians.length === 0 && (
                         <div className="text-muted text-sm" style={{ marginTop: "6px" }}>
                           No active technicians are available. Add or activate a technician in Staff Management.
                         </div>
@@ -350,7 +387,12 @@ function AssignmentsPage() {
             </div>
 
             {/* Current assignments */}
-            {selected && assignments.length > 0 && (
+            {selected && assignmentLoadError && (
+              <div className="alert alert-danger" style={{ marginTop: "16px" }}>
+                Could not load assignment history: {assignmentLoadError}
+              </div>
+            )}
+            {selected && !assignmentLoadError && assignments.length > 0 && (
               <div className="card" style={{ marginTop: "16px" }}>
                 <div className="card-header">
                   <div className="card-title">Assignment History</div>

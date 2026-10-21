@@ -48,6 +48,8 @@ export default function TicketDetailPage() {
   const [loadError, setLoadError] = useState("");
   const [departments, setDepartments] = useState<Department[]>([]);
   const [technicians, setTechnicians] = useState<UserProfile[]>([]);
+  const [assignmentLoadError, setAssignmentLoadError] = useState("");
+  const [technicianLoadError, setTechnicianLoadError] = useState("");
 
   // Action state
   const [newStatus, setNewStatus] = useState("");
@@ -74,11 +76,17 @@ export default function TicketDetailPage() {
     async function load() {
       setLoading(true);
       setLoadError("");
+      setAssignmentLoadError("");
       try {
         const [r, t, a, m, n, photos] = await Promise.all([
           fetchApi<MaintenanceReport>(`/v1/reports/${id}`),
           fetchApi<unknown>(`/v1/reports/${id}/timeline`).catch(() => []),
-          fetchApi<unknown>(`/v1/reports/${id}/assignments`).catch(() => []),
+          fetchApi<unknown>(`/v1/reports/${id}/assignments`).catch((err: unknown) => {
+            if (!cancelled) {
+              setAssignmentLoadError(err instanceof Error ? err.message : "Could not load assignments.");
+            }
+            return [];
+          }),
           fetchApi<unknown>(`/v1/reports/${id}/materials`).catch(() => []),
           fetchApi<unknown>(`/v1/reports/${id}/notes`).catch(() => []),
           fetchApi<unknown>(`/v1/reports/${id}/attachments`).catch(() => []),
@@ -104,9 +112,17 @@ export default function TicketDetailPage() {
       .catch(() => {});
     fetchApi<UserProfile[]>("/v1/staff")
       .then((value) => {
-        if (!cancelled) setTechnicians(value.filter((user) => user.role === "technician"));
+        if (!cancelled) {
+          setTechnicians(value.filter((user) => user.role === "technician"));
+          setTechnicianLoadError("");
+        }
       })
-      .catch(() => {});
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setTechnicians([]);
+          setTechnicianLoadError(err instanceof Error ? err.message : "Could not load technicians.");
+        }
+      });
     return () => { cancelled = true; };
   }, [id]);
 
@@ -394,7 +410,9 @@ export default function TicketDetailPage() {
             <div className="card">
               <div className="card-header"><div className="card-title">Assignment History</div></div>
               <div className="table-wrapper">
-                {assignments.length === 0 ? (
+                {assignmentLoadError ? (
+                  <div className="alert alert-danger">Could not load assignments: {assignmentLoadError}</div>
+                ) : assignments.length === 0 ? (
                   <div className="empty-state"><div className="empty-state-text">No assignments yet.</div></div>
                 ) : (
                   <table className="table">
@@ -566,6 +584,16 @@ export default function TicketDetailPage() {
                   <option value="">Select technician…</option>
                   {technicians.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
                 </select>
+                {technicianLoadError && (
+                  <div className="text-danger text-sm" style={{ marginTop: "6px" }}>
+                    Could not load technicians: {technicianLoadError}
+                  </div>
+                )}
+                {!technicianLoadError && technicians.length === 0 && (
+                  <div className="text-muted text-sm" style={{ marginTop: "6px" }}>
+                    No active technicians are available.
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">Notes</label>
