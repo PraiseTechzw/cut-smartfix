@@ -34,6 +34,7 @@ export default function TicketDetailPage() {
   const [notes, setNotes] = useState<MaintenanceNote[]>([]);
   const [audit, setAudit] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [departments, setDepartments] = useState<Department[]>([]);
   const [technicians, setTechnicians] = useState<UserProfile[]>([]);
 
@@ -58,25 +59,36 @@ export default function TicketDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
     async function load() {
-      const [r, t, a, m, n] = await Promise.all([
-        fetchApi<MaintenanceReport>(`/v1/reports/${id}`),
-        fetchApi<ReportTimelineEvent[]>(`/v1/reports/${id}/timeline`).catch(() => []),
-        fetchApi<Assignment[]>(`/v1/reports/${id}/assignments`).catch(() => []),
-        fetchApi<MaterialRequest[]>(`/v1/reports/${id}/materials`).catch(() => []),
-        fetchApi<MaintenanceNote[]>(`/v1/reports/${id}/notes`).catch(() => []),
-      ]);
-      setReport(r);
-      setTimeline(t);
-      setAssignments(a);
-      setMaterials(m);
-      setNotes(n);
-      setLoading(false);
+      setLoading(true);
+      setLoadError("");
+      try {
+        const [r, t, a, m, n] = await Promise.all([
+          fetchApi<MaintenanceReport>(`/v1/reports/${id}`),
+          fetchApi<ReportTimelineEvent[]>(`/v1/reports/${id}/timeline`).catch(() => []),
+          fetchApi<Assignment[]>(`/v1/reports/${id}/assignments`).catch(() => []),
+          fetchApi<MaterialRequest[]>(`/v1/reports/${id}/materials`).catch(() => []),
+          fetchApi<MaintenanceNote[]>(`/v1/reports/${id}/notes`).catch(() => []),
+        ]);
+        if (cancelled) return;
+        setReport(r);
+        setTimeline(t);
+        setAssignments(a);
+        setMaterials(m);
+        setNotes(n);
+      } catch (err) {
+        if (cancelled) return;
+        setLoadError(err instanceof Error ? err.message : "Could not load this ticket.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
     load();
 
     fetchApi<Department[]>("/v1/departments").then(setDepartments).catch(() => {});
     fetchApi<UserProfile[]>("/v1/admin/users?role=technician").then(setTechnicians).catch(() => {});
+    return () => { cancelled = true; };
   }, [id]);
 
   useEffect(() => {
@@ -149,6 +161,14 @@ export default function TicketDetailPage() {
 
   if (loading) {
     return <div style={{ padding: "48px", textAlign: "center", color: "var(--muted)" }}>Loading ticket…</div>;
+  }
+  if (loadError) {
+    return (
+      <div>
+        <div className="alert alert-danger">Could not load ticket: {loadError}</div>
+        <Link href="/maintenance" className="btn btn-secondary btn-sm">Back to maintenance</Link>
+      </div>
+    );
   }
   if (!report) {
     return <div className="alert alert-danger">Ticket not found.</div>;

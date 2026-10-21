@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchApi } from "../../../lib/api";
 import type {
@@ -306,9 +307,12 @@ export default function ReportsPage() {
                   {reports.map((r) => (
                     <tr key={r.id}>
                       <td>
-                        <span style={{ fontFamily: "monospace", fontSize: "12px", fontWeight: 600 }}>
+                        <Link
+                          href={`/maintenance/${r.id}`}
+                          style={{ fontFamily: "monospace", fontSize: "12px", fontWeight: 600 }}
+                        >
                           {r.ticketNumber}
-                        </span>
+                        </Link>
                         {r.isOverdue && (
                           <span className="badge badge-danger" style={{ marginLeft: "4px" }}>!</span>
                         )}
