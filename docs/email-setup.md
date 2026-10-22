@@ -1,12 +1,17 @@
-# Supabase Confirmation Email
+# Supabase Authentication Email Templates
 
-The student mobile app expects a six-digit signup OTP and verifies it with Supabase Auth using `type: "signup"`.
+The student app currently supports signup email verification with a six-digit code. It does not currently implement password recovery, so there is no working password reset email template to configure yet.
 
-1. Open Supabase Dashboard → Authentication → Email Templates → **Confirm signup**.
-2. Replace the template with the contents of `docs/supabase-confirmation-email.html`.
-3. Keep `{{ .Token }}` unchanged. Supabase replaces it with the six-digit confirmation code.
-4. Keep `{{ .ConfirmationURL }}` unchanged as the fallback button link.
-5. Set the Site URL and redirect URLs to the student app deep-link scheme configured in `apps/student-mobile/app.json`.
-6. Ensure email confirmations are enabled under Authentication → Providers → Email.
+## Student email verification
 
-The code is entered at the mobile verification screen. The app calls Supabase `/auth/v1/verify` with the pending email, `type: "signup"`, and the six-digit token. The template does not send or expose passwords.
+1. In Supabase Dashboard, open **Authentication → Email Templates → Confirm signup**.
+2. Set the subject to `Verify your CUT SmartFix student account`.
+3. Paste the contents of [`supabase-confirmation-email.html`](supabase-confirmation-email.html) into the message editor.
+4. Keep `{{ .Token }}` unchanged. Supabase replaces it with the six-digit code.
+
+## Email settings
+
+- Ensure email confirmations are enabled under **Authentication → Providers → Email**.
+- The signup screen verifies the entered code with Supabase Auth using `type: "signup"`.
+- The email templates never include or ask for a password.
+- Do not configure a password reset email for the student app until a recovery flow is implemented in the app.
