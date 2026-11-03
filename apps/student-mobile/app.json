@@ -4,6 +4,7 @@
     "slug": "cut-smartfix",
     "scheme": "cutsmartfix",
     "version": "0.1.0",
+    "icon": "./assets/app-icon.png",
     "orientation": "portrait",
     "newArchEnabled": true,
     "experiments": {
@@ -28,6 +29,10 @@
     ],
     "android": {
       "package": "com.praisetechzw.cutsmartfix",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",

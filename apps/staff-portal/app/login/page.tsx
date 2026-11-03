@@ -40,8 +40,8 @@ export default function LoginPage() {
             <Image
               src="/brand-logo.png"
               alt=""
-              width={1232}
-              height={1277}
+              width={512}
+              height={531}
               style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
           </div>
@@ -81,8 +81,8 @@ export default function LoginPage() {
               <Image
                 src="/brand-logo.png"
                 alt=""
-                width={1232}
-                height={1277}
+                width={512}
+                height={531}
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
             </div>
