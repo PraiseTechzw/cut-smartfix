@@ -23,6 +23,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../context/auth";
+import { enqueuePendingReport } from "../src/offlineReports";
 import {
   BRAND_BACKGROUND,
   BRAND_BLUE,
@@ -47,41 +48,8 @@ import type {
 const TOTAL_STEPS = 5;
 const MAX_PHOTOS = 5;
 
-// ---------------------------------------------------------------------------
-// Offline queue helpers
-// ---------------------------------------------------------------------------
-let asyncStorageModule: {
-  getItem: (key: string) => Promise<string | null>;
-  setItem: (key: string, value: string) => Promise<void>;
-} | null = null;
-
-const memoryOfflineQueue: unknown[] = [];
-
-async function getStorage() {
-  if (asyncStorageModule) return asyncStorageModule;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = require("@react-native-async-storage/async-storage");
-    asyncStorageModule = mod.default ?? mod;
-    return asyncStorageModule!;
-  } catch {
-    return {
-      getItem: async (_k: string) => JSON.stringify(memoryOfflineQueue),
-      setItem: async (_k: string, v: string) => {
-        const parsed = JSON.parse(v);
-        memoryOfflineQueue.length = 0;
-        memoryOfflineQueue.push(...(Array.isArray(parsed) ? parsed : []));
-      },
-    };
-  }
-}
-
 async function saveOffline(report: unknown) {
-  const s = await getStorage();
-  const existing = await s.getItem("cut_pending_reports");
-  const queue: unknown[] = existing ? JSON.parse(existing) : [];
-  queue.push(report);
-  await s.setItem("cut_pending_reports", JSON.stringify(queue));
+  await enqueuePendingReport(report);
 }
 
 // ---------------------------------------------------------------------------
@@ -716,10 +684,23 @@ export default function ReportWizardScreen() {
           err.message.toLowerCase().includes("network"));
 
       if (isNetworkError) {
-        // Genuinely offline — queue for later
-        await saveOffline({ ...payload, savedAt: new Date().toISOString() });
-        setOffline(true);
-        setSubmitted(true);
+        try {
+          await saveOffline({ ...payload, savedAt: new Date().toISOString() });
+          if (photos.length > 0) {
+            setPhotoUploadWarning(
+              "Your report details were saved, but photos are not included in offline submissions. Please attach them after the report is online.",
+            );
+          }
+          setOffline(true);
+          setSubmitted(true);
+        } catch (storageError) {
+          Alert.alert(
+            "Could not save offline",
+            storageError instanceof Error
+              ? storageError.message
+              : "Your report could not be saved on this device. Keep the app open and try again.",
+          );
+        }
       } else {
         // Some other unexpected error
         Alert.alert(

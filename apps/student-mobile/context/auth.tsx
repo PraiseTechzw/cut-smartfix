@@ -1,4 +1,5 @@
 import { API_URL } from "../src/constants/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
   useCallback,
@@ -9,64 +10,28 @@ import React, {
 import type { UserProfile } from "../src/types/contracts";
 
 // ---------------------------------------------------------------------------
-// Storage abstraction — AsyncStorage when available, in-memory fallback
+// Persistent session storage
 // ---------------------------------------------------------------------------
-let asyncStorageModule: {
-  getItem: (key: string) => Promise<string | null>;
-  setItem: (key: string, value: string) => Promise<void>;
-  removeItem: (key: string) => Promise<void>;
-} | null = null;
-
-const memoryStore: Record<string, string> = {};
-const memoryStorage = {
-  getItem: async (key: string): Promise<string | null> =>
-    memoryStore[key] ?? null,
-  setItem: async (key: string, value: string): Promise<void> => {
-    memoryStore[key] = value;
-  },
-  removeItem: async (key: string): Promise<void> => {
-    delete memoryStore[key];
-  },
-};
-
-async function getStorage() {
-  if (asyncStorageModule) return asyncStorageModule;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = require("@react-native-async-storage/async-storage");
-    asyncStorageModule = mod.default ?? mod;
-    return asyncStorageModule!;
-  } catch {
-    return memoryStorage;
-  }
-}
-
 const TOKEN_KEY         = "cut_smartfix_token";
 const PENDING_EMAIL_KEY = "cut_smartfix_pending_email";
 
 async function loadToken(): Promise<string | null> {
-  const s = await getStorage();
-  return s.getItem(TOKEN_KEY);
+  return AsyncStorage.getItem(TOKEN_KEY);
 }
 async function saveToken(token: string): Promise<void> {
-  const s = await getStorage();
-  return s.setItem(TOKEN_KEY, token);
+  return AsyncStorage.setItem(TOKEN_KEY, token);
 }
 async function clearToken(): Promise<void> {
-  const s = await getStorage();
-  return s.removeItem(TOKEN_KEY);
+  return AsyncStorage.removeItem(TOKEN_KEY);
 }
 async function loadPendingEmail(): Promise<string | null> {
-  const s = await getStorage();
-  return s.getItem(PENDING_EMAIL_KEY);
+  return AsyncStorage.getItem(PENDING_EMAIL_KEY);
 }
 async function savePendingEmail(email: string): Promise<void> {
-  const s = await getStorage();
-  return s.setItem(PENDING_EMAIL_KEY, email);
+  return AsyncStorage.setItem(PENDING_EMAIL_KEY, email);
 }
 async function clearPendingEmail(): Promise<void> {
-  const s = await getStorage();
-  return s.removeItem(PENDING_EMAIL_KEY);
+  return AsyncStorage.removeItem(PENDING_EMAIL_KEY);
 }
 
 // ---------------------------------------------------------------------------
@@ -360,19 +325,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [stored, pending] = await Promise.all([
-        loadToken(),
-        loadPendingEmail(),
-      ]);
-      if (cancelled) return;
+      try {
+        const [stored, pending] = await Promise.all([
+          loadToken(),
+          loadPendingEmail(),
+        ]);
+        if (cancelled) return;
 
-      if (pending) setPendingEmail(pending);
+        if (pending) setPendingEmail(pending);
 
-      if (stored) {
-        setToken(stored);
-        await fetchProfile(stored);
+        if (stored) {
+          setToken(stored);
+          await fetchProfile(stored);
+        }
+      } catch (error) {
+        console.error("Could not restore the saved sign-in session.", error);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [fetchProfile]);
