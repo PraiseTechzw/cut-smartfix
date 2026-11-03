@@ -93,16 +93,14 @@ a:hover {
   gap: 10px;
 }
 .sidebar-brand-icon {
-  width: 32px;
-  height: 32px;
-  background: var(--green);
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  padding: 2px;
+  background: #fff;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  font-weight: 800;
-  color: #fff;
   flex-shrink: 0;
 }
 .sidebar-brand-text {

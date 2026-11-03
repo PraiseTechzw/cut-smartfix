@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import React, { useState } from "react";
 import { useAuth } from "../../lib/auth";
 
@@ -47,8 +48,8 @@ export default function LoginPage() {
     heroContent: { position: "relative", zIndex: 1, display: "flex", flexDirection: "column", height: "100%" } as React.CSSProperties,
     heroLogo: { display: "flex", alignItems: "center", gap: 12, marginBottom: "auto" },
     heroLogoIcon: {
-      width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.15)",
-      border: "1px solid rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center",
+      width: 52, height: 52, borderRadius: 8, background: "#fff", padding: 2,
+      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
     },
     heroLogoText: { color: "#fff" },
     heroLogoName: { fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em" },
@@ -79,9 +80,8 @@ export default function LoginPage() {
     formInner: { width: "100%", maxWidth: 400 },
     mobileLogo: { display: "flex", flexDirection: "column" as const, alignItems: "center", marginBottom: 32, gap: 12 },
     mobileLogoIcon: {
-      width: 56, height: 56, borderRadius: 16, background: "#0b6b57",
+      width: 64, height: 64, borderRadius: 8, background: "#fff", padding: 2,
       display: "flex", alignItems: "center", justifyContent: "center",
-      boxShadow: "0 4px 14px rgba(11,107,87,0.3)",
     },
     mobileLogoText: { fontSize: 20, fontWeight: 800, color: "#111827", letterSpacing: "-0.02em" },
     mobileLogoSub:  { fontSize: 12, color: "#6b7280", marginTop: 2 },
@@ -133,9 +133,13 @@ export default function LoginPage() {
           {/* Logo */}
           <div style={s.heroLogo}>
             <div style={s.heroLogoIcon}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
+              <Image
+                src="/brand-logo.png"
+                alt=""
+                width={1232}
+                height={1277}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
             <div style={s.heroLogoText}>
               <div style={s.heroLogoName}>CUT SmartFix</div>
@@ -181,9 +185,13 @@ export default function LoginPage() {
           {/* Mobile-only logo */}
           <div style={s.mobileLogo} className="login-mobile-logo">
             <div style={s.mobileLogoIcon}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
+              <Image
+                src="/brand-logo.png"
+                alt=""
+                width={1232}
+                height={1277}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
             <div>
               <div style={s.mobileLogoText}>CUT SmartFix</div>

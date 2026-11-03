@@ -5,6 +5,7 @@ import { AuthProvider } from "../lib/auth";
 export const metadata: Metadata = {
   title: "CUT SmartFix | Admin Portal",
   description: "Chinhoyi University of Technology — Facilities Management Administration",
+  icons: { icon: "/brand-logo.png" },
 };
 
 export default function RootLayout({

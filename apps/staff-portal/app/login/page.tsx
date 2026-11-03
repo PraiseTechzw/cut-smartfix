@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, FormEvent } from "react";
 import { useAuth } from "../../lib/auth";
 import { Mascot } from "../../components/Mascot";
@@ -36,7 +37,13 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="auth-hero-logo">
           <div className="auth-hero-logo-icon">
-            <OwlIcon size={26} color="#fff" />
+            <Image
+              src="/brand-logo.png"
+              alt=""
+              width={1232}
+              height={1277}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
           </div>
           <div className="auth-hero-logo-text">
             <strong>CUT SmartFix</strong>
@@ -71,7 +78,13 @@ export default function LoginPage() {
           {/* Mobile-only logo */}
           <div className="auth-mobile-logo">
             <div className="auth-mobile-logo-icon">
-              <OwlIcon size={28} color="#fff" />
+              <Image
+                src="/brand-logo.png"
+                alt=""
+                width={1232}
+                height={1277}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
             <div style={{ textAlign: "center" }}>
               <p style={{ fontWeight: 800, fontSize: "1.15rem", color: "var(--text)", margin: 0, letterSpacing: "-0.02em" }}>
@@ -195,29 +208,6 @@ export default function LoginPage() {
         </div>
       </section>
     </div>
-  );
-}
-
-/* ── Inline icon helpers (no extra deps) ── */
-
-function OwlIcon({ size = 24, color = "currentColor" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      {/* Simplified owl silhouette */}
-      <ellipse cx="12" cy="13" rx="7" ry="8" fill={color} opacity="0.9" />
-      {/* Ear tufts */}
-      <path d="M7 6 Q6 3 8 2 Q8.5 5 9 6Z" fill={color} />
-      <path d="M17 6 Q18 3 16 2 Q15.5 5 15 6Z" fill={color} />
-      {/* Face */}
-      <ellipse cx="12" cy="12" rx="4.5" ry="4.5" fill="white" opacity="0.9" />
-      {/* Eyes */}
-      <circle cx="10.2" cy="11.5" r="1.5" fill="#17231f" />
-      <circle cx="13.8" cy="11.5" r="1.5" fill="#17231f" />
-      <circle cx="10.6" cy="11" r="0.5" fill="white" />
-      <circle cx="14.2" cy="11" r="0.5" fill="white" />
-      {/* Beak */}
-      <path d="M11.3 13.8 L12 15 L12.7 13.8Z" fill="#e3a820" />
-    </svg>
   );
 }
 

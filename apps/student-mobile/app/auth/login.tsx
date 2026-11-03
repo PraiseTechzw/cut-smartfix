@@ -1,5 +1,6 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "../../components/LinearGradient";
+import { BrandLogo } from "../../components/BrandLogo";
 import { Link, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -355,7 +356,10 @@ export default function LoginScreen() {
           <FadeSlideIn delay={0}>
             <View style={styles.mascotArea}>
               <Mascot state={mascotState} lookProgress={lookProgress} />
-              <Text style={styles.appName}>CUT SmartFix</Text>
+              <View style={styles.appIdentity}>
+                <BrandLogo size={48} />
+                <Text style={styles.appName}>CUT SmartFix</Text>
+              </View>
               <View style={styles.taglineRow}>
                 <Text style={styles.taglineDot}>⬤</Text>
                 <Text style={styles.tagline}>Campus maintenance, simplified.</Text>
@@ -437,6 +441,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32, justifyContent: "center" },
   mascotArea: { alignItems: "center", marginBottom: 28, gap: 8 },
+  appIdentity: { flexDirection: "row", alignItems: "center", gap: 10 },
   appName: { color: TEXT_PRIMARY, fontSize: 26, fontWeight: "800", letterSpacing: -0.3 },
   taglineRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   taglineDot: { color: GREEN, fontSize: 6 },

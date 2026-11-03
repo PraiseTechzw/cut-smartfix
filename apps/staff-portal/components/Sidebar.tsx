@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../lib/auth';
 
@@ -146,8 +147,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <nav className={`sidebar${isOpen ? ' open' : ''}`} aria-label="Main navigation">
         {/* Logo */}
         <div className="sidebar-logo">
-          <h1>CUT SmartFix</h1>
-          <span>Staff Portal</span>
+          <div className="sidebar-logo-mark">
+            <Image
+              src="/brand-logo.png"
+              alt=""
+              width={1232}
+              height={1277}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          </div>
+          <div className="sidebar-logo-text">
+            <h1>CUT SmartFix</h1>
+            <span>Staff Portal</span>
+          </div>
         </div>
 
         {/* Nav links */}

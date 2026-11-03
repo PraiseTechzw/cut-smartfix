@@ -142,9 +142,29 @@ ol {
 .sidebar-logo {
   padding: 20px 16px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-logo-mark {
+  width: 42px;
+  height: 42px;
+  padding: 2px;
+  background: #fff;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-logo-text {
+  min-width: 0;
 }
 
 .sidebar-logo h1 {
+  margin: 0;
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -1044,16 +1064,15 @@ ol {
 }
 
 .auth-hero-logo-icon {
-  width: 44px;
-  height: 44px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  padding: 2px;
+  background: #fff;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
 }
 
 .auth-hero-logo-text {
@@ -1141,15 +1160,15 @@ ol {
 }
 
 .auth-mobile-logo-icon {
-  width: 56px;
-  height: 56px;
-  background: var(--green);
-  border-radius: 16px;
+  width: 64px;
+  height: 64px;
+  padding: 2px;
+  background: #fff;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
-  box-shadow: 0 4px 12px rgba(11, 107, 87, 0.3);
 }
 
 .auth-card {

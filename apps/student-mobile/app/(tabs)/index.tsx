@@ -1,5 +1,6 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { BrandLogo } from "../../components/BrandLogo";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -546,7 +547,10 @@ function HomeHeader({
 
       <View style={styles.headerContent}>
         <View style={styles.headerLeft}>
-          <Text style={styles.eyebrow}>CUT SMARTFIX</Text>
+          <View style={styles.headerBrand}>
+            <BrandLogo size={36} />
+            <Text style={styles.eyebrow}>CUT SMARTFIX</Text>
+          </View>
           {loading ? (
             <View style={{ marginTop: 6 }}>
               <SkeletonBlock
@@ -744,6 +748,12 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
     marginRight: 12,
+  },
+  headerBrand: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
   },
   eyebrow: {
     color: "rgba(255,255,255,0.70)",

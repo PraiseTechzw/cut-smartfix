@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import { useAuth } from "../lib/auth";
@@ -135,9 +136,13 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
         {/* Brand */}
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
+            <Image
+              src="/brand-logo.png"
+              alt=""
+              width={1232}
+              height={1277}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
           </div>
           <div className="sidebar-brand-text">
             <div className="sidebar-brand-name">CUT SmartFix</div>
