@@ -70,25 +70,6 @@ async function registerPushToken(apiToken: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers — detect Supabase "email not confirmed" error
-// ---------------------------------------------------------------------------
-function isEmailNotConfirmedError(json: Record<string, unknown>): boolean {
-  const msg = (
-    (json?.error_description as string) ??
-    (json?.msg as string) ??
-    (json?.message as string) ??
-    ""
-  ).toLowerCase();
-  return (
-    msg.includes("email not confirmed") ||
-    msg.includes("email_not_confirmed") ||
-    msg.includes("confirm your email") ||
-    // Supabase also returns error code
-    json?.error_code === "email_not_confirmed"
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Context types
 // ---------------------------------------------------------------------------
 export interface AuthContextValue {
@@ -122,47 +103,44 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const SUPABASE_URL     = process.env.EXPO_PUBLIC_SUPABASE_URL     ?? "";
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
-
-function assertSupabaseConfigured() {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error(
-      "Sign-in is not configured in this app build. Configure the Supabase URL and anon key, then rebuild the app.",
-    );
-  }
+interface AuthApiResponse<T> {
+  data?: T | null;
+  error?: { code?: string; message?: string } | null;
 }
-
-async function readAuthResponse(res: Response) {
-  try {
-    return await res.json();
-  } catch {
-    throw new Error(
-      `The authentication service returned an invalid response (HTTP ${res.status}). Check the Supabase URL configured for this app.`,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Supabase minimal REST helpers
-// ---------------------------------------------------------------------------
 
 /** Shared timeout for all auth network calls (ms). */
 const AUTH_TIMEOUT_MS = 15_000;
 
-/** Fetch wrapper that aborts after AUTH_TIMEOUT_MS. */
-async function fetchWithAuthTimeout(
-  url: string,
-  init: RequestInit,
-): Promise<Response> {
+async function requestAuth<T>(
+  path: string,
+  body: Record<string, string>,
+): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, { ...init, signal: controller.signal });
-    clearTimeout(timer);
-    return res;
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    const json = (await res.json()) as AuthApiResponse<T>;
+    if (!res.ok) {
+      const code = json.error?.code;
+      if (code === "EMAIL_NOT_CONFIRMED") {
+        const error = new Error(
+          "Email not confirmed. Please verify your email.",
+        );
+        (error as Error & { code: string }).code = "email_not_confirmed";
+        throw error;
+      }
+      throw new Error(json.error?.message ?? `Authentication failed (HTTP ${res.status}).`);
+    }
+    if (json.data == null) {
+      throw new Error("The authentication service returned an invalid response.");
+    }
+    return json.data;
   } catch (err) {
-    clearTimeout(timer);
     if (err instanceof Error && err.name === "AbortError") {
       throw new Error("Request timed out. Check your internet connection.");
     }
@@ -173,10 +151,12 @@ async function fetchWithAuthTimeout(
       msg.includes("network error")
     ) {
       throw new Error(
-        "Cannot reach the server. Make sure you are connected to the internet.",
+        "Cannot reach the sign-in service. Check your internet connection.",
       );
     }
     throw err;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -184,30 +164,11 @@ async function supabaseSignIn(
   email: string,
   password: string,
 ): Promise<string> {
-  assertSupabaseConfigured();
-  const res = await fetchWithAuthTimeout(
-    `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
-      body: JSON.stringify({ email, password }),
-    },
+  const data = await requestAuth<{ accessToken: string }>(
+    "/v1/auth/sign-in",
+    { email, password },
   );
-  const json = await readAuthResponse(res);
-  if (!res.ok) {
-    if (isEmailNotConfirmedError(json)) {
-      // Surface a typed error so callers can route to verify screen
-      const err = new Error("Email not confirmed. Please verify your email.");
-      (err as Error & { code: string }).code = "email_not_confirmed";
-      throw err;
-    }
-    throw new Error(
-      (json?.error_description as string) ??
-        (json?.msg as string) ??
-        "Login failed",
-    );
-  }
-  return json.access_token as string;
+  return data.accessToken;
 }
 
 async function supabaseSignUp(
@@ -216,74 +177,27 @@ async function supabaseSignUp(
   fullName: string,
   studentId: string,
 ): Promise<{ access_token: string | null; needsConfirmation: boolean }> {
-  assertSupabaseConfigured();
-  const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
-    body: JSON.stringify({
-      email,
-      password,
-      data: { full_name: fullName, student_id: studentId },
-    }),
+  return requestAuth("/v1/auth/sign-up", {
+    email,
+    password,
+    fullName,
+    studentId,
   });
-  const json = await readAuthResponse(res);
-  if (!res.ok) {
-    throw new Error(
-      (json?.error_description as string) ??
-        (json?.msg as string) ??
-        "Registration failed",
-    );
-  }
-
-  // If Supabase requires email confirmation it returns a user with
-  // identities[] but no session / access_token.
-  const needsConfirmation =
-    !json?.session?.access_token &&
-    (json?.user?.identities?.length > 0 || json?.user != null);
-
-  if (needsConfirmation) {
-    return { access_token: null, needsConfirmation: true };
-  }
-
-  // Email confirmations disabled → token present immediately
-  const token = (json?.session?.access_token ?? json?.access_token) as string;
-  return { access_token: token, needsConfirmation: false };
 }
 
 async function supabaseVerifyOtp(
   email: string,
   token: string,
 ): Promise<string> {
-  assertSupabaseConfigured();
-  const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/verify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
-    body: JSON.stringify({ type: "signup", email, token }),
+  const data = await requestAuth<{ accessToken: string }>("/v1/auth/verify", {
+    email,
+    token,
   });
-  const json = await readAuthResponse(res);
-  if (!res.ok) {
-    throw new Error(
-      (json?.error_description as string) ??
-        (json?.msg as string) ??
-        "Invalid or expired code",
-    );
-  }
-  return (json?.access_token ?? json?.session?.access_token) as string;
+  return data.accessToken;
 }
 
 async function supabaseResendOtp(email: string): Promise<void> {
-  assertSupabaseConfigured();
-  const res = await fetchWithAuthTimeout(`${SUPABASE_URL}/auth/v1/resend`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
-    body: JSON.stringify({ type: "signup", email }),
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(
-      (json?.error_description as string) ?? "Could not resend code",
-    );
-  }
+  await requestAuth("/v1/auth/resend", { email });
 }
 
 // ---------------------------------------------------------------------------

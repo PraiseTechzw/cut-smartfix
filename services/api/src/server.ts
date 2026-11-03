@@ -3064,6 +3064,148 @@ app.get(
 // Auth helpers (public — no auth required)
 // ─────────────────────────────────────────
 
+const signInSchema = z.object({
+  email: z.string().email().max(320),
+  password: z.string().min(1).max(256),
+});
+
+const signUpSchema = z.object({
+  email: z.string().email().max(320),
+  password: z.string().min(8).max(256),
+  fullName: z.string().trim().min(1).max(120),
+  studentId: z.string().trim().min(4).max(40).regex(/^[A-Za-z0-9-]+$/),
+});
+
+const verifyOtpSchema = z.object({
+  email: z.string().email().max(320),
+  token: z.string().trim().regex(/^\d{6}$/),
+});
+
+const resendOtpSchema = z.object({
+  email: z.string().email().max(320),
+});
+
+function parsePublicAuthInput<T extends z.ZodType>(
+  schema: T,
+  req: express.Request,
+  res: express.Response,
+): z.infer<T> | null {
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    sendError(
+      res,
+      400,
+      "VALIDATION_ERROR",
+      parsed.error.issues[0]?.message ?? "Invalid input",
+    );
+    return null;
+  }
+  return parsed.data;
+}
+
+function sendSupabaseAuthError(
+  res: express.Response,
+  error: { code?: string; message?: string; status?: number },
+  fallback: string,
+): void {
+  if (error.code === "email_not_confirmed") {
+    sendError(
+      res,
+      403,
+      "EMAIL_NOT_CONFIRMED",
+      "Email not confirmed. Please verify your email.",
+    );
+    return;
+  }
+
+  const status = error.status && error.status >= 400 && error.status < 500
+    ? error.status
+    : 400;
+  sendError(res, status, "AUTHENTICATION_FAILED", error.message ?? fallback);
+}
+
+app.post("/v1/auth/sign-in", async (req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const input = parsePublicAuthInput(signInSchema, req, res);
+  if (!input) return;
+
+  const { data, error } = await client.auth.signInWithPassword(input);
+  if (error) {
+    sendSupabaseAuthError(res, error, "Sign-in failed.");
+    return;
+  }
+  if (!data.session?.access_token) {
+    sendError(res, 502, "AUTH_SESSION_MISSING", "Sign-in did not return a session.");
+    return;
+  }
+  ok(res, { accessToken: data.session.access_token });
+});
+
+app.post("/v1/auth/sign-up", async (req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const input = parsePublicAuthInput(signUpSchema, req, res);
+  if (!input) return;
+
+  const { data, error } = await client.auth.signUp({
+    email: input.email,
+    password: input.password,
+    options: {
+      data: { full_name: input.fullName, student_id: input.studentId },
+    },
+  });
+  if (error) {
+    sendSupabaseAuthError(res, error, "Registration failed.");
+    return;
+  }
+
+  const accessToken = data.session?.access_token ?? null;
+  ok(res, {
+    access_token: accessToken,
+    needsConfirmation: !accessToken,
+  });
+});
+
+app.post("/v1/auth/verify", async (req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const input = parsePublicAuthInput(verifyOtpSchema, req, res);
+  if (!input) return;
+
+  const { data, error } = await client.auth.verifyOtp({
+    email: input.email,
+    token: input.token,
+    type: "signup",
+  });
+  if (error) {
+    sendSupabaseAuthError(res, error, "Invalid or expired code.");
+    return;
+  }
+  if (!data.session?.access_token) {
+    sendError(res, 502, "AUTH_SESSION_MISSING", "Verification did not return a session.");
+    return;
+  }
+  ok(res, { accessToken: data.session.access_token });
+});
+
+app.post("/v1/auth/resend", async (req, res) => {
+  const client = getClient(res);
+  if (!client) return;
+  const input = parsePublicAuthInput(resendOtpSchema, req, res);
+  if (!input) return;
+
+  const { error } = await client.auth.resend({
+    email: input.email,
+    type: "signup",
+  });
+  if (error) {
+    sendSupabaseAuthError(res, error, "Could not resend code.");
+    return;
+  }
+  ok(res, { sent: true });
+});
+
 /**
  * POST /v1/auth/check
  * Body: { email?: string; studentId?: string }

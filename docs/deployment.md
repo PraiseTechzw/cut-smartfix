@@ -39,15 +39,15 @@ NEXT_PUBLIC_API_URL=https://cut-smartfix-api.onrender.com
 
 The web portal templates are `apps/staff-portal/.env.example` and `apps/admin-portal/.env.example`. Set the Supabase public URL and anon key in those portals for browser login; never put the API service-role key in either one.
 
-The Expo app uses `EXPO_PUBLIC_API_URL` when set and otherwise defaults to the deployed API URL. Set the Supabase URL and a genuine anon/publishable key for local development; never put a service-role key in an `EXPO_PUBLIC_*` variable.
+The Expo app uses `EXPO_PUBLIC_API_URL` when set and otherwise defaults to the deployed API URL. Student sign-in, registration, and email verification are proxied through the API, which uses its server-side Supabase credentials. The mobile app does not need a Supabase anon key. Never put a service-role key in an `EXPO_PUBLIC_*` variable.
 
-EAS build profiles select their matching `development`, `preview`, or `production` EAS environment. Configure `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in each EAS environment before building. The `production-internal` profile creates an Android APK using the production environment:
+EAS build profiles select their matching `development`, `preview`, or `production` EAS environment. Set `EXPO_PUBLIC_API_URL` in the relevant EAS environment only if the app should use a different API URL. The `production-internal` profile creates an Android APK using the production environment:
 
 ```bash
 eas build --profile production-internal --platform android
 ```
 
-The Supabase anon/publishable key is public client configuration, but it must have only the anon/publishable role. Rotate any service-role key that was previously placed in a mobile environment or build. Restart Expo after changing local values and rebuild for a release build. For Expo Go, clear the Metro cache if it still uses the old value.
+Deploy the API changes before building the app so the `/v1/auth/sign-in`, `/v1/auth/sign-up`, `/v1/auth/verify`, and `/v1/auth/resend` endpoints are available. Rotate any service-role key that was previously placed in a mobile environment or build. Restart Expo after changing local values and rebuild for a release build. For Expo Go, clear the Metro cache if it still uses the old value.
 
 ## Local verification
 
