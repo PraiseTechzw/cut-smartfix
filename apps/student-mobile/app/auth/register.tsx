@@ -16,6 +16,19 @@ import { LinearGradient } from "../../components/LinearGradient";
 import { Link, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_LIGHT,
+  BRAND_BORDER,
+  BRAND_HINT,
+  BRAND_MUTED,
+  BRAND_TEXT,
+  DANGER_RED,
+  SUCCESS_GREEN,
+  typeScale,
+} from "../../src/theme";
+import {
   Animated,
   Dimensions,
   Easing,
@@ -37,16 +50,13 @@ const { width: SCREEN_W } = Dimensions.get("window");
 const TOTAL_STEPS = 3;
 
 // ─── Design tokens ────────────────────────────────────────────
-const GREEN = "#0b6b57";
-const GREEN_DARK = "#094f40";
-const GREEN_LIGHT = "#e8f5f0";
-const TEXT_PRIMARY = "#0f1f1b";
-const TEXT_SECONDARY = "#4a5e57";
-const TEXT_MUTED = "#8ea89f";
-const BORDER = "#d0ddd8";
-const BORDER_FOCUS = "#0b6b57";
-const ERROR = "#c0392b";
-const BG = "#f5f8f6";
+const TEXT_PRIMARY = BRAND_TEXT;
+const TEXT_SECONDARY = BRAND_MUTED;
+const TEXT_MUTED = BRAND_HINT;
+const BORDER = BRAND_BORDER;
+const BORDER_FOCUS = BRAND_BLUE;
+const ERROR = DANGER_RED;
+const BG = BRAND_BACKGROUND;
 
 // ─────────────────────────────────────────────────────────────
 // Uniqueness check
@@ -157,7 +167,7 @@ function UniquenessIndicator({ status }: { status: CheckStatus }) {
     available: {
       icon: "✓",
       text: "Available",
-      color: "#27ae60",
+      color: SUCCESS_GREEN,
       bg: "#eafaf1",
     },
     taken: { icon: "✕", text: "Already in use", color: ERROR, bg: "#fdf0f0" },
@@ -190,8 +200,8 @@ const uniqueStyles = StyleSheet.create({
     marginBottom: 14,
     marginLeft: 2,
   },
-  icon: { fontSize: 11, fontWeight: "800" },
-  text: { fontSize: 11, fontWeight: "700" },
+  icon: { fontSize: typeScale.overline, fontWeight: "800" },
+  text: { fontSize: typeScale.overline, fontWeight: "700" },
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -281,7 +291,7 @@ const progressStyles = StyleSheet.create({
     marginBottom: 20,
   },
   connectorActive: {
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
   },
   bubbleCol: {
     alignItems: "center",
@@ -298,41 +308,41 @@ const progressStyles = StyleSheet.create({
     justifyContent: "center",
   },
   bubbleActive: {
-    borderColor: GREEN,
-    backgroundColor: GREEN_LIGHT,
-    shadowColor: GREEN,
+    borderColor: BRAND_BLUE,
+    backgroundColor: BRAND_BLUE_LIGHT,
+    shadowColor: BRAND_BLUE,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
   },
   bubbleDone: {
-    borderColor: GREEN,
-    backgroundColor: GREEN,
+    borderColor: BRAND_BLUE,
+    backgroundColor: BRAND_BLUE,
   },
   bubbleText: {
-    fontSize: 18,
+    fontSize: typeScale.headline,
   },
   bubbleTextActive: {
-    fontSize: 18,
+    fontSize: typeScale.headline,
   },
   doneCheck: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: typeScale.body,
     fontWeight: "800",
   },
   stepLabel: {
-    fontSize: 10,
+    fontSize: typeScale.tiny,
     fontWeight: "600",
     color: TEXT_MUTED,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   stepLabelActive: {
-    color: GREEN,
+    color: BRAND_BLUE,
   },
   stepLabelDone: {
-    color: GREEN,
+    color: BRAND_BLUE,
     opacity: 0.7,
   },
 });
@@ -497,7 +507,7 @@ const fieldStyles = StyleSheet.create({
     elevation: 1,
   },
   containerFocused: {
-    shadowColor: GREEN,
+    shadowColor: BRAND_BLUE,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -515,7 +525,7 @@ const fieldStyles = StyleSheet.create({
     paddingHorizontal: 4,
     fontWeight: "600",
   },
-  input: { flex: 1, fontSize: 16, color: TEXT_PRIMARY, padding: 0 },
+  input: { flex: 1, fontSize: typeScale.body, color: TEXT_PRIMARY, padding: 0 },
   rightSlot: { paddingLeft: 8 },
   errorRow: {
     flexDirection: "row",
@@ -524,8 +534,8 @@ const fieldStyles = StyleSheet.create({
     marginLeft: 4,
     gap: 5,
   },
-  errorDot: { color: ERROR, fontSize: 6 },
-  errorText: { color: ERROR, fontSize: 12, fontWeight: "500" },
+  errorDot: { color: ERROR, fontSize: typeScale.micro },
+  errorText: { color: ERROR, fontSize: typeScale.caption, fontWeight: "500" },
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -540,7 +550,7 @@ function EyeToggle({
 }) {
   return (
     <Pressable onPress={onPress} hitSlop={8}>
-      <Text style={{ fontSize: 18, opacity: visible ? 1 : 0.4 }}>
+      <Text style={{ fontSize: typeScale.headline, opacity: visible ? 1 : 0.4 }}>
         {visible ? "👁" : "🙈"}
       </Text>
     </Pressable>
@@ -568,7 +578,7 @@ function getStrength(pw: string): {
     { label: "Weak", color: "#e74c3c" },
     { label: "Fair", color: "#e67e22" },
     { label: "Good", color: "#f1c40f" },
-    { label: "Strong", color: "#27ae60" },
+    { label: "Strong", color: SUCCESS_GREEN },
   ];
   return { score, ...map[score] };
 }
@@ -623,7 +633,7 @@ const sbStyles = StyleSheet.create({
     overflow: "hidden",
   },
   fill: { height: "100%", borderRadius: 2 },
-  label: { fontSize: 11, fontWeight: "700", width: 44, textAlign: "right" },
+  label: { fontSize: typeScale.overline, fontWeight: "700", width: 44, textAlign: "right" },
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -652,7 +662,7 @@ function PasswordRule({ met, text }: { met: boolean; text: string }) {
       <Animated.Text
         style={[
           ruleStyles.icon,
-          { color: met ? "#27ae60" : TEXT_MUTED, transform: [{ scale }] },
+          { color: met ? SUCCESS_GREEN : TEXT_MUTED, transform: [{ scale }] },
         ]}
       >
         {met ? "✓" : "○"}
@@ -664,9 +674,9 @@ function PasswordRule({ met, text }: { met: boolean; text: string }) {
 
 const ruleStyles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
-  icon: { fontSize: 13, fontWeight: "800", width: 16 },
-  text: { color: TEXT_MUTED, fontSize: 12 },
-  textMet: { color: "#27ae60", fontWeight: "600" },
+  icon: { fontSize: typeScale.footnote, fontWeight: "800", width: 16 },
+  text: { color: TEXT_MUTED, fontSize: typeScale.caption },
+  textMet: { color: SUCCESS_GREEN, fontWeight: "600" },
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -700,10 +710,10 @@ function MatchIndicator({
   const match = password === confirm;
   return (
     <Animated.View style={[miStyles.row, { opacity }]}>
-      <Text style={[miStyles.icon, { color: match ? "#27ae60" : ERROR }]}>
+      <Text style={[miStyles.icon, { color: match ? SUCCESS_GREEN : ERROR }]}>
         {match ? "✓" : "✕"}
       </Text>
-      <Text style={[miStyles.text, { color: match ? "#27ae60" : ERROR }]}>
+      <Text style={[miStyles.text, { color: match ? SUCCESS_GREEN : ERROR }]}>
         {match ? "Passwords match" : "Passwords do not match"}
       </Text>
     </Animated.View>
@@ -719,8 +729,8 @@ const miStyles = StyleSheet.create({
     marginBottom: 18,
     paddingHorizontal: 2,
   },
-  icon: { fontSize: 12, fontWeight: "800" },
-  text: { fontSize: 12, fontWeight: "600" },
+  icon: { fontSize: typeScale.caption, fontWeight: "800" },
+  text: { fontSize: typeScale.caption, fontWeight: "600" },
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -769,7 +779,7 @@ function PrimaryButton({
           <Text style={secondaryBtnStyles.label}>{label}</Text>
         ) : (
           <LinearGradient
-            colors={[GREEN, GREEN_DARK]}
+            colors={[BRAND_BLUE, BRAND_BLUE_DARK]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[
@@ -797,14 +807,14 @@ const primaryBtnStyles = StyleSheet.create({
     paddingVertical: 18,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: GREEN_DARK,
+    shadowColor: BRAND_BLUE_DARK,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 6,
   },
   disabled: { opacity: 0.65 },
-  label: { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: 0.3 },
+  label: { color: "#fff", fontSize: typeScale.body, fontWeight: "700", letterSpacing: 0.3 },
   loadingRow: {
     flexDirection: "row",
     gap: 6,
@@ -822,7 +832,7 @@ const secondaryBtnStyles = StyleSheet.create({
     borderColor: BORDER,
     backgroundColor: "#fff",
   },
-  label: { color: TEXT_SECONDARY, fontSize: 16, fontWeight: "700" },
+  label: { color: TEXT_SECONDARY, fontSize: typeScale.body, fontWeight: "700" },
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -919,16 +929,16 @@ const reviewRowStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f4f1",
   },
-  icon: { fontSize: 20, width: 28, textAlign: "center" },
+  icon: { fontSize: typeScale.title3, width: 28, textAlign: "center" },
   text: { flex: 1, gap: 2 },
   label: {
     color: TEXT_MUTED,
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  value: { color: TEXT_PRIMARY, fontSize: 15, fontWeight: "600" },
+  value: { color: TEXT_PRIMARY, fontSize: typeScale.callout, fontWeight: "600" },
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -1389,11 +1399,11 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   backBtn: { width: 60 },
-  backBtnText: { color: GREEN, fontSize: 16, fontWeight: "600" },
-  topTitle: { color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" },
+  backBtnText: { color: BRAND_BLUE, fontSize: typeScale.body, fontWeight: "600" },
+  topTitle: { color: TEXT_PRIMARY, fontSize: typeScale.body, fontWeight: "700" },
   cancelText: {
     color: TEXT_MUTED,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "600",
     width: 60,
     textAlign: "right",
@@ -1413,17 +1423,17 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     gap: 8,
   },
-  stepEmoji: { fontSize: 48, marginBottom: 4 },
+  stepEmoji: { fontSize: typeScale.heroXL, marginBottom: 4 },
   stepTitle: {
     color: TEXT_PRIMARY,
-    fontSize: 26,
+    fontSize: typeScale.displaySmall,
     fontWeight: "800",
     letterSpacing: -0.5,
     textAlign: "center",
   },
   stepSubtitle: {
     color: TEXT_MUTED,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     textAlign: "center",
     lineHeight: 20,
     paddingHorizontal: 16,
@@ -1456,7 +1466,7 @@ const styles = StyleSheet.create({
   },
   rulesTitle: {
     color: TEXT_SECONDARY,
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -1466,7 +1476,7 @@ const styles = StyleSheet.create({
   // Review step
   summaryTitle: {
     color: TEXT_SECONDARY,
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -1488,7 +1498,7 @@ const styles = StyleSheet.create({
   },
   editBtnText: {
     color: TEXT_SECONDARY,
-    fontSize: 12,
+    fontSize: typeScale.caption,
     fontWeight: "600",
   },
   termsBox: {
@@ -1497,7 +1507,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     color: TEXT_MUTED,
-    fontSize: 12,
+    fontSize: typeScale.caption,
     textAlign: "center",
     lineHeight: 18,
   },
@@ -1510,8 +1520,8 @@ const styles = StyleSheet.create({
     marginTop: 28,
     flexWrap: "wrap",
   },
-  footerText: { color: TEXT_SECONDARY, fontSize: 14 },
-  footerLink: { color: GREEN, fontSize: 14, fontWeight: "700" },
+  footerText: { color: TEXT_SECONDARY, fontSize: typeScale.subhead },
+  footerLink: { color: BRAND_BLUE, fontSize: typeScale.subhead, fontWeight: "700" },
   bottomNote: { marginTop: 12, alignItems: "center" },
-  bottomNoteText: { color: TEXT_MUTED, fontSize: 12, letterSpacing: 0.2 },
+  bottomNoteText: { color: TEXT_MUTED, fontSize: typeScale.caption, letterSpacing: 0.2 },
 });

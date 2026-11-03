@@ -19,17 +19,26 @@ import {
 import { Mascot } from "../../components/Mascot";
 import { useAuth } from "../../context/auth";
 import { useMascot } from "../../hooks/useMascot";
+import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BORDER,
+  BRAND_HINT,
+  BRAND_MUTED,
+  BRAND_TEXT,
+  DANGER_RED,
+  typeScale,
+} from "../../src/theme";
 
 // ─── Design tokens ────────────────────────────────────────────
-const GREEN      = "#0b6b57";
-const GREEN_DARK = "#094f40";
-const TEXT_PRIMARY   = "#0f1f1b";
-const TEXT_SECONDARY = "#4a5e57";
-const TEXT_MUTED     = "#8ea89f";
-const BORDER         = "#d0ddd8";
-const BORDER_FOCUS   = "#0b6b57";
-const ERROR          = "#c0392b";
-const BG             = "#f5f8f6";
+const TEXT_PRIMARY   = BRAND_TEXT;
+const TEXT_SECONDARY = BRAND_MUTED;
+const TEXT_MUTED     = BRAND_HINT;
+const BORDER         = BRAND_BORDER;
+const BORDER_FOCUS   = BRAND_BLUE;
+const ERROR          = DANGER_RED;
+const BG             = BRAND_BACKGROUND;
 
 // ─── Animated floating-label field ───────────────────────────
 interface FieldProps {
@@ -131,23 +140,23 @@ const fieldStyles = StyleSheet.create({
     shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
   },
   focused: {
-    shadowColor: GREEN, shadowOffset: { width: 0, height: 3 },
+    shadowColor: BRAND_BLUE, shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15, shadowRadius: 8, elevation: 4,
   },
   labelWrap: { position: "absolute", left: 14, zIndex: 1, top: 0, bottom: 0, justifyContent: "flex-start" },
   label: { paddingHorizontal: 4, fontWeight: "600" },
-  input: { flex: 1, fontSize: 16, color: TEXT_PRIMARY, padding: 0 },
+  input: { flex: 1, fontSize: typeScale.body, color: TEXT_PRIMARY, padding: 0 },
   right: { paddingLeft: 8 },
   errorRow: { flexDirection: "row", alignItems: "center", marginTop: 6, marginLeft: 4, gap: 5 },
-  errorDot: { color: ERROR, fontSize: 6 },
-  errorText: { color: ERROR, fontSize: 12, fontWeight: "500" },
+  errorDot: { color: ERROR, fontSize: typeScale.micro },
+  errorText: { color: ERROR, fontSize: typeScale.caption, fontWeight: "500" },
 });
 
 // ─── Eye toggle ───────────────────────────────────────────────
 function EyeToggle({ visible, onPress }: { visible: boolean; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} hitSlop={8}>
-      <Text style={{ fontSize: 18, opacity: visible ? 1 : 0.4 }}>
+      <Text style={{ fontSize: typeScale.headline, opacity: visible ? 1 : 0.4 }}>
         {visible ? "👁" : "🙈"}
       </Text>
     </Pressable>
@@ -168,7 +177,7 @@ function PrimaryButton({ label, onPress, loading }: { label: string; onPress: ()
         style={loading && { opacity: 0.65 }}
       >
         <LinearGradient
-          colors={[GREEN, GREEN_DARK]}
+          colors={[BRAND_BLUE, BRAND_BLUE_DARK]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={btnStyles.gradient}
         >
@@ -183,10 +192,10 @@ const btnStyles = StyleSheet.create({
   gradient: {
     borderRadius: 16, paddingVertical: 18,
     alignItems: "center", justifyContent: "center",
-    shadowColor: GREEN_DARK, shadowOffset: { width: 0, height: 6 },
+    shadowColor: BRAND_BLUE_DARK, shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
   },
-  label: { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: 0.3 },
+  label: { color: "#fff", fontSize: typeScale.body, fontWeight: "700", letterSpacing: 0.3 },
 });
 
 // ─── Loading dots ─────────────────────────────────────────────
@@ -270,15 +279,15 @@ const overlayStyles = StyleSheet.create({
   },
   circle: {
     width: 88, height: 88, borderRadius: 44,
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     alignItems: "center", justifyContent: "center",
-    shadowColor: GREEN_DARK,
+    shadowColor: BRAND_BLUE_DARK,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4, shadowRadius: 20, elevation: 12,
   },
-  tick: { color: "#fff", fontSize: 40, fontWeight: "800" },
-  label: { color: TEXT_PRIMARY, fontSize: 22, fontWeight: "800", letterSpacing: -0.3 },
-  sub: { color: TEXT_MUTED, fontSize: 14 },
+  tick: { color: "#fff", fontSize: typeScale.hero, fontWeight: "800" },
+  label: { color: TEXT_PRIMARY, fontSize: typeScale.title2, fontWeight: "800", letterSpacing: -0.3 },
+  sub: { color: TEXT_MUTED, fontSize: typeScale.subhead },
 });
 
 // ─── Main screen ──────────────────────────────────────────────
@@ -442,23 +451,23 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32, justifyContent: "center" },
   mascotArea: { alignItems: "center", marginBottom: 28, gap: 8 },
   appIdentity: { flexDirection: "row", alignItems: "center", gap: 10 },
-  appName: { color: TEXT_PRIMARY, fontSize: 26, fontWeight: "800", letterSpacing: -0.3 },
+  appName: { color: TEXT_PRIMARY, fontSize: typeScale.displaySmall, fontWeight: "800", letterSpacing: -0.3 },
   taglineRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  taglineDot: { color: GREEN, fontSize: 6 },
-  tagline: { color: TEXT_SECONDARY, fontSize: 14 },
+  taglineDot: { color: BRAND_BLUE, fontSize: typeScale.micro },
+  tagline: { color: TEXT_SECONDARY, fontSize: typeScale.subhead },
   card: {
     backgroundColor: "#fff", borderRadius: 24, padding: 24,
     shadowColor: "#000", shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08, shadowRadius: 20, elevation: 8,
   },
-  heading: { color: TEXT_PRIMARY, fontSize: 26, fontWeight: "800", letterSpacing: -0.5, marginBottom: 4 },
-  subheading: { color: TEXT_MUTED, fontSize: 14, marginBottom: 28 },
+  heading: { color: TEXT_PRIMARY, fontSize: typeScale.displaySmall, fontWeight: "800", letterSpacing: -0.5, marginBottom: 4 },
+  subheading: { color: TEXT_MUTED, fontSize: typeScale.subhead, marginBottom: 28 },
   dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 20, gap: 10 },
   dividerLine: { flex: 1, height: 1, backgroundColor: "#edf1ef" },
-  dividerText: { color: TEXT_MUTED, fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1 },
+  dividerText: { color: TEXT_MUTED, fontSize: typeScale.caption, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1 },
   footer: { flexDirection: "row", justifyContent: "center", alignItems: "center", flexWrap: "wrap" },
-  footerText: { color: TEXT_SECONDARY, fontSize: 14 },
-  footerLink: { color: GREEN, fontSize: 14, fontWeight: "700" },
+  footerText: { color: TEXT_SECONDARY, fontSize: typeScale.subhead },
+  footerLink: { color: BRAND_BLUE, fontSize: typeScale.subhead, fontWeight: "700" },
   bottomNote: { marginTop: 24, alignItems: "center" },
-  bottomNoteText: { color: TEXT_MUTED, fontSize: 12, letterSpacing: 0.2 },
+  bottomNoteText: { color: TEXT_MUTED, fontSize: typeScale.caption, letterSpacing: 0.2 },
 });

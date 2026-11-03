@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           style={{
             width: "40px", height: "40px",
             border: "3px solid var(--border)",
-            borderTopColor: "var(--green)",
+            borderTopColor: "var(--brand-blue)",
             borderRadius: "50%",
             animation: "spin 0.8s linear infinite",
           }}

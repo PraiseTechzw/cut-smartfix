@@ -23,7 +23,7 @@ export default function LocationsPage() {
   }, []);
 
   const cards = [
-    { href: "/locations/campuses", label: "Campuses",  desc: "University campuses and sites", count: counts.campuses, color: "#0b6b57" },
+    { href: "/locations/campuses", label: "Campuses",  desc: "University campuses and sites", count: counts.campuses, color: "#0055d4" },
     { href: "/locations/areas",    label: "Areas",     desc: "Campus zones and functional areas", count: counts.areas, color: "#2563eb" },
     { href: "/locations/buildings",label: "Buildings", desc: "Physical buildings on each campus", count: counts.buildings, color: "#7c3aed" },
     { href: "/locations/floors",   label: "Floors",    desc: "Floor levels within buildings", count: counts.floors, color: "#d97706" },

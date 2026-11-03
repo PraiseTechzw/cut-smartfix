@@ -15,6 +15,18 @@ import {
 import type { MaintenanceReport, PaginatedList } from "../../src/types/contracts";
 import { useApi } from "../../hooks/useApi";
 import { useAuth } from "../../context/auth";
+import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_LIGHT,
+  BRAND_BORDER,
+  BRAND_MUTED,
+  BRAND_TEXT,
+  colors,
+  statusColors,
+  typeScale,
+} from "../../src/theme";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -22,14 +34,14 @@ import { useAuth } from "../../context/auth";
 const APP_VERSION = "0.1.0";
 
 const C = {
-  BG: "#f5f8f6",
-  SURFACE: "#fff",
-  GREEN: "#0b6b57",
-  GREEN_DARK: "#084f41",
-  GREEN_LIGHT: "#e8f5f0",
-  TEXT: "#0f1f1b",
-  MUTED: "#52615b",
-  BORDER: "#d0ddd8",
+  BG: BRAND_BACKGROUND,
+  SURFACE: colors.surface,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_LIGHT,
+  TEXT: BRAND_TEXT,
+  MUTED: BRAND_MUTED,
+  BORDER: BRAND_BORDER,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -84,10 +96,10 @@ function Avatar({ name }: { name: string }) {
 function RoleBadge({ role }: { role: string }) {
   type RoleStyle = { bg: string; text: string };
   const map: Record<string, RoleStyle> = {
-    student: { bg: "#d4edda", text: "#155724" },
-    technician: { bg: "#cce5ff", text: "#004085" },
-    supervisor: { bg: "#fff3cd", text: "#856404" },
-    administrator: { bg: "#f8d7da", text: "#721c24" },
+    student: { bg: statusColors.success.background, text: statusColors.success.foreground },
+    technician: { bg: statusColors.info.background, text: statusColors.info.foreground },
+    supervisor: { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+    administrator: { bg: statusColors.danger.background, text: statusColors.danger.foreground },
   };
   const c: RoleStyle = map[role] ?? { bg: "#e9ecef", text: "#495057" };
   return (
@@ -193,7 +205,7 @@ function PrefRow({
       <Switch
         value={value}
         onValueChange={onToggle}
-        trackColor={{ false: "#c5d4c9", true: C.GREEN }}
+        trackColor={{ false: "#cbd5e1", true: C.BRAND_BLUE }}
         thumbColor={C.SURFACE}
       />
     </View>
@@ -355,7 +367,7 @@ const iconStyles = StyleSheet.create({
   iconText: {
     color: C.SURFACE,
     fontWeight: "800",
-    fontSize: 13,
+    fontSize: typeScale.footnote,
   },
 });
 
@@ -494,7 +506,7 @@ export default function ProfileScreen() {
         {/* ── HERO ───────────────────────────────────────────── */}
         <View style={styles.heroOuter}>
           <LinearGradient
-            colors={[C.GREEN, C.GREEN_DARK]}
+            colors={[C.BRAND_BLUE, C.BRAND_BLUE_DARK]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroBanner}
@@ -554,7 +566,7 @@ export default function ProfileScreen() {
             <>
               <PrefRow
                 icon={
-                  <IconCircle color={C.GREEN}>
+                  <IconCircle color={C.BRAND_BLUE}>
                     <BellIcon />
                   </IconCircle>
                 }
@@ -608,7 +620,7 @@ export default function ProfileScreen() {
           />
           <View style={styles.settingsDivider} />
           <SettingsRow
-            iconColor="#52615b"
+            iconColor={C.MUTED}
             iconContent={<ShieldIcon />}
             label="Privacy Policy"
             onPress={() =>
@@ -621,7 +633,7 @@ export default function ProfileScreen() {
           />
           <View style={styles.settingsDivider} />
           <SettingsRow
-            iconColor={C.GREEN}
+            iconColor={C.BRAND_BLUE}
             iconContent={<InfoIcon />}
             label="About CUT SmartFix"
             last
@@ -702,21 +714,21 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   avatarText: {
-    color: C.GREEN,
-    fontSize: 26,
+    color: C.BRAND_BLUE,
+    fontSize: typeScale.displaySmall,
     fontWeight: "800",
     letterSpacing: 1,
   },
   heroName: {
     color: C.TEXT,
-    fontSize: 22,
+    fontSize: typeScale.title2,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 3,
   },
   heroEmail: {
     color: C.MUTED,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     textAlign: "center",
     marginBottom: 10,
   },
@@ -734,14 +746,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   pillText: {
-    fontSize: 12,
+    fontSize: typeScale.caption,
     fontWeight: "700",
   },
   pillMono: {
-    backgroundColor: C.GREEN_LIGHT,
+    backgroundColor: C.BRAND_BLUE_LIGHT,
   },
   pillMonoText: {
-    color: C.GREEN,
+    color: C.BRAND_BLUE,
     fontFamily: "monospace" as const,
     letterSpacing: 0.5,
   },
@@ -771,13 +783,13 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   statValue: {
-    color: C.GREEN,
-    fontSize: 26,
+    color: C.BRAND_BLUE,
+    fontSize: typeScale.displaySmall,
     fontWeight: "800",
   },
   statLabel: {
     color: C.MUTED,
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "600",
     textAlign: "center",
   },
@@ -799,7 +811,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: C.TEXT,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "700",
     marginBottom: 12,
   },
@@ -810,17 +822,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   savedBadge: {
-    color: C.GREEN,
-    fontSize: 12,
+    color: C.BRAND_BLUE,
+    fontSize: typeScale.caption,
     fontWeight: "700",
-    backgroundColor: C.GREEN_LIGHT,
+    backgroundColor: C.BRAND_BLUE_LIGHT,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 100,
   },
   loadingText: {
     color: C.MUTED,
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     textAlign: "center",
     paddingVertical: 16,
     paddingBottom: 20,
@@ -841,11 +853,11 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     color: C.MUTED,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
   },
   infoValue: {
     color: C.TEXT,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "600",
     maxWidth: "58%",
     textAlign: "right",
@@ -868,12 +880,12 @@ const styles = StyleSheet.create({
   },
   prefLabel: {
     color: C.TEXT,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "600",
   },
   prefDesc: {
     color: C.MUTED,
-    fontSize: 12,
+    fontSize: typeScale.caption,
   },
 
   // ── Icon circle ──────────────────────────────────────────────
@@ -905,7 +917,7 @@ const styles = StyleSheet.create({
   settingsLabel: {
     flex: 1,
     color: C.TEXT,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "500",
   },
 
@@ -952,7 +964,7 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     color: "#dc3545",
-    fontSize: 15,
+    fontSize: typeScale.callout,
     fontWeight: "700",
     letterSpacing: 0.3,
   },
@@ -960,7 +972,7 @@ const styles = StyleSheet.create({
   // ── Version footer ───────────────────────────────────────────
   version: {
     color: C.MUTED,
-    fontSize: 12,
+    fontSize: typeScale.caption,
     textAlign: "center",
     paddingHorizontal: 20,
     marginBottom: 8,
@@ -978,30 +990,30 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: C.GREEN_LIGHT,
+    backgroundColor: C.BRAND_BLUE_LIGHT,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
   },
   centerStateAvatarText: {
-    color: C.GREEN,
-    fontSize: 32,
+    color: C.BRAND_BLUE,
+    fontSize: typeScale.displayLarge,
     fontWeight: "800",
   },
   centerStateTitle: {
     color: C.TEXT,
-    fontSize: 20,
+    fontSize: typeScale.title3,
     fontWeight: "700",
   },
   centerStateSub: {
     color: C.MUTED,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     textAlign: "center",
     lineHeight: 20,
   },
   loginBtn: {
     marginTop: 8,
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
     borderRadius: 10,
     paddingHorizontal: 36,
     paddingVertical: 13,
@@ -1009,6 +1021,6 @@ const styles = StyleSheet.create({
   loginBtnText: {
     color: C.SURFACE,
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
 });

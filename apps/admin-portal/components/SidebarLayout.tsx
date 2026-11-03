@@ -269,7 +269,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                   No new notifications
                 </div>
                 <div style={{ borderTop: "1px solid var(--border)", padding: "8px 16px 4px" }}>
-                  <Link href="/notifications" style={{ fontSize: 12, color: "var(--green)", fontWeight: 600 }} onClick={() => setNotifOpen(false)}>
+                  <Link href="/notifications" style={{ fontSize: 12, color: "var(--brand-blue)", fontWeight: 600 }} onClick={() => setNotifOpen(false)}>
                     View all notifications →
                   </Link>
                 </div>
@@ -280,7 +280,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           {/* User pill */}
           <div className="topbar-user" onClick={() => setUserMenuOpen((v) => !v)}>
             <div style={{
-              width: 28, height: 28, borderRadius: "50%", background: "var(--green)",
+              width: 28, height: 28, borderRadius: "50%", background: "var(--brand-blue)",
               color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 11, fontWeight: 700, flexShrink: 0,
             }}>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchApi } from "../../../lib/api";
 import type { AnalyticsReport } from "@cut-smartfix/contracts";
 
-function HBar({ title, data, color = "var(--green)" }: {
+function HBar({ title, data, color = "var(--brand-blue)" }: {
   title: string;
   data: { label: string; value: number }[];
   color?: string;
@@ -144,7 +144,7 @@ export default function AnalyticsPage() {
 
       {/* KPI row */}
       <div className="stat-cards" style={{ marginBottom: "24px" }}>
-        <div className="stat-card green">
+        <div className="stat-card blue">
           <div className="stat-card-label">Total reports</div>
           <div className="stat-card-value">{stats?.total ?? 0}</div>
         </div>
@@ -183,7 +183,7 @@ export default function AnalyticsPage() {
       {/* Charts grid */}
       <div className="analytics-grid" style={{ marginBottom: "20px" }}>
         <HBar title="By Status" data={report?.byStatus ?? []} color="var(--blue)" />
-        <HBar title="By Category" data={report?.byCategory ?? []} color="var(--green)" />
+        <HBar title="By Category" data={report?.byCategory ?? []} color="var(--brand-blue)" />
         <HBar title="By Building" data={report?.byBuilding ?? []} color="#7c3aed" />
         <HBar title="By Department" data={report?.byDepartment ?? []} color="var(--amber)" />
         <HBar title="Technician Workload" data={report?.byTechnician ?? []} color="var(--cyan)" />

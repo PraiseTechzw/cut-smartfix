@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../context/auth";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { useOfflineSync } from "../hooks/useOfflineSync";
+import { typeScale } from "../src/theme";
 
 // ---------------------------------------------------------------------------
 // Offline banner — slides in from top when connectivity is lost
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
   },
   bannerText: {
     color: "#f9fafb",
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     fontWeight: "600",
     letterSpacing: 0.2,
   },

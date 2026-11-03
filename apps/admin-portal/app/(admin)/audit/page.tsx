@@ -59,7 +59,7 @@ export default function AuditPage() {
   const actionColor = (a: string) => {
     if (a.includes("deleted") || a.includes("cancelled") || a.includes("rejected") || a.includes("deactivated"))
       return "var(--red)";
-    if (a.includes("created") || a.includes("approved")) return "var(--green)";
+    if (a.includes("created") || a.includes("approved")) return "var(--success-green)";
     if (a.includes("updated") || a.includes("assigned")) return "var(--blue)";
     return "var(--text)";
   };
@@ -182,7 +182,7 @@ export default function AuditPage() {
                             {log.newValues && (
                               <div>
                                 <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)", marginBottom: "4px" }}>After</div>
-                                <pre style={{ fontSize: "11px", color: "var(--green)", margin: 0 }}>
+                                <pre style={{ fontSize: "11px", color: "var(--success-green)", margin: 0 }}>
                                   {JSON.stringify(log.newValues, null, 2)}
                                 </pre>
                               </div>

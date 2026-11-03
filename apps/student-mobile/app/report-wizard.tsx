@@ -23,6 +23,16 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../context/auth";
+import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BORDER,
+  BRAND_HINT,
+  BRAND_MUTED,
+  BRAND_SURFACE_MUTED,
+  BRAND_TEXT,
+  typeScale,
+} from "../src/theme";
 import type {
   Area,
   Building,
@@ -310,7 +320,7 @@ function SelectionList<T extends { id: string; name: string }>({
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#0b6b57" />
+        <ActivityIndicator color={BRAND_BLUE} />
       </View>
     );
   }
@@ -865,7 +875,7 @@ export default function ReportWizardScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g. Broken tap in Lab 2"
-              placeholderTextColor="#9caea5"
+              placeholderTextColor={BRAND_HINT}
               value={title}
               onChangeText={setTitle}
               maxLength={120}
@@ -876,7 +886,7 @@ export default function ReportWizardScreen() {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Describe the problem in detail — what happened, when, how severe..."
-              placeholderTextColor="#9caea5"
+              placeholderTextColor={BRAND_HINT}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -1122,7 +1132,7 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "#f4f7f2" },
+  page: { flex: 1, backgroundColor: BRAND_BACKGROUND },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -1132,14 +1142,14 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   backBtn: {
-    color: "#0b6b57",
-    fontSize: 16,
+    color: BRAND_BLUE,
+    fontSize: typeScale.body,
     fontWeight: "600",
     width: 60,
   },
   topBarTitle: {
-    color: "#17231f",
-    fontSize: 16,
+    color: BRAND_TEXT,
+    fontSize: typeScale.body,
     fontWeight: "700",
   },
   progressContainer: {
@@ -1153,20 +1163,20 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#c5d4c9",
+    backgroundColor: BRAND_BORDER,
   },
   progressDotActive: {
-    backgroundColor: "#0b6b57",
+    backgroundColor: BRAND_BLUE,
     width: 24,
     borderRadius: 5,
   },
   progressDotDone: {
-    backgroundColor: "#0b6b57",
+    backgroundColor: BRAND_BLUE,
     opacity: 0.5,
   },
   progressLabel: {
-    color: "#52615b",
-    fontSize: 12,
+    color: BRAND_MUTED,
+    fontSize: typeScale.caption,
     marginLeft: 6,
   },
   scrollContent: {
@@ -1174,14 +1184,14 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   stepTitle: {
-    color: "#17231f",
-    fontSize: 24,
+    color: BRAND_TEXT,
+    fontSize: typeScale.title,
     fontWeight: "800",
     marginBottom: 20,
   },
   sectionLabel: {
-    color: "#52615b",
-    fontSize: 13,
+    color: BRAND_MUTED,
+    fontSize: typeScale.footnote,
     fontWeight: "700",
     marginBottom: 8,
     marginTop: 12,
@@ -1192,7 +1202,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     textTransform: "none",
     letterSpacing: 0,
-    fontSize: 12,
+    fontSize: typeScale.caption,
   },
   selectionList: {
     gap: 8,
@@ -1201,37 +1211,37 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: "#d7e0d9",
+    borderColor: BRAND_BORDER,
     padding: 14,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   selectionItemActive: {
-    borderColor: "#0b6b57",
+    borderColor: BRAND_BLUE,
     backgroundColor: "#f0f9f6",
   },
   selectionText: {
-    color: "#17231f",
-    fontSize: 15,
+    color: BRAND_TEXT,
+    fontSize: typeScale.callout,
     flex: 1,
   },
   selectionTextActive: {
-    color: "#0b6b57",
+    color: BRAND_BLUE,
     fontWeight: "700",
   },
   checkmark: {
-    color: "#0b6b57",
-    fontSize: 16,
+    color: BRAND_BLUE,
+    fontSize: typeScale.body,
     fontWeight: "700",
   },
   input: {
     backgroundColor: "#fff",
-    borderColor: "#d7e0d9",
+    borderColor: BRAND_BORDER,
     borderWidth: 1,
     borderRadius: 10,
-    color: "#17231f",
-    fontSize: 16,
+    color: BRAND_TEXT,
+    fontSize: typeScale.body,
     padding: 15,
   },
   textArea: {
@@ -1239,8 +1249,8 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   charCount: {
-    color: "#52615b",
-    fontSize: 12,
+    color: BRAND_MUTED,
+    fontSize: typeScale.caption,
     textAlign: "right",
     marginTop: 4,
   },
@@ -1254,27 +1264,27 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#d7e0d9",
+    borderColor: BRAND_BORDER,
     padding: 14,
     alignItems: "center",
     gap: 4,
   },
   urgencyCardActive: {
-    borderColor: "#0b6b57",
+    borderColor: BRAND_BLUE,
     backgroundColor: "#f0f9f6",
   },
-  urgencyEmoji: { fontSize: 28 },
+  urgencyEmoji: { fontSize: typeScale.display },
   urgencyLabel: {
-    color: "#17231f",
-    fontSize: 15,
+    color: BRAND_TEXT,
+    fontSize: typeScale.callout,
     fontWeight: "700",
   },
   urgencyLabelActive: {
-    color: "#0b6b57",
+    color: BRAND_BLUE,
   },
   urgencyDesc: {
-    color: "#52615b",
-    fontSize: 11,
+    color: BRAND_MUTED,
+    fontSize: typeScale.overline,
     textAlign: "center",
   },
   // Photos
@@ -1293,7 +1303,7 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 10,
-    backgroundColor: "#e8ede9",
+    backgroundColor: BRAND_SURFACE_MUTED,
   },
   photoRemoveBtn: {
     position: "absolute",
@@ -1308,7 +1318,7 @@ const styles = StyleSheet.create({
   },
   photoRemoveText: {
     color: "#fff",
-    fontSize: 10,
+    fontSize: typeScale.tiny,
     fontWeight: "700",
     lineHeight: 12,
   },
@@ -1316,15 +1326,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "#d7e0d9",
+    borderColor: BRAND_BORDER,
     borderStyle: "dashed",
     padding: 28,
     alignItems: "center",
     gap: 6,
   },
-  photoAddIcon: { fontSize: 36 },
-  photoAddText: { color: "#17231f", fontSize: 15, fontWeight: "600" },
-  photoAddSubtext: { color: "#52615b", fontSize: 12 },
+  photoAddIcon: { fontSize: typeScale.heroSmall },
+  photoAddText: { color: BRAND_TEXT, fontSize: typeScale.callout, fontWeight: "600" },
+  photoAddSubtext: { color: BRAND_MUTED, fontSize: typeScale.caption },
   // Review
   reviewCard: {
     backgroundColor: "#fff",
@@ -1343,20 +1353,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   reviewLabel: {
-    color: "#52615b",
-    fontSize: 13,
+    color: BRAND_MUTED,
+    fontSize: typeScale.footnote,
     fontWeight: "600",
     width: 90,
     flexShrink: 0,
   },
   reviewValue: {
-    color: "#17231f",
-    fontSize: 14,
+    color: BRAND_TEXT,
+    fontSize: typeScale.subhead,
     flex: 1,
   },
   reviewDivider: {
     height: 1,
-    backgroundColor: "#f0f4f1",
+    backgroundColor: BRAND_SURFACE_MUTED,
     marginVertical: 4,
   },
   reviewPhotoScroll: {
@@ -1370,7 +1380,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 8,
-    backgroundColor: "#e8ede9",
+    backgroundColor: BRAND_SURFACE_MUTED,
   },
   authWarning: {
     backgroundColor: "#fff3cd",
@@ -1380,14 +1390,14 @@ const styles = StyleSheet.create({
   },
   authWarningText: {
     color: "#856404",
-    fontSize: 13,
+    fontSize: typeScale.footnote,
   },
   submitBtn: {
-    backgroundColor: "#0b6b57",
+    backgroundColor: BRAND_BLUE,
     borderRadius: 12,
     padding: 18,
     alignItems: "center",
-    shadowColor: "#0b6b57",
+    shadowColor: BRAND_BLUE,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1399,23 +1409,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  submitBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  submitBtnText: { color: "#fff", fontSize: typeScale.bodyLarge, fontWeight: "700" },
   submitStatusText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "600",
   },
   navBar: {
     flexDirection: "row",
     padding: 16,
     gap: 10,
-    backgroundColor: "#f4f7f2",
+    backgroundColor: BRAND_BACKGROUND,
     borderTopWidth: 1,
-    borderTopColor: "#e4ede7",
+    borderTopColor: BRAND_BORDER,
   },
   navBtn: {
     flex: 1,
-    backgroundColor: "#0b6b57",
+    backgroundColor: BRAND_BLUE,
     borderRadius: 12,
     padding: 16,
     alignItems: "center",
@@ -1423,17 +1433,17 @@ const styles = StyleSheet.create({
   navBtnSecondary: {
     backgroundColor: "#fff",
     borderWidth: 1.5,
-    borderColor: "#c5d4c9",
+    borderColor: BRAND_BORDER,
   },
-  navBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  navBtnSecondaryText: { color: "#52615b", fontWeight: "700", fontSize: 15 },
+  navBtnText: { color: "#fff", fontWeight: "700", fontSize: typeScale.callout },
+  navBtnSecondaryText: { color: BRAND_MUTED, fontWeight: "700", fontSize: typeScale.callout },
   center: {
     padding: 24,
     alignItems: "center",
   },
   emptyText: {
-    color: "#52615b",
-    fontSize: 14,
+    color: BRAND_MUTED,
+    fontSize: typeScale.subhead,
     padding: 12,
   },
   // Success screen
@@ -1444,16 +1454,16 @@ const styles = StyleSheet.create({
     padding: 32,
     gap: 12,
   },
-  successIcon: { fontSize: 64 },
+  successIcon: { fontSize: typeScale.billboard },
   successTitle: {
-    color: "#17231f",
-    fontSize: 28,
+    color: BRAND_TEXT,
+    fontSize: typeScale.display,
     fontWeight: "800",
     textAlign: "center",
   },
   successBody: {
-    color: "#52615b",
-    fontSize: 15,
+    color: BRAND_MUTED,
+    fontSize: typeScale.callout,
     textAlign: "center",
     lineHeight: 22,
   },
@@ -1462,7 +1472,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff7ed",
     borderRadius: 10,
     padding: 12,
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     lineHeight: 19,
     textAlign: "center",
   },
@@ -1474,24 +1484,24 @@ const styles = StyleSheet.create({
     width: "100%",
     marginVertical: 8,
     borderWidth: 2,
-    borderColor: "#0b6b57",
+    borderColor: BRAND_BLUE,
     gap: 4,
   },
   ticketLabel: {
-    color: "#52615b",
-    fontSize: 12,
+    color: BRAND_MUTED,
+    fontSize: typeScale.caption,
     fontWeight: "700",
     letterSpacing: 1,
     textTransform: "uppercase",
   },
   ticketValue: {
-    color: "#0b6b57",
-    fontSize: 24,
+    color: BRAND_BLUE,
+    fontSize: typeScale.title,
     fontWeight: "900",
     fontFamily: "monospace" as const,
   },
   successBtn: {
-    backgroundColor: "#0b6b57",
+    backgroundColor: BRAND_BLUE,
     borderRadius: 12,
     paddingHorizontal: 32,
     paddingVertical: 16,
@@ -1499,13 +1509,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  successBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  successBtnText: { color: "#fff", fontWeight: "700", fontSize: typeScale.body },
   successSecondaryBtn: {
     paddingVertical: 12,
   },
   successSecondaryText: {
-    color: "#0b6b57",
+    color: BRAND_BLUE,
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
 });

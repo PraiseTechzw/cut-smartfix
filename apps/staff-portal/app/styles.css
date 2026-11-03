@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap");
 :root {
-  color: #17231f;
-  background: #f4f7f2;
+  color: #17233b;
+  background: #f4f7fb;
   font-family: "DM Sans", sans-serif;
 }
 * {
@@ -16,7 +16,7 @@ main {
   padding: 10vh 7vw;
 }
 .eyebrow {
-  color: #0b6b57;
+  color: #0055d4;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 2px;
@@ -31,7 +31,7 @@ h1 {
 }
 .lede {
   max-width: 540px;
-  color: #52615b;
+  color: #536174;
   font-size: 19px;
   line-height: 1.6;
 }
@@ -43,7 +43,7 @@ h1 {
 }
 .grid div {
   background: #fff;
-  border-left: 4px solid #e3b23c;
+  border-left: 4px solid #fbb401;
   padding: 22px;
 }
 .grid strong,
@@ -66,7 +66,7 @@ h1 {
   margin-top: 42px;
 }
 .modules a {
-  color: #0b6b57;
+  color: #0055d4;
   font-weight: 700;
   text-decoration: none;
 }

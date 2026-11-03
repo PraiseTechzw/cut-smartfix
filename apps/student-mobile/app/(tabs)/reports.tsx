@@ -13,6 +13,20 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { useApi } from "../../hooks/useApi";
+import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_LIGHT,
+  BRAND_BORDER,
+  BRAND_MUTED,
+  BRAND_TEXT,
+  colors,
+  SUCCESS_GREEN,
+  SUCCESS_GREEN_LIGHT,
+  statusColors,
+  typeScale,
+} from "../../src/theme";
 import type {
   MaintenanceReport,
   PaginatedList,
@@ -23,17 +37,19 @@ import type {
 // Design tokens
 // ─────────────────────────────────────────
 const C = {
-  BG: "#f5f8f6",
-  SURFACE: "#fff",
-  GREEN: "#0b6b57",
-  GREEN_DARK: "#084f41",
-  GREEN_LIGHT: "#e8f5f0",
-  TEXT: "#0f1f1b",
-  MUTED: "#52615b",
-  BORDER: "#d0ddd8",
-  AMBER: "#d97706",
-  BLUE: "#2563eb",
-  RED: "#dc2626",
+  BG: BRAND_BACKGROUND,
+  SURFACE: colors.surface,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_LIGHT,
+  SUCCESS_GREEN,
+  SUCCESS_GREEN_LIGHT,
+  TEXT: BRAND_TEXT,
+  MUTED: BRAND_MUTED,
+  BORDER: BRAND_BORDER,
+  AMBER: colors.warning,
+  BLUE: colors.info,
+  RED: colors.danger,
 } as const;
 
 // ─────────────────────────────────────────
@@ -99,25 +115,25 @@ function getStatusGroup(
 // Status badge colours
 // ─────────────────────────────────────────
 const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
-  submitted: { bg: "#fef3c7", text: "#92400e" },
-  under_review: { bg: "#fef3c7", text: "#92400e" },
-  reopened: { bg: "#fef3c7", text: "#92400e" },
-  assigned: { bg: "#dbeafe", text: "#1e40af" },
-  accepted: { bg: "#dbeafe", text: "#1e40af" },
-  in_progress: { bg: "#dbeafe", text: "#1e40af" },
+  submitted: { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  under_review: { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  reopened: { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  assigned: { bg: statusColors.active.background, text: statusColors.active.foreground },
+  accepted: { bg: statusColors.active.background, text: statusColors.active.foreground },
+  in_progress: { bg: statusColors.active.background, text: statusColors.active.foreground },
   waiting_for_materials: { bg: "#ede9fe", text: "#5b21b6" },
-  repair_completed: { bg: "#d1fae5", text: "#065f46" },
-  under_verification: { bg: "#d1fae5", text: "#065f46" },
-  closed: { bg: C.GREEN_LIGHT, text: C.GREEN_DARK },
-  rejected: { bg: "#fee2e2", text: "#991b1b" },
-  duplicate: { bg: "#fee2e2", text: "#991b1b" },
-  cancelled: { bg: "#f3f4f6", text: "#374151" },
+  repair_completed: { bg: statusColors.success.background, text: statusColors.success.foreground },
+  under_verification: { bg: statusColors.success.background, text: statusColors.success.foreground },
+  closed: { bg: statusColors.success.background, text: statusColors.success.foreground },
+  rejected: { bg: statusColors.danger.background, text: statusColors.danger.foreground },
+  duplicate: { bg: statusColors.danger.background, text: statusColors.danger.foreground },
+  cancelled: { bg: statusColors.neutral.background, text: statusColors.neutral.foreground },
 };
 
 // Accent border colour on card left edge
 const ACCENT_COLOR: Record<"active" | "completed" | "rejected" | "unknown", string> = {
   active: C.AMBER,
-  completed: C.GREEN,
+  completed: C.SUCCESS_GREEN,
   rejected: C.RED,
   unknown: C.BORDER,
 };
@@ -568,8 +584,8 @@ export default function ReportsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={C.GREEN}
-              colors={[C.GREEN]}
+              tintColor={C.BRAND_BLUE}
+              colors={[C.BRAND_BLUE]}
             />
           }
           ListEmptyComponent={<EmptyState filter={filter} />}
@@ -616,21 +632,21 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: C.TEXT,
-    fontSize: 28,
+    fontSize: typeScale.display,
     fontWeight: "800",
     letterSpacing: -0.3,
   },
 
   // ── count badge ──
   countBadge: {
-    backgroundColor: C.GREEN_LIGHT,
+    backgroundColor: C.BRAND_BLUE_LIGHT,
     borderRadius: 100,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   countBadgeText: {
-    color: C.GREEN,
-    fontSize: 12,
+    color: C.BRAND_BLUE,
+    fontSize: typeScale.caption,
     fontWeight: "700",
   },
 
@@ -646,7 +662,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   chipActive: {
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
   },
   chipInactive: {
     backgroundColor: C.SURFACE,
@@ -654,7 +670,7 @@ const styles = StyleSheet.create({
     borderColor: C.BORDER,
   },
   chipText: {
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     fontWeight: "600",
   },
   chipTextActive: {
@@ -702,15 +718,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ticketNumber: {
-    color: C.GREEN,
+    color: C.BRAND_BLUE,
     fontFamily: "monospace",
-    fontSize: 12,
+    fontSize: typeScale.caption,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
   cardTitle: {
     color: C.TEXT,
-    fontSize: 15,
+    fontSize: typeScale.callout,
     fontWeight: "700",
     lineHeight: 21,
   },
@@ -722,7 +738,7 @@ const styles = StyleSheet.create({
   },
   cardDate: {
     color: C.MUTED,
-    fontSize: 12,
+    fontSize: typeScale.caption,
   },
 
   // ── status badge ──
@@ -732,7 +748,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "700",
   },
 
@@ -741,7 +757,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: C.GREEN_LIGHT,
+    backgroundColor: C.BRAND_BLUE_LIGHT,
     borderRadius: 100,
     paddingHorizontal: 9,
     paddingVertical: 3,
@@ -751,11 +767,11 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
   },
   categoryPillText: {
-    color: C.GREEN_DARK,
-    fontSize: 11,
+    color: C.BRAND_BLUE_DARK,
+    fontSize: typeScale.overline,
     fontWeight: "600",
   },
 
@@ -772,7 +788,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: C.GREEN_LIGHT,
+    backgroundColor: C.BRAND_BLUE_LIGHT,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
@@ -783,7 +799,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.SURFACE,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: C.GREEN,
+    borderColor: C.BRAND_BLUE,
     alignItems: "center",
     paddingTop: 14,
     gap: 5,
@@ -793,7 +809,7 @@ const styles = StyleSheet.create({
     top: -7,
     width: 18,
     height: 10,
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
     borderRadius: 4,
   },
   emptyLine: {
@@ -804,23 +820,23 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: C.TEXT,
-    fontSize: 18,
+    fontSize: typeScale.headline,
     fontWeight: "700",
     textAlign: "center",
   },
   emptyBody: {
     color: C.MUTED,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     textAlign: "center",
     lineHeight: 20,
   },
   ctaBtn: {
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
     borderRadius: 12,
     paddingHorizontal: 28,
     paddingVertical: 12,
     marginTop: 4,
-    shadowColor: C.GREEN,
+    shadowColor: C.BRAND_BLUE,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -828,7 +844,7 @@ const styles = StyleSheet.create({
   },
   ctaBtnText: {
     color: C.SURFACE,
-    fontSize: 15,
+    fontSize: typeScale.callout,
     fontWeight: "700",
   },
 
@@ -857,12 +873,12 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     color: C.TEXT,
-    fontSize: 17,
+    fontSize: typeScale.bodyLarge,
     fontWeight: "700",
   },
   errorMessage: {
     color: C.MUTED,
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     textAlign: "center",
     lineHeight: 18,
   },
@@ -870,14 +886,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: C.GREEN,
+    borderColor: C.BRAND_BLUE,
     paddingHorizontal: 28,
     paddingVertical: 10,
   },
   retryBtnText: {
-    color: C.GREEN,
+    color: C.BRAND_BLUE,
     fontWeight: "700",
-    fontSize: 14,
+    fontSize: typeScale.subhead,
   },
 
   // ── FAB ──
@@ -886,7 +902,7 @@ const styles = StyleSheet.create({
     bottom: 28,
     right: 24,
     zIndex: 10,
-    shadowColor: C.GREEN_DARK,
+    shadowColor: C.BRAND_BLUE_DARK,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
@@ -896,7 +912,7 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -925,16 +941,16 @@ const styles = StyleSheet.create({
   },
   loginTitle: {
     color: C.TEXT,
-    fontSize: 24,
+    fontSize: typeScale.title,
     fontWeight: "800",
   },
   loginBody: {
     color: C.MUTED,
-    fontSize: 15,
+    fontSize: typeScale.callout,
     textAlign: "center",
   },
   loginBtn: {
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
     borderRadius: 12,
     paddingHorizontal: 36,
     paddingVertical: 13,
@@ -943,6 +959,6 @@ const styles = StyleSheet.create({
   loginBtnText: {
     color: C.SURFACE,
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
 });

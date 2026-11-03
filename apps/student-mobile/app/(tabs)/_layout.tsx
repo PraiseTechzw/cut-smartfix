@@ -2,12 +2,19 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  BRAND_BLUE,
+  BRAND_BORDER,
+  BRAND_GOLD,
+  BRAND_HINT,
+  colors,
+  typeScale,
+} from "../../src/theme";
 
 // Design tokens
-const GREEN = "#0b6b57";
-const MUTED = "#8ea89f";
-const BG = "#fff";
-const BORDER = "#e4ede7";
+const MUTED = BRAND_HINT;
+const BG = colors.surface;
+const BORDER = BRAND_BORDER;
 
 // ---------------------------------------------------------------------------
 // Icon components — drawn with pure View/StyleSheet shapes, no external libs
@@ -175,7 +182,7 @@ function ActivePill() {
         width: 20,
         height: 3,
         borderRadius: 2,
-        backgroundColor: GREEN,
+        backgroundColor: BRAND_BLUE,
         marginBottom: 4,
       }}
     />
@@ -238,13 +245,14 @@ export default function TabsLayout() {
     <TabsNav
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: GREEN,
+        tabBarActiveTintColor: BRAND_BLUE,
         tabBarInactiveTintColor: MUTED,
         tabBarStyle: [
           styles.tabBar,
           {
             height: 62 + insets.bottom,
             paddingBottom: Math.max(insets.bottom, 8),
+            borderTopColor: BRAND_GOLD,
           },
         ],
         tabBarLabelStyle: styles.label,
@@ -324,7 +332,7 @@ const styles = StyleSheet.create({
     }),
   },
   label: {
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "600",
     marginTop: 2,
   },

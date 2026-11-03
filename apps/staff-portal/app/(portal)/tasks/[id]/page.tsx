@@ -593,7 +593,7 @@ export default function TaskDetailPage() {
                         alignItems: "center",
                         gap: 8,
                         fontSize: "0.875rem",
-                        color: "var(--green)",
+                        color: "var(--brand-blue)",
                       }}
                     >
                       📎 {a.fileName}
@@ -635,7 +635,7 @@ export default function TaskDetailPage() {
                         alignItems: "center",
                         gap: 8,
                         fontSize: "0.875rem",
-                        color: "var(--green)",
+                        color: "var(--brand-blue)",
                       }}
                     >
                       🖼 {e.fileName}

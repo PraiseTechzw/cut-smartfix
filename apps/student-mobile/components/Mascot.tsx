@@ -14,21 +14,26 @@
  */
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
+import {
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_MID,
+  BRAND_GOLD,
+  BRAND_GOLD_DARK,
+  colors,
+  BRAND_TEXT,
+  DANGER_RED,
+} from "../src/theme";
 
 export type MascotState = "idle" | "typing" | "peek" | "hide" | "success" | "error";
 
 // ─────────────────────────────────────────────────────────────
 // Colours
 // ─────────────────────────────────────────────────────────────
-const GREEN      = "#0b6b57";
-const GREEN_DARK = "#094f40";
-const GREEN_MID  = "#1a8c73";
-const CREAM      = "#f0f9f5";
-const DARK       = "#0f1f1b";
-const WHITE      = "#ffffff";
-const AMBER      = "#e3b23c";
-const AMBER_DARK = "#b8891e";
-const RED        = "#c0392b";
+const CREAM      = colors.surfaceMuted;
+const DARK       = BRAND_TEXT;
+const WHITE      = colors.white;
+const RED        = DANGER_RED;
 
 // ─────────────────────────────────────────────────────────────
 // Sub-components
@@ -175,7 +180,7 @@ function Paw({ side }: { side: "left" | "right" }) {
         pawStyles.paw,
         {
           transform: [{ scaleX: flip }],
-          backgroundColor: GREEN_MID,
+          backgroundColor: BRAND_BLUE_MID,
         },
       ]}
     >
@@ -204,7 +209,7 @@ const pawStyles = StyleSheet.create({
     width: 10,
     height: 14,
     borderRadius: 6,
-    backgroundColor: GREEN_MID,
+    backgroundColor: BRAND_BLUE_MID,
   },
 });
 
@@ -360,7 +365,7 @@ export function Mascot({ state, lookProgress = 0 }: MascotProps) {
           {/* Beak / nose */}
           <View style={[
             mascotStyles.beak,
-            eyeWorried && { borderTopColor: AMBER_DARK },
+            eyeWorried && { borderTopColor: BRAND_GOLD_DARK },
           ]} />
 
           {/* Blush dots (success) */}
@@ -399,12 +404,12 @@ const mascotStyles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
     position: "relative",
-    shadowColor: GREEN_DARK,
+    shadowColor: BRAND_BLUE_DARK,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
@@ -425,7 +430,7 @@ const mascotStyles = StyleSheet.create({
     width: 18,
     height: 22,
     borderRadius: 9,
-    backgroundColor: GREEN_DARK,
+    backgroundColor: BRAND_BLUE_DARK,
   },
   earLeft: { left: 10, transform: [{ rotate: "-15deg" }] },
   earRight: { right: 10, transform: [{ rotate: "15deg" }] },
@@ -446,7 +451,7 @@ const mascotStyles = StyleSheet.create({
     borderTopWidth: 8,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: AMBER,
+    borderTopColor: BRAND_GOLD,
     marginTop: 1,
   },
   blushRow: {

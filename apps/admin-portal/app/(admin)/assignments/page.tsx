@@ -200,7 +200,7 @@ function AssignmentsPage() {
                           cursor: "pointer",
                           background:
                             selected?.id === t.id
-                              ? "var(--green-light)"
+                              ? "var(--brand-blue-light)"
                               : "transparent",
                           transition: "background 0.15s",
                         }}

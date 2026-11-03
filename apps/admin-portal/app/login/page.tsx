@@ -32,12 +32,12 @@ export default function LoginPage() {
 
   // ── Inline style objects ──────────────────────────────────────────────────
   const s: Record<string, React.CSSProperties> = {
-    page: { minHeight: "100vh", display: "flex", background: "#f0f4f3" },
+    page: { minHeight: "100vh", display: "flex", background: "var(--bg)" },
     // Left hero panel
     hero: {
       display: "flex", flexDirection: "column", justifyContent: "space-between",
       minWidth: 380, maxWidth: 480, flex: "0 0 420px",
-      background: "linear-gradient(160deg,#0b6b57 0%,#085a49 55%,#073d34 100%)",
+      background: "linear-gradient(160deg,var(--brand-blue) 0%,var(--brand-blue-dark) 58%,#002f70 100%)",
       padding: "48px 44px", position: "relative", overflow: "hidden",
     } as React.CSSProperties,
     heroDots: {
@@ -111,7 +111,7 @@ export default function LoginPage() {
       display: "flex", alignItems: "center", padding: 4,
     },
     submitBtn: {
-      width: "100%", padding: "11px 16px", background: "#0b6b57", color: "#fff",
+      width: "100%", padding: "11px 16px", background: "var(--brand-blue)", color: "#fff",
       border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700,
       cursor: "pointer", marginTop: 6, display: "flex", alignItems: "center",
       justifyContent: "center", gap: 8, transition: "background 0.15s",
@@ -214,7 +214,7 @@ export default function LoginPage() {
                   placeholder="you@cut.ac.zw"
                   value={email} onChange={(e) => setEmail(e.target.value)}
                   required autoComplete="email" autoFocus disabled={submitting}
-                  onFocus={(e) => { e.target.style.borderColor = "#0b6b57"; e.target.style.boxShadow = "0 0 0 3px rgba(11,107,87,0.12)"; }}
+                  onFocus={(e) => { e.target.style.borderColor = "var(--brand-blue)"; e.target.style.boxShadow = "0 0 0 3px rgba(0,85,212,0.16)"; }}
                   onBlur={(e)  => { e.target.style.borderColor = "#e2e8e4"; e.target.style.boxShadow = "none"; }}
                 />
               </div>
@@ -227,7 +227,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     value={password} onChange={(e) => setPassword(e.target.value)}
                     required autoComplete="current-password" disabled={submitting}
-                    onFocus={(e) => { e.target.style.borderColor = "#0b6b57"; e.target.style.boxShadow = "0 0 0 3px rgba(11,107,87,0.12)"; }}
+                    onFocus={(e) => { e.target.style.borderColor = "var(--brand-blue)"; e.target.style.boxShadow = "0 0 0 3px rgba(0,85,212,0.16)"; }}
                     onBlur={(e)  => { e.target.style.borderColor = "#e2e8e4"; e.target.style.boxShadow = "none"; }}
                   />
                   <button type="button" style={s.eyeBtn} onClick={() => setShowPass((v) => !v)} aria-label={showPass ? "Hide password" : "Show password"} tabIndex={-1}>

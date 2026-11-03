@@ -13,6 +13,17 @@ import {
 } from "react-native";
 import { useApi } from "../../hooks/useApi";
 import { useAuth } from "../../context/auth";
+import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_LIGHT,
+  BRAND_BORDER,
+  BRAND_MUTED,
+  BRAND_TEXT,
+  colors,
+  typeScale,
+} from "../../src/theme";
 import type { Notification } from "../../src/types/contracts";
 
 
@@ -20,19 +31,19 @@ import type { Notification } from "../../src/types/contracts";
 // Design tokens
 // ---------------------------------------------------------------------------
 const C = {
-  BG: "#f5f8f6",
-  SURFACE: "#fff",
-  SURFACE_READ: "#fafcfb",
-  GREEN: "#0b6b57",
-  GREEN_DARK: "#084f41",
-  GREEN_LIGHT: "#e8f5f0",
-  TEXT: "#0f1f1b",
-  MUTED: "#52615b",
-  BORDER: "#d0ddd8",
-  BLUE: "#2563eb",
-  AMBER: "#d97706",
-  RED: "#dc2626",
-  GRAY: "#9ca3af",
+  BG: BRAND_BACKGROUND,
+  SURFACE: colors.surface,
+  SURFACE_READ: colors.surfaceMuted,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_LIGHT,
+  TEXT: BRAND_TEXT,
+  MUTED: BRAND_MUTED,
+  BORDER: BRAND_BORDER,
+  BLUE: colors.info,
+  AMBER: colors.warning,
+  RED: colors.danger,
+  GRAY: colors.tertiaryLabel,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -84,7 +95,7 @@ function iconForType(type: string): { letter: string; bg: string } {
   const t = type.toLowerCase();
   if (t.includes("status") || t.includes("update"))
     return { letter: "S", bg: C.BLUE };
-  if (t.includes("assign")) return { letter: "A", bg: C.GREEN };
+  if (t.includes("assign")) return { letter: "A", bg: C.BRAND_BLUE };
   if (t.includes("system") || t.includes("info"))
     return { letter: "i", bg: C.GRAY };
   // Fallback: use first letter of type, gray bg
@@ -404,8 +415,8 @@ export default function NotificationsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={C.GREEN}
-            colors={[C.GREEN]}
+            tintColor={C.BRAND_BLUE}
+            colors={[C.BRAND_BLUE]}
           />
         }
         stickySectionHeadersEnabled={false}
@@ -494,13 +505,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: typeScale.display,
     fontWeight: "800",
     color: C.TEXT,
     letterSpacing: -0.3,
   },
   unreadBadge: {
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
     borderRadius: 100,
     paddingHorizontal: 9,
     paddingVertical: 3,
@@ -509,12 +520,12 @@ const styles = StyleSheet.create({
   },
   unreadBadgeText: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: typeScale.caption,
     fontWeight: "700",
   },
   markAllText: {
-    color: C.GREEN,
-    fontSize: 13,
+    color: C.BRAND_BLUE,
+    fontSize: typeScale.footnote,
     fontWeight: "700",
   },
 
@@ -532,7 +543,7 @@ const styles = StyleSheet.create({
   // ── Section header ────────────────────────────────────────────
   sectionHeader: {
     color: C.MUTED,
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "700",
     letterSpacing: 1.1,
     textTransform: "uppercase",
@@ -552,7 +563,7 @@ const styles = StyleSheet.create({
   cardUnread: {
     backgroundColor: C.SURFACE,
     borderLeftWidth: 3,
-    borderLeftColor: C.GREEN,
+    borderLeftColor: C.BRAND_BLUE,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
@@ -572,7 +583,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "600",
     color: C.MUTED,
   },
@@ -581,7 +592,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   cardBody: {
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     color: C.MUTED,
     lineHeight: 19,
   },
@@ -592,7 +603,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   cardTime: {
-    fontSize: 11,
+    fontSize: typeScale.overline,
     color: C.MUTED,
   },
 
@@ -608,21 +619,21 @@ const styles = StyleSheet.create({
   },
   typeIconLetter: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "800",
     lineHeight: 16,
   },
 
   // ── Ticket pill ───────────────────────────────────────────────
   ticketPill: {
-    backgroundColor: C.GREEN_LIGHT,
+    backgroundColor: C.BRAND_BLUE_LIGHT,
     borderRadius: 100,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   ticketPillText: {
-    color: C.GREEN_DARK,
-    fontSize: 11,
+    color: C.BRAND_BLUE_DARK,
+    fontSize: typeScale.overline,
     fontWeight: "700",
     fontFamily: "monospace" as const,
     letterSpacing: 0.4,
@@ -638,16 +649,16 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: typeScale.title3,
     fontWeight: "800",
     color: C.TEXT,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     color: C.MUTED,
   },
   swipeHint: {
-    fontSize: 12,
+    fontSize: typeScale.caption,
     color: C.BORDER,
     marginTop: 16,
     textAlign: "center",
@@ -725,27 +736,27 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   errorTitle: {
-    fontSize: 16,
+    fontSize: typeScale.body,
     fontWeight: "700",
     color: C.TEXT,
   },
   errorBody: {
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     color: C.MUTED,
     textAlign: "center",
   },
   retryBtn: {
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: C.GREEN,
+    borderColor: C.BRAND_BLUE,
     paddingHorizontal: 28,
     paddingVertical: 10,
     marginTop: 4,
   },
   retryBtnText: {
-    color: C.GREEN,
+    color: C.BRAND_BLUE,
     fontWeight: "700",
-    fontSize: 14,
+    fontSize: typeScale.subhead,
   },
 
   // ── Misc ──────────────────────────────────────────────────────
@@ -758,11 +769,11 @@ const styles = StyleSheet.create({
   },
   promptText: {
     color: C.MUTED,
-    fontSize: 15,
+    fontSize: typeScale.callout,
     textAlign: "center",
   },
   loginBtn: {
-    backgroundColor: C.GREEN,
+    backgroundColor: C.BRAND_BLUE,
     borderRadius: 10,
     paddingHorizontal: 32,
     paddingVertical: 12,
@@ -771,6 +782,6 @@ const styles = StyleSheet.create({
   loginBtnText: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
 });

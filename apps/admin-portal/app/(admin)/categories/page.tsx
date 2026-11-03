@@ -269,7 +269,7 @@ export default function CategoriesPage() {
                 style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px", cursor: "pointer" }}
                 onClick={() => setExpanded(expanded === cat.id ? null : cat.id)}
               >
-                <span style={{ display: "flex", alignItems: "center", color: "var(--green)", flexShrink: 0 }}>
+                <span style={{ display: "flex", alignItems: "center", color: "var(--brand-blue)", flexShrink: 0 }}>
                   <CategoryIcon name={cat.icon} size={26} />
                 </span>
                 <div style={{ flex: 1 }}>
@@ -355,8 +355,8 @@ export default function CategoriesPage() {
                       onClick={() => setCatIcon(ico)}
                       style={{
                         width: "36px", height: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center",
-                        border: `2px solid ${catIcon === ico ? "var(--green)" : "var(--border)"}`,
-                        borderRadius: "6px", background: catIcon === ico ? "var(--green-light)" : "var(--surface)",
+                        border: `2px solid ${catIcon === ico ? "var(--brand-blue)" : "var(--border)"}`,
+                        borderRadius: "6px", background: catIcon === ico ? "var(--brand-blue-light)" : "var(--surface)",
                         cursor: "pointer",
                       }}
                     ><CategoryIcon name={ico} size={20} /></button>

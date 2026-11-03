@@ -14,6 +14,17 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../context/auth";
+import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BORDER,
+  BRAND_HINT,
+  BRAND_MUTED,
+  BRAND_SURFACE_MUTED,
+  BRAND_TEXT,
+  statusColors,
+  typeScale,
+} from "../../src/theme";
 import type {
   CompletionEvidence,
   CreateFeedbackInput,
@@ -29,26 +40,26 @@ import type {
 // Helpers
 // ---------------------------------------------------------------------------
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  submitted: { bg: "#fff3cd", text: "#92580a" },
-  under_review: { bg: "#fff3cd", text: "#92580a" },
-  reopened: { bg: "#fff3cd", text: "#92580a" },
-  assigned: { bg: "#cce5ff", text: "#004085" },
-  accepted: { bg: "#cce5ff", text: "#004085" },
-  in_progress: { bg: "#cce5ff", text: "#004085" },
-  waiting_for_materials: { bg: "#cce5ff", text: "#004085" },
-  repair_completed: { bg: "#d4edda", text: "#155724" },
-  under_verification: { bg: "#d4edda", text: "#155724" },
-  closed: { bg: "#d4edda", text: "#155724" },
-  rejected: { bg: "#f8d7da", text: "#721c24" },
-  duplicate: { bg: "#f8d7da", text: "#721c24" },
-  cancelled: { bg: "#f8d7da", text: "#721c24" },
+  submitted: { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  under_review: { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  reopened: { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  assigned: { bg: statusColors.info.background, text: statusColors.info.foreground },
+  accepted: { bg: statusColors.info.background, text: statusColors.info.foreground },
+  in_progress: { bg: statusColors.info.background, text: statusColors.info.foreground },
+  waiting_for_materials: { bg: statusColors.info.background, text: statusColors.info.foreground },
+  repair_completed: { bg: statusColors.success.background, text: statusColors.success.foreground },
+  under_verification: { bg: statusColors.success.background, text: statusColors.success.foreground },
+  closed: { bg: statusColors.success.background, text: statusColors.success.foreground },
+  rejected: { bg: statusColors.danger.background, text: statusColors.danger.foreground },
+  duplicate: { bg: statusColors.danger.background, text: statusColors.danger.foreground },
+  cancelled: { bg: statusColors.danger.background, text: statusColors.danger.foreground },
 };
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
-  critical: { bg: "#f8d7da", text: "#721c24" },
-  high: { bg: "#ffe5d0", text: "#943c00" },
-  medium: { bg: "#fff3cd", text: "#856404" },
-  low: { bg: "#d4edda", text: "#155724" },
+  critical: { bg: statusColors.danger.background, text: statusColors.danger.foreground },
+  high: { bg: statusColors.highPriority.background, text: statusColors.highPriority.foreground },
+  medium: { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  low: { bg: statusColors.success.background, text: statusColors.success.foreground },
 };
 
 const TIMELINE_ICONS: Partial<Record<ReportStatus, string>> = {
@@ -313,7 +324,7 @@ export default function ReportDetailScreen() {
     return (
       <SafeAreaView style={styles.page}>
         <View style={styles.center}>
-          <ActivityIndicator color="#0b6b57" size="large" />
+          <ActivityIndicator color={BRAND_BLUE} size="large" />
           <Text style={styles.loadingText}>Loading ticket...</Text>
         </View>
       </SafeAreaView>
@@ -605,7 +616,7 @@ export default function ReportDetailScreen() {
                 <TextInput
                   style={[styles.input, styles.feedbackInput]}
                   placeholder="Additional comments (optional)"
-                  placeholderTextColor="#9caea5"
+                  placeholderTextColor={BRAND_HINT}
                   value={comment}
                   onChangeText={setComment}
                   multiline
@@ -679,7 +690,7 @@ export default function ReportDetailScreen() {
             <TextInput
               style={[styles.input, styles.feedbackInput]}
               placeholder="e.g. The tap is still dripping after the repair..."
-              placeholderTextColor="#9caea5"
+              placeholderTextColor={BRAND_HINT}
               value={reopenNote}
               onChangeText={setReopenNote}
               multiline
@@ -724,7 +735,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "#f4f7f2" },
+  page: { flex: 1, backgroundColor: BRAND_BACKGROUND },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -734,14 +745,14 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   backBtn: {
-    color: "#0b6b57",
-    fontSize: 16,
+    color: BRAND_BLUE,
+    fontSize: typeScale.body,
     fontWeight: "600",
     width: 60,
   },
   topBarTitle: {
-    color: "#17231f",
-    fontSize: 14,
+    color: BRAND_TEXT,
+    fontSize: typeScale.subhead,
     fontWeight: "700",
     fontFamily: "monospace" as const,
     flex: 1,
@@ -760,16 +771,16 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   ticketNumber: {
-    color: "#0b6b57",
+    color: BRAND_BLUE,
     fontFamily: "monospace" as const,
-    fontSize: 12,
+    fontSize: typeScale.caption,
     fontWeight: "700",
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   title: {
-    color: "#17231f",
-    fontSize: 20,
+    color: BRAND_TEXT,
+    fontSize: typeScale.title3,
     fontWeight: "800",
     marginBottom: 10,
     lineHeight: 26,
@@ -786,18 +797,18 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "700",
     textTransform: "capitalize",
   },
   description: {
-    color: "#52615b",
-    fontSize: 14,
+    color: BRAND_MUTED,
+    fontSize: typeScale.subhead,
     lineHeight: 21,
   },
   cardSectionTitle: {
-    color: "#17231f",
-    fontSize: 14,
+    color: BRAND_TEXT,
+    fontSize: typeScale.subhead,
     fontWeight: "700",
     marginBottom: 12,
   },
@@ -805,18 +816,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f4f1",
+    borderBottomColor: BRAND_SURFACE_MUTED,
     gap: 12,
   },
   detailLabel: {
-    color: "#52615b",
-    fontSize: 13,
+    color: BRAND_MUTED,
+    fontSize: typeScale.footnote,
     width: 90,
     flexShrink: 0,
   },
   detailValue: {
-    color: "#17231f",
-    fontSize: 13,
+    color: BRAND_TEXT,
+    fontSize: typeScale.footnote,
     fontWeight: "500",
     flex: 1,
   },
@@ -831,13 +842,13 @@ const styles = StyleSheet.create({
     width: 30,
   },
   timelineIcon: {
-    fontSize: 18,
+    fontSize: typeScale.headline,
     marginBottom: 4,
   },
   timelineLine: {
     flex: 1,
     width: 2,
-    backgroundColor: "#e4ede7",
+    backgroundColor: BRAND_BORDER,
     marginBottom: 4,
   },
   timelineContent: {
@@ -846,24 +857,24 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   timelineStatus: {
-    color: "#17231f",
-    fontSize: 14,
+    color: BRAND_TEXT,
+    fontSize: typeScale.subhead,
     fontWeight: "700",
     textTransform: "capitalize",
   },
   timelineActor: {
-    color: "#52615b",
-    fontSize: 12,
+    color: BRAND_MUTED,
+    fontSize: typeScale.caption,
   },
   timelineNote: {
-    color: "#52615b",
-    fontSize: 13,
+    color: BRAND_MUTED,
+    fontSize: typeScale.footnote,
     lineHeight: 18,
     marginTop: 2,
   },
   timelineDate: {
-    color: "#9caea5",
-    fontSize: 11,
+    color: BRAND_HINT,
+    fontSize: typeScale.overline,
     marginTop: 4,
   },
   // Attachments / Evidence
@@ -876,37 +887,37 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 8,
-    backgroundColor: "#e8ede9",
+    backgroundColor: BRAND_SURFACE_MUTED,
   },
   thumbnailPlaceholder: {
     width: 100,
     height: 100,
     borderRadius: 8,
-    backgroundColor: "#e8ede9",
+    backgroundColor: BRAND_SURFACE_MUTED,
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
     padding: 8,
   },
-  thumbnailIcon: { fontSize: 28 },
-  thumbnailName: { color: "#52615b", fontSize: 10, textAlign: "center" },
+  thumbnailIcon: { fontSize: typeScale.display },
+  thumbnailName: { color: BRAND_MUTED, fontSize: typeScale.tiny, textAlign: "center" },
   evidenceSubtitle: {
-    color: "#52615b",
-    fontSize: 13,
+    color: BRAND_MUTED,
+    fontSize: typeScale.footnote,
     marginBottom: 12,
     lineHeight: 18,
   },
   evidenceCaption: {
-    color: "#52615b",
-    fontSize: 11,
+    color: BRAND_MUTED,
+    fontSize: typeScale.overline,
     marginTop: 4,
     maxWidth: 100,
   },
   // Feedback
   feedbackForm: { gap: 12 },
   feedbackQuestion: {
-    color: "#17231f",
-    fontSize: 15,
+    color: BRAND_TEXT,
+    fontSize: typeScale.callout,
     fontWeight: "600",
     lineHeight: 21,
   },
@@ -917,14 +928,14 @@ const styles = StyleSheet.create({
   yesNoBtn: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: "#c5d4c9",
+    borderColor: BRAND_BORDER,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
     backgroundColor: "#fff",
   },
   yesNoBtnActive: {
-    borderColor: "#0b6b57",
+    borderColor: BRAND_BLUE,
     backgroundColor: "#f0f9f6",
   },
   yesNoBtnActiveNo: {
@@ -932,19 +943,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff5f5",
   },
   yesNoText: {
-    color: "#52615b",
+    color: BRAND_MUTED,
     fontWeight: "700",
-    fontSize: 14,
+    fontSize: typeScale.subhead,
   },
   yesNoTextActive: {
-    color: "#0b6b57",
+    color: BRAND_BLUE,
   },
   yesNoTextActiveNo: {
     color: "#e05252",
   },
   ratingLabel: {
-    color: "#52615b",
-    fontSize: 13,
+    color: BRAND_MUTED,
+    fontSize: typeScale.footnote,
     fontWeight: "600",
   },
   stars: {
@@ -952,26 +963,26 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   star: {
-    fontSize: 32,
-    color: "#c5d4c9",
+    fontSize: typeScale.displayLarge,
+    color: BRAND_BORDER,
   },
   starFilled: {
     color: "#e3b23c",
   },
   input: {
-    backgroundColor: "#f4f7f2",
-    borderColor: "#d7e0d9",
+    backgroundColor: BRAND_BACKGROUND,
+    borderColor: BRAND_BORDER,
     borderWidth: 1,
     borderRadius: 10,
-    color: "#17231f",
-    fontSize: 15,
+    color: BRAND_TEXT,
+    fontSize: typeScale.callout,
     padding: 14,
   },
   feedbackInput: {
     minHeight: 80,
   },
   feedbackSubmitBtn: {
-    backgroundColor: "#0b6b57",
+    backgroundColor: BRAND_BLUE,
     borderRadius: 10,
     padding: 15,
     alignItems: "center",
@@ -980,7 +991,7 @@ const styles = StyleSheet.create({
   feedbackSubmitText: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
   feedbackSubmitted: {
     gap: 8,
@@ -988,17 +999,17 @@ const styles = StyleSheet.create({
   },
   feedbackSubmittedTitle: {
     color: "#155724",
-    fontSize: 15,
+    fontSize: typeScale.callout,
     fontWeight: "700",
   },
   feedbackSubmittedDetail: {
-    color: "#52615b",
-    fontSize: 14,
+    color: BRAND_MUTED,
+    fontSize: typeScale.subhead,
   },
   // Reopen
   reopenDescription: {
-    color: "#52615b",
-    fontSize: 14,
+    color: BRAND_MUTED,
+    fontSize: typeScale.subhead,
     lineHeight: 20,
     marginBottom: 14,
   },
@@ -1009,9 +1020,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   reopenBtnText: {
-    color: "#17231f",
+    color: BRAND_TEXT,
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
   reopenActions: {
     flexDirection: "row",
@@ -1021,16 +1032,16 @@ const styles = StyleSheet.create({
   reopenCancelBtn: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: "#c5d4c9",
+    borderColor: BRAND_BORDER,
     borderRadius: 10,
     padding: 14,
     alignItems: "center",
     backgroundColor: "#fff",
   },
   reopenCancelText: {
-    color: "#52615b",
+    color: BRAND_MUTED,
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
   reopenConfirmBtn: {
     flex: 2,
@@ -1040,9 +1051,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   reopenConfirmText: {
-    color: "#17231f",
+    color: BRAND_TEXT,
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
   // States
   center: {
@@ -1052,15 +1063,15 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 32,
   },
-  loadingText: { color: "#52615b", fontSize: 14 },
-  errorText: { color: "#721c24", fontSize: 14, textAlign: "center" },
+  loadingText: { color: BRAND_MUTED, fontSize: typeScale.subhead },
+  errorText: { color: "#721c24", fontSize: typeScale.subhead, textAlign: "center" },
   retryBtn: {
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#0b6b57",
+    borderColor: BRAND_BLUE,
     paddingHorizontal: 24,
     paddingVertical: 10,
   },
-  retryBtnText: { color: "#0b6b57", fontWeight: "700" },
-  backLink: { color: "#0b6b57", fontSize: 15, fontWeight: "600" },
+  retryBtnText: { color: BRAND_BLUE, fontWeight: "700" },
+  backLink: { color: BRAND_BLUE, fontSize: typeScale.callout, fontWeight: "600" },
 });

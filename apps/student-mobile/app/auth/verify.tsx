@@ -26,17 +26,27 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../context/auth";
+import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_BLUE_LIGHT,
+  BRAND_BORDER,
+  BRAND_HINT,
+  BRAND_MUTED,
+  BRAND_TEXT,
+  DANGER_RED,
+  SUCCESS_GREEN,
+  typeScale,
+} from "../../src/theme";
 
 // ─── Design tokens ─────────────────────────────────────────────
-const GREEN       = "#0b6b57";
-const GREEN_DARK  = "#084f41";
-const GREEN_LIGHT = "#e8f5f0";
-const TEXT_PRIMARY   = "#0f1f1b";
-const TEXT_SECONDARY = "#4a5e57";
-const TEXT_MUTED     = "#8ea89f";
-const BORDER         = "#d0ddd8";
-const ERROR          = "#c0392b";
-const BG             = "#f5f8f6";
+const TEXT_PRIMARY   = BRAND_TEXT;
+const TEXT_SECONDARY = BRAND_MUTED;
+const TEXT_MUTED     = BRAND_HINT;
+const BORDER         = BRAND_BORDER;
+const ERROR          = DANGER_RED;
+const BG             = BRAND_BACKGROUND;
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60;
@@ -89,18 +99,18 @@ const successStyles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: GREEN_DARK,
+    shadowColor: BRAND_BLUE_DARK,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 12,
   },
-  tick: { color: "#fff", fontSize: 44, fontWeight: "800" },
-  label: { color: TEXT_PRIMARY, fontSize: 24, fontWeight: "800", letterSpacing: -0.3 },
-  sub: { color: TEXT_MUTED, fontSize: 15 },
+  tick: { color: "#fff", fontSize: typeScale.heroLarge, fontWeight: "800" },
+  label: { color: TEXT_PRIMARY, fontSize: typeScale.title, fontWeight: "800", letterSpacing: -0.3 },
+  sub: { color: TEXT_MUTED, fontSize: typeScale.callout },
 });
 
 // ─── Single OTP digit box ───────────────────────────────────────
@@ -115,7 +125,7 @@ function OtpBox({
   error: boolean;
   shake: Animated.Value;
 }) {
-  const borderColor = error ? ERROR : focused ? GREEN : value ? GREEN : BORDER;
+  const borderColor = error ? ERROR : focused ? BRAND_BLUE : value ? BRAND_BLUE : BORDER;
   const bgColor     = value ? "#fff" : focused ? "#fff" : "#fafcfb";
 
   return (
@@ -148,7 +158,7 @@ const boxStyles = StyleSheet.create({
     position: "relative",
   },
   focused: {
-    shadowColor: GREEN,
+    shadowColor: BRAND_BLUE,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -162,7 +172,7 @@ const boxStyles = StyleSheet.create({
     elevation: 3,
   },
   digit: {
-    fontSize: 22,
+    fontSize: typeScale.title2,
     fontWeight: "800",
     color: TEXT_PRIMARY,
     letterSpacing: 0,
@@ -172,7 +182,7 @@ const boxStyles = StyleSheet.create({
     bottom: 10,
     width: 2,
     height: 20,
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     borderRadius: 1,
     opacity: 0.8,
   },
@@ -403,7 +413,7 @@ export default function VerifyScreen() {
             style={[styles.btnWrap, (!otpFull || loading) && { opacity: 0.6 }]}
           >
             <LinearGradient
-              colors={[GREEN, GREEN_DARK]}
+              colors={[BRAND_BLUE, BRAND_BLUE_DARK]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.btn}
@@ -502,26 +512,26 @@ const styles = StyleSheet.create({
   header: { alignItems: "center", marginBottom: 36, gap: 10, width: "100%" },
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: GREEN_LIGHT,
+    backgroundColor: BRAND_BLUE_LIGHT,
     alignItems: "center", justifyContent: "center",
     marginBottom: 4,
-    shadowColor: GREEN,
+    shadowColor: BRAND_BLUE,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
     elevation: 6,
   },
-  iconEmoji: { fontSize: 36 },
+  iconEmoji: { fontSize: typeScale.heroSmall },
   title: {
     color: TEXT_PRIMARY,
-    fontSize: 28,
+    fontSize: typeScale.display,
     fontWeight: "800",
     letterSpacing: -0.5,
     textAlign: "center",
   },
   subtitle: {
     color: TEXT_MUTED,
-    fontSize: 15,
+    fontSize: typeScale.callout,
     textAlign: "center",
     lineHeight: 22,
   },
@@ -536,7 +546,7 @@ const styles = StyleSheet.create({
   },
   emailText: {
     color: TEXT_SECONDARY,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     fontWeight: "700",
     textAlign: "center",
   },
@@ -578,8 +588,8 @@ const styles = StyleSheet.create({
     borderColor: "#ffd5d5",
     alignSelf: "stretch",
   },
-  errorIcon: { color: ERROR, fontSize: 14, fontWeight: "800" },
-  errorText: { color: ERROR, fontSize: 13, fontWeight: "600", flex: 1 },
+  errorIcon: { color: ERROR, fontSize: typeScale.subhead, fontWeight: "800" },
+  errorText: { color: ERROR, fontSize: typeScale.footnote, fontWeight: "600", flex: 1 },
   successRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -593,8 +603,8 @@ const styles = StyleSheet.create({
     borderColor: "#b7ecd4",
     alignSelf: "stretch",
   },
-  successIcon: { color: "#27ae60", fontSize: 14, fontWeight: "800" },
-  successText: { color: "#27ae60", fontSize: 13, fontWeight: "600" },
+  successIcon: { color: SUCCESS_GREEN, fontSize: typeScale.subhead, fontWeight: "800" },
+  successText: { color: SUCCESS_GREEN, fontSize: typeScale.footnote, fontWeight: "600" },
 
   // Button
   btnWrap: { width: "100%", marginBottom: 20 },
@@ -603,21 +613,21 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: GREEN_DARK,
+    shadowColor: BRAND_BLUE_DARK,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 6,
   },
-  btnLabel: { color: "#fff", fontSize: 16, fontWeight: "700", letterSpacing: 0.3 },
+  btnLabel: { color: "#fff", fontSize: typeScale.body, fontWeight: "700", letterSpacing: 0.3 },
 
   // Resend
   resendRow: { marginBottom: 16, alignItems: "center" },
-  resendCountdown: { color: TEXT_MUTED, fontSize: 14 },
-  resendTimer: { color: GREEN, fontWeight: "700" },
-  resendBtn: { color: GREEN, fontSize: 14, fontWeight: "700" },
+  resendCountdown: { color: TEXT_MUTED, fontSize: typeScale.subhead },
+  resendTimer: { color: BRAND_BLUE, fontWeight: "700" },
+  resendBtn: { color: BRAND_BLUE, fontSize: typeScale.subhead, fontWeight: "700" },
 
   // Change email
   changeEmail: { marginTop: 8, paddingVertical: 8, paddingHorizontal: 16 },
-  changeEmailText: { color: TEXT_MUTED, fontSize: 13, fontWeight: "500" },
+  changeEmailText: { color: TEXT_MUTED, fontSize: typeScale.footnote, fontWeight: "500" },
 });

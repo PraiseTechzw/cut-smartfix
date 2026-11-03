@@ -14,6 +14,20 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { useApi } from "../../hooks/useApi";
+import {
+  BRAND_BACKGROUND,
+  BRAND_BLUE,
+  BRAND_BLUE_DARK,
+  BRAND_GOLD,
+  BRAND_BLUE_LIGHT,
+  BRAND_BORDER,
+  BRAND_MUTED,
+  BRAND_TEXT,
+  colors,
+  SUCCESS_GREEN,
+  statusColors,
+  typeScale,
+} from "../../src/theme";
 import type {
   MaintenanceReport,
   PaginatedList,
@@ -23,17 +37,14 @@ import type {
 // ─────────────────────────────────────────────────────────────────────────────
 // Design tokens
 // ─────────────────────────────────────────────────────────────────────────────
-const BG          = "#f5f8f6";
-const SURFACE     = "#ffffff";
-const GREEN       = "#0b6b57";
-const GREEN_DARK  = "#084f41";
-const GREEN_LIGHT = "#e8f5f0";
-const TEXT        = "#0f1f1b";
-const MUTED       = "#52615b";
-const BORDER      = "#d0ddd8";
-const AMBER       = "#d97706";
-const BLUE        = "#2563eb";
-const RED         = "#dc2626";
+const BG          = BRAND_BACKGROUND;
+const SURFACE     = colors.surface;
+const TEXT        = BRAND_TEXT;
+const MUTED       = BRAND_MUTED;
+const BORDER      = BRAND_BORDER;
+const AMBER       = colors.warning;
+const BLUE        = colors.info;
+const RED         = colors.danger;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -83,7 +94,7 @@ function getGroupColor(group: StatusGroup): string {
   switch (group) {
     case "open":     return AMBER;
     case "active":   return BLUE;
-    case "done":     return GREEN;
+    case "done":     return SUCCESS_GREEN;
     case "rejected": return RED;
   }
 }
@@ -91,19 +102,19 @@ function getGroupColor(group: StatusGroup): string {
 interface BadgeColors { bg: string; text: string }
 
 const STATUS_BADGE: Record<ReportStatus, BadgeColors> = {
-  submitted:              { bg: "#fffbeb", text: "#92400e" },
-  under_review:           { bg: "#fffbeb", text: "#92400e" },
-  reopened:               { bg: "#fff7ed", text: "#9a3412" },
-  assigned:               { bg: "#eff6ff", text: "#1d4ed8" },
-  accepted:               { bg: "#eff6ff", text: "#1d4ed8" },
-  in_progress:            { bg: "#eff6ff", text: "#1d4ed8" },
-  waiting_for_materials:  { bg: "#f0f9ff", text: "#0369a1" },
-  repair_completed:       { bg: "#f0fdf4", text: "#166534" },
-  under_verification:     { bg: "#f0fdf4", text: "#166534" },
-  closed:                 { bg: "#f0fdf4", text: "#166534" },
-  rejected:               { bg: "#fef2f2", text: "#991b1b" },
-  cancelled:              { bg: "#fef2f2", text: "#991b1b" },
-  duplicate:              { bg: "#fdf4ff", text: "#7e22ce" },
+  submitted:              { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  under_review:           { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  reopened:               { bg: statusColors.pending.background, text: statusColors.pending.foreground },
+  assigned:               { bg: statusColors.active.background, text: statusColors.active.foreground },
+  accepted:               { bg: statusColors.active.background, text: statusColors.active.foreground },
+  in_progress:            { bg: statusColors.active.background, text: statusColors.active.foreground },
+  waiting_for_materials:  { bg: "#F0F9FF", text: "#0369A1" },
+  repair_completed:       { bg: statusColors.success.background, text: statusColors.success.foreground },
+  under_verification:     { bg: statusColors.success.background, text: statusColors.success.foreground },
+  closed:                 { bg: statusColors.success.background, text: statusColors.success.foreground },
+  rejected:               { bg: statusColors.danger.background, text: statusColors.danger.foreground },
+  cancelled:              { bg: statusColors.danger.background, text: statusColors.danger.foreground },
+  duplicate:              { bg: "#FDF4FF", text: "#7E22CE" },
 };
 
 function badgeColors(status: ReportStatus): BadgeColors {
@@ -235,9 +246,9 @@ const il = StyleSheet.create({
     width: ENV_W,
     height: ENV_H,
     borderRadius: 6,
-    backgroundColor: GREEN_LIGHT,
+    backgroundColor: BRAND_BLUE_LIGHT,
     borderWidth: 2,
-    borderColor: GREEN,
+    borderColor: BRAND_BLUE,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
@@ -249,7 +260,7 @@ const il = StyleSheet.create({
     left: 0,
     width: ENV_W * 0.56,
     height: 2,
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     transformOrigin: "top left",
     transform: [{ rotate: "30deg" }],
   },
@@ -259,7 +270,7 @@ const il = StyleSheet.create({
     right: 0,
     width: ENV_W * 0.56,
     height: 2,
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     transformOrigin: "top right",
     transform: [{ rotate: "-30deg" }],
   },
@@ -269,7 +280,7 @@ const il = StyleSheet.create({
     left: 0,
     width: ENV_W * 0.56,
     height: 2,
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     transformOrigin: "bottom left",
     transform: [{ rotate: "-22deg" }],
   },
@@ -279,7 +290,7 @@ const il = StyleSheet.create({
     right: 0,
     width: ENV_W * 0.56,
     height: 2,
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     transformOrigin: "bottom right",
     transform: [{ rotate: "22deg" }],
   },
@@ -608,7 +619,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.page}>
-      <StatusBar barStyle="light-content" backgroundColor={GREEN_DARK} />
+      <StatusBar barStyle="light-content" backgroundColor={BRAND_BLUE_DARK} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -617,8 +628,8 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={GREEN}
-            colors={[GREEN]}
+            tintColor={BRAND_BLUE}
+            colors={[BRAND_BLUE]}
           />
         }
       >
@@ -651,7 +662,7 @@ export default function HomeScreen() {
             <StatCard
               label="Closed"
               value={doneCount}
-              accentColor={GREEN}
+              accentColor={BRAND_BLUE}
               loading={loading}
               pulseOpacity={pulseOpacity}
             />
@@ -718,7 +729,7 @@ const styles = StyleSheet.create({
   // ── Page
   page: {
     flex: 1,
-    backgroundColor: GREEN_DARK, // matches header so status bar area blends
+    backgroundColor: BRAND_BLUE_DARK, // matches header so status bar area blends
   },
   scrollContent: {
     paddingBottom: 48,
@@ -728,16 +739,18 @@ const styles = StyleSheet.create({
   // ── Header
   header: {
     overflow: "hidden",
+    borderBottomWidth: 3,
+    borderBottomColor: BRAND_GOLD,
     paddingTop: 16,
     paddingBottom: 28,
     paddingHorizontal: 20,
   },
   headerGradLeft: {
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     right: "40%",
   },
   headerGradRight: {
-    backgroundColor: GREEN_DARK,
+    backgroundColor: BRAND_BLUE_DARK,
     left: "60%",
   },
   headerContent: {
@@ -757,20 +770,20 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     color: "rgba(255,255,255,0.70)",
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "700",
     letterSpacing: 2,
     marginBottom: 4,
   },
   greeting: {
     color: "#ffffff",
-    fontSize: 26,
+    fontSize: typeScale.displaySmall,
     fontWeight: "800",
     lineHeight: 32,
   },
   headerDate: {
     color: "rgba(255,255,255,0.75)",
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     fontWeight: "500",
     paddingBottom: 2,
   },
@@ -810,13 +823,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statValue: {
-    fontSize: 30,
+    fontSize: typeScale.banner,
     fontWeight: "800",
     lineHeight: 34,
   },
   statLabel: {
     color: MUTED,
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "600",
     textAlign: "center",
   },
@@ -825,19 +838,19 @@ const styles = StyleSheet.create({
   ctaOuter: {
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: GREEN,
+    shadowColor: BRAND_BLUE,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 5,
   },
   ctaGradientLeft: {
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     right: "40%",
     borderRadius: 14,
   },
   ctaGradientRight: {
-    backgroundColor: GREEN_DARK,
+    backgroundColor: BRAND_BLUE_DARK,
     left: "60%",
     borderRadius: 14,
   },
@@ -851,7 +864,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     color: "#ffffff",
-    fontSize: 17,
+    fontSize: typeScale.bodyLarge,
     fontWeight: "700",
     letterSpacing: 0.2,
   },
@@ -865,12 +878,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: TEXT,
-    fontSize: 18,
+    fontSize: typeScale.headline,
     fontWeight: "700",
   },
   viewAllLink: {
-    color: GREEN,
-    fontSize: 13,
+    color: BRAND_BLUE,
+    fontSize: typeScale.footnote,
     fontWeight: "600",
   },
 
@@ -895,8 +908,8 @@ const styles = StyleSheet.create({
   },
   ticketNumber: {
     fontFamily: "monospace",
-    color: GREEN,
-    fontSize: 12,
+    color: BRAND_BLUE,
+    fontSize: typeScale.caption,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
@@ -906,13 +919,13 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: typeScale.overline,
     fontWeight: "700",
     textTransform: "capitalize",
   },
   reportTitle: {
     color: TEXT,
-    fontSize: 15,
+    fontSize: typeScale.callout,
     fontWeight: "600",
     lineHeight: 21,
   },
@@ -923,7 +936,7 @@ const styles = StyleSheet.create({
   },
   reportCategory: {
     color: MUTED,
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     fontWeight: "400",
   },
   reportMetaDot: {
@@ -935,7 +948,7 @@ const styles = StyleSheet.create({
   },
   reportDate: {
     color: MUTED,
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     fontWeight: "400",
   },
 
@@ -947,26 +960,26 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: TEXT,
-    fontSize: 17,
+    fontSize: typeScale.bodyLarge,
     fontWeight: "700",
     marginBottom: 8,
   },
   emptyBody: {
     color: MUTED,
-    fontSize: 14,
+    fontSize: typeScale.subhead,
     textAlign: "center",
     lineHeight: 21,
     marginBottom: 20,
   },
   emptyButton: {
-    backgroundColor: GREEN_LIGHT,
+    backgroundColor: BRAND_BLUE_LIGHT,
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 28,
   },
   emptyButtonText: {
-    color: GREEN,
-    fontSize: 15,
+    color: BRAND_BLUE,
+    fontSize: typeScale.callout,
     fontWeight: "700",
   },
 
@@ -989,19 +1002,19 @@ const styles = StyleSheet.create({
   },
   errorIconText: {
     color: RED,
-    fontSize: 22,
+    fontSize: typeScale.title2,
     fontWeight: "800",
     lineHeight: 26,
   },
   errorTitle: {
     color: TEXT,
-    fontSize: 16,
+    fontSize: typeScale.body,
     fontWeight: "700",
     marginBottom: 6,
   },
   errorMessage: {
     color: MUTED,
-    fontSize: 13,
+    fontSize: typeScale.footnote,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -1015,7 +1028,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: TEXT,
-    fontSize: 15,
+    fontSize: typeScale.callout,
     fontWeight: "600",
   },
 
@@ -1027,10 +1040,10 @@ const styles = StyleSheet.create({
   },
   loginPromptText: {
     color: MUTED,
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
   loginButton: {
-    backgroundColor: GREEN,
+    backgroundColor: BRAND_BLUE,
     borderRadius: 14,
     paddingHorizontal: 36,
     paddingVertical: 13,
@@ -1038,6 +1051,6 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: "#ffffff",
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: typeScale.callout,
   },
 });

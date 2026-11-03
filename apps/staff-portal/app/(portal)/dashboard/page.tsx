@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
       {/* Stat cards */}
       <div className="dashboard-stat-grid">
-        <Link href="/tasks" className="stat-card stat-card-link accent-green">
+        <Link href="/tasks" className="stat-card stat-card-link accent-blue">
           <div className="stat-card-label">Open Work</div>
           <div className="stat-card-value">{loading ? '–' : stats.total}</div>
           <div className="stat-card-sub">Active work orders</div>

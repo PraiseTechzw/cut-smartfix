@@ -16,7 +16,7 @@ function StatCard({
   label, value, sub, color,
 }: { label: string; value: number | string; sub?: string; color?: string }) {
   return (
-    <div className={`stat-card ${color ?? "green"}`}>
+    <div className={`stat-card ${color ?? "blue"}`}>
       <div className="stat-card-label">{label}</div>
       <div className="stat-card-value">{value}</div>
       {sub && <div className="stat-card-sub">{sub}</div>}
